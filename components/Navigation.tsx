@@ -54,14 +54,27 @@ export default function Navigation() {
     },
     { 
       href: '/events', 
-      label: 'Events',
+      label: 'Community',
       submenu: [
-        { href: '/events', label: 'All Events' },
+        { href: '/events', label: 'Events' },
         { href: '/projects', label: 'Projects' },
+        { href: '/volunteer/dashboard', label: 'Volunteer' },
         { href: '/news', label: 'News' },
       ]
     },
+    { 
+      href: '/social', 
+      label: 'Forum',
+      submenu: [
+        { href: '/social', label: 'All Posts' },
+        { href: '/lists', label: 'Lists' },
+      ]
+    },
     { href: '/dashboard', label: 'Dashboard' },
+    { 
+      href: '/analytics', 
+      label: 'Analytics',
+    },
     { href: '/submit', label: 'Submit' },
     { href: '/about', label: 'About' },
   ]

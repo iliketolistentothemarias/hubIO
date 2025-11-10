@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { allResources } from '@/data/resources'
 import { getDatabase } from '@/lib/db/schema'
 import Link from 'next/link'
+import VoiceSearch from './VoiceSearch'
 
 interface SearchResult {
   id: string
@@ -120,14 +121,21 @@ export default function AdvancedSearch() {
             WebkitBackdropFilter: 'saturate(180%) blur(20px)',
           }}
         />
-        {query && (
-          <button
-            onClick={clearSearch}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        )}
+        <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
+          <VoiceSearch onResult={(result) => {
+            setQuery(result)
+            handleSearch(result)
+            setIsOpen(true)
+          }} />
+          {query && (
+            <button
+              onClick={clearSearch}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          )}
+        </div>
       </div>
 
       <AnimatePresence>

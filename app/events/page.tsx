@@ -7,7 +7,7 @@
  * calendar view, and event management features.
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { Calendar, MapPin, Clock, Users, Filter, Grid, List, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -16,91 +16,58 @@ import LiquidGlass from '@/components/LiquidGlass'
 import { Event } from '@/lib/types'
 import { getAuthService } from '@/lib/auth'
 
-// Mock events data
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    name: 'Community Food Drive',
-    description: 'Annual community food drive to support local families. Bring non-perishable items.',
-    category: 'Community',
-    date: new Date('2026-02-15'),
-    time: '10:00 AM - 2:00 PM',
-    location: {
-      lat: 47.6097,
-      lng: -122.3331,
-      address: '123 Main Street',
-      city: 'Seattle',
-      state: 'WA',
-      zipCode: '98101',
-    },
-    organizer: 'Community Food Bank',
-    organizerId: 'org_1',
-    registered: 45,
-    rsvpRequired: true,
-    tags: ['Food', 'Community', 'Volunteer'],
-    status: 'upcoming',
-    createdAt: new Date('2026-01-01'),
-    updatedAt: new Date('2026-01-01'),
-  },
-  {
-    id: '2',
-    name: 'Small Business Networking',
-    description: 'Monthly networking event for local business owners. Connect, share resources, and grow together.',
-    category: 'Business',
-    date: new Date('2026-02-20'),
-    time: '6:00 PM - 8:00 PM',
-    location: {
-      lat: 47.6145,
-      lng: -122.3415,
-      address: '456 Business Center',
-      city: 'Seattle',
-      state: 'WA',
-      zipCode: '98102',
-    },
-    organizer: 'Local Business Association',
-    organizerId: 'org_2',
-    registered: 23,
-    rsvpRequired: true,
-    ticketPrice: 15,
-    tags: ['Business', 'Networking', 'Professional'],
-    status: 'upcoming',
-    createdAt: new Date('2026-01-05'),
-    updatedAt: new Date('2026-01-05'),
-  },
-  {
-    id: '3',
-    name: 'Youth Art Workshop',
-    description: 'Free art workshop for youth ages 12-18. All materials provided. No experience necessary.',
-    category: 'Youth',
-    date: new Date('2026-02-18'),
-    time: '3:00 PM - 5:00 PM',
-    location: {
-      lat: 47.6062,
-      lng: -122.3321,
-      address: '789 Community Center',
-      city: 'Seattle',
-      state: 'WA',
-      zipCode: '98103',
-    },
-    organizer: 'Youth Empowerment Center',
-    organizerId: 'org_3',
-    registered: 18,
-    capacity: 25,
-    rsvpRequired: true,
-    tags: ['Youth', 'Arts', 'Education'],
-    status: 'upcoming',
-    createdAt: new Date('2026-01-10'),
-    updatedAt: new Date('2026-01-10'),
-  },
-]
-
-const categories = ['All', 'Community', 'Business', 'Youth', 'Education', 'Health', 'Arts', 'Sports']
+const categories = ['All', 'Community', 'Business', 'Youth', 'Education', 'Health', 'Arts', 'Sports', 'Health & Wellness', 'Volunteering', 'Employment', 'Environment']
 
 export default function EventsPage() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [viewMode, setViewMode] = useState<'grid' | 'list' | 'calendar'>('grid')
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [events, setEvents] = useState<Event[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState('upcoming')
+
+  useEffect(() => {
+    loadEvents()
+  }, [activeTab, selectedCategory])
+
+  const loadEvents = async () => {
+    try {
+      setLoading(true)
+      
+      // If "My Events" tab, fetch from my-events endpoint
+      if (activeTab === 'my-events') {
+        const response = await fetch('/api/events/my-events')
+        const result = await response.json()
+        
+        if (result.success && result.data) {
+          setEvents(result.data.items || result.data || [])
+        } else {
+          setEvents([])
+        }
+        return
+      }
+      
+      // Otherwise, fetch from regular events endpoint
+      const status = activeTab === 'upcoming' ? 'upcoming' : activeTab === 'past' ? 'past' : 'upcoming'
+      const categoryParam = selectedCategory !== 'All' ? `&category=${selectedCategory}` : ''
+      const response = await fetch(`/api/events?status=${status}${categoryParam}`)
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        setEvents(result.data.items || result.data || [])
+      } else {
+        setEvents([])
+      }
+    } catch (error) {
+      console.error('Error loading events:', error)
+      setEvents([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const [rsvping, setRsvping] = useState<string | null>(null)
 
   const handleRSVP = async (event: Event) => {
     const auth = getAuthService()
@@ -113,20 +80,57 @@ export default function EventsPage() {
       return
     }
     
-    // User is authenticated, proceed with RSVP
-    // TODO: Implement actual RSVP logic
-    alert(`RSVP for ${event.name} - This feature will be implemented soon!`)
+    try {
+      setRsvping(event.id)
+      
+      // Determine if event requires RSVP or just registration
+      const endpoint = event.rsvpRequired 
+        ? `/api/events/${event.id}/rsvp`
+        : `/api/events/${event.id}/register`
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        // Show success toast
+        if (typeof window !== 'undefined') {
+          const { showToast } = await import('@/components/Toast')
+          showToast(`Successfully ${event.rsvpRequired ? 'RSVPed' : 'registered'} for ${event.name}!`, 'success')
+        }
+        
+        // Reload events to update registration count
+        loadEvents()
+      } else {
+        // Show error toast
+        if (typeof window !== 'undefined') {
+          const { showToast } = await import('@/components/Toast')
+          showToast(result.error || 'Failed to RSVP', 'error')
+        }
+      }
+    } catch (error) {
+      console.error('Error RSVPing to event:', error)
+      if (typeof window !== 'undefined') {
+        const { showToast } = await import('@/components/Toast')
+        showToast('An error occurred. Please try again.', 'error')
+      }
+    } finally {
+      setRsvping(null)
+    }
   }
 
   const filteredEvents = useMemo(() => {
-    let filtered = mockEvents
+    let filtered = events
 
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(e => e.category === selectedCategory)
     }
 
     return filtered.sort((a, b) => a.date.getTime() - b.date.getTime())
-  }, [selectedCategory])
+  }, [events, selectedCategory])
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
@@ -141,10 +145,21 @@ export default function EventsPage() {
   }
 
   const tabs = [
-    { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: filteredEvents.length },
-    { id: 'past', label: 'Past Events', icon: CalendarIcon },
+    { id: 'upcoming', label: 'Upcoming', icon: Calendar, count: activeTab === 'upcoming' ? filteredEvents.length : undefined },
+    { id: 'past', label: 'Past Events', icon: CalendarIcon, count: activeTab === 'past' ? filteredEvents.length : undefined },
     { id: 'my-events', label: 'My Events', icon: Users },
   ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading events...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary-50/30 
@@ -224,15 +239,17 @@ export default function EventsPage() {
         </motion.div>
 
         {/* Tab Navigation */}
-        <TabNavigation tabs={tabs} defaultTab="upcoming">
-          {(activeTab) => (
+        <TabNavigation tabs={tabs} defaultTab="upcoming" onTabChange={(tab) => {
+          setActiveTab(tab)
+        }}>
+          {(tab) => (
             <div>
               {viewMode === 'calendar' ? (
-                <CalendarView events={filteredEvents} currentMonth={currentMonth} setCurrentMonth={setCurrentMonth} onRSVP={handleRSVP} />
+                <CalendarView events={filteredEvents} currentMonth={currentMonth} setCurrentMonth={setCurrentMonth} onRSVP={handleRSVP} rsvping={rsvping} />
               ) : viewMode === 'list' ? (
-                <ListView events={filteredEvents} onRSVP={handleRSVP} />
+                <ListView events={filteredEvents} onRSVP={handleRSVP} rsvping={rsvping} />
               ) : (
-                <GridView events={filteredEvents} onRSVP={handleRSVP} />
+                <GridView events={filteredEvents} onRSVP={handleRSVP} rsvping={rsvping} />
               )}
             </div>
           )}
@@ -242,7 +259,7 @@ export default function EventsPage() {
   )
 }
 
-function CalendarView({ events, currentMonth, setCurrentMonth, onRSVP }: any) {
+function CalendarView({ events, currentMonth, setCurrentMonth, onRSVP, rsvping }: any) {
   const daysInMonth = getDaysInMonth(currentMonth)
   const firstDay = getFirstDayOfMonth(currentMonth)
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
@@ -326,7 +343,7 @@ function CalendarView({ events, currentMonth, setCurrentMonth, onRSVP }: any) {
   )
 }
 
-function GridView({ events, onRSVP }: { events: Event[]; onRSVP: (event: Event) => void }) {
+function GridView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event: Event) => void; rsvping: string | null }) {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {events.map((event, index) => (
@@ -377,10 +394,18 @@ function GridView({ events, onRSVP }: { events: Event[]; onRSVP: (event: Event) 
               </div>
 
               <button 
-                onClick={() => event.rsvpRequired ? onRSVP(event) : undefined}
-                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-2 rounded-2xl font-semibold hover:shadow-lg transition-all"
+                onClick={() => (event.rsvpRequired || !event.rsvpRequired) ? onRSVP(event) : undefined}
+                disabled={rsvping === event.id}
+                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-2 rounded-2xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {event.rsvpRequired ? 'RSVP Now' : 'Learn More'}
+                {rsvping === event.id ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    {event.rsvpRequired ? 'RSVPing...' : 'Registering...'}
+                  </>
+                ) : (
+                  event.rsvpRequired ? 'RSVP Now' : 'Register Now'
+                )}
               </button>
             </div>
           </LiquidGlass>
@@ -390,7 +415,7 @@ function GridView({ events, onRSVP }: { events: Event[]; onRSVP: (event: Event) 
   )
 }
 
-function ListView({ events, onRSVP }: { events: Event[]; onRSVP: (event: Event) => void }) {
+function ListView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event: Event) => void; rsvping: string | null }) {
   return (
     <div className="space-y-4">
       {events.map((event, index) => (
@@ -437,10 +462,18 @@ function ListView({ events, onRSVP }: { events: Event[]; onRSVP: (event: Event) 
               </div>
               <div className="flex-shrink-0">
                 <button 
-                  onClick={() => event.rsvpRequired ? onRSVP(event) : undefined}
-                  className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all"
+                  onClick={() => onRSVP(event)}
+                  disabled={rsvping === event.id}
+                  className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  {event.rsvpRequired ? 'RSVP' : 'View'}
+                  {rsvping === event.id ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      {event.rsvpRequired ? 'RSVPing...' : 'Registering...'}
+                    </>
+                  ) : (
+                    event.rsvpRequired ? 'RSVP Now' : 'Register Now'
+                  )}
                 </button>
               </div>
             </div>

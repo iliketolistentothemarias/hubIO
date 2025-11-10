@@ -8,11 +8,13 @@
  * - POST /api/campaigns - Create new campaign
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDatabase } from '@/lib/db/schema'
-import { requireAuth } from '@/lib/auth'
 import { validateCampaign } from '@/lib/utils/validation'
-import { ApiResponse, FundraisingCampaign, PaginatedResponse } from '@/lib/types'
+import { FundraisingCampaign, PaginatedResponse } from '@/lib/types'
+import { successResponse, createdResponse, validationErrorResponse } from '@/lib/api/response'
+import { handleApiError } from '@/lib/api/error-handler'
+import { requireAuthenticatedUser, getPaginationParams } from '@/lib/api/middleware'
 
 const db = getDatabase()
 
@@ -26,8 +28,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category')
     const status = searchParams.get('status') || 'active'
-    const page = parseInt(searchParams.get('page') || '1')
-    const pageSize = parseInt(searchParams.get('pageSize') || '20')
+    const { page, pageSize } = getPaginationParams(request)
 
     let campaigns = db.getAllCampaigns()
 
@@ -50,24 +51,17 @@ export async function GET(request: NextRequest) {
     const startIndex = (page - 1) * pageSize
     const paginatedCampaigns = campaigns.slice(startIndex, startIndex + pageSize)
 
-    const response: ApiResponse<PaginatedResponse<FundraisingCampaign>> = {
-      success: true,
-      data: {
-        items: paginatedCampaigns,
-        total,
-        page,
-        pageSize,
-        totalPages,
-      },
+    const paginatedResponse: PaginatedResponse<FundraisingCampaign> = {
+      items: paginatedCampaigns,
+      total,
+      page,
+      pageSize,
+      totalPages,
     }
 
-    return NextResponse.json(response)
+    return successResponse(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching campaigns:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch campaigns' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Failed to fetch campaigns')
   }
 }
 
@@ -78,16 +72,13 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth()
+    const user = await requireAuthenticatedUser()
     const body = await request.json()
 
     // Validate campaign data
     const validation = validateCampaign(body)
     if (!validation.valid) {
-      return NextResponse.json(
-        { success: false, error: 'Validation failed', errors: validation.errors },
-        { status: 400 }
-      )
+      return validationErrorResponse(validation)
     }
 
     // Create campaign
@@ -112,27 +103,12 @@ export async function POST(request: NextRequest) {
 
     const created = db.createCampaign(campaign)
 
-    const response: ApiResponse<FundraisingCampaign> = {
-      success: true,
-      data: created,
-      message: 'Campaign created successfully. It will be reviewed by our team.',
-    }
-
-    return NextResponse.json(response, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating campaign:', error)
-    
-    if (error.message === 'Authentication required') {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to create campaign' },
-      { status: 500 }
+    return createdResponse(
+      created,
+      'Campaign created successfully. It will be reviewed by our team.'
     )
+  } catch (error) {
+    return handleApiError(error, 'Failed to create campaign')
   }
 }
 

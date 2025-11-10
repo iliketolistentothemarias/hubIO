@@ -103,6 +103,27 @@ export async function POST(
       }
     }
 
+    // Record moderation action
+    try {
+      const { getDatabase } = await import('@/lib/db/schema')
+      const db = getDatabase()
+      const { ModerationAction } = await import('@/lib/types/moderation')
+      
+      const action: ModerationAction = {
+        id: `mod_${Date.now()}`,
+        type: 'resource',
+        itemId: resourceId,
+        action: 'approve',
+        adminId: session.user.id,
+        adminName: user?.name || 'Admin',
+        automated: false,
+        createdAt: new Date(),
+      }
+      db.createModerationAction(action)
+    } catch (error) {
+      console.warn('Could not record moderation action:', error)
+    }
+
     const response: ApiResponse<any> = {
       success: true,
       message: 'Resource approved successfully',

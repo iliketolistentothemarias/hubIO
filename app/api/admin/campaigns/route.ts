@@ -6,7 +6,6 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/server'
 import { ApiResponse } from '@/lib/types'
 
 /**
@@ -41,17 +40,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Try to use admin client if available
-    let client = supabase
-    try {
-      const adminClient = createAdminClient()
-      client = adminClient
-    } catch (error) {
-      console.warn('Admin client not available, using regular client')
-    }
-
     // Get all campaigns
-    const { data: campaigns, error: campaignsError } = await client
+    const { data: campaigns, error: campaignsError } = await supabase
       .from('fundraising_campaigns')
       .select('*')
       .order('created_at', { ascending: false })
@@ -127,17 +117,8 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Try to use admin client if available
-    let client = supabase
-    try {
-      const adminClient = createAdminClient()
-      client = adminClient
-    } catch (error) {
-      console.warn('Admin client not available, using regular client')
-    }
-
     // Delete campaign
-    const { error: deleteError } = await client
+    const { error: deleteError } = await supabase
       .from('fundraising_campaigns')
       .delete()
       .eq('id', campaignId)

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { HandHeart, Calendar, MapPin, Users, Clock, ArrowRight, Filter } from 'lucide-react'
 import LiquidGlass from './LiquidGlass'
+import VolunteerApplicationDialog from './VolunteerApplicationDialog'
 import { getAuthService } from '@/lib/auth'
 
 interface Opportunity {
@@ -81,6 +82,8 @@ const categories = ['All', 'Environment', 'Food Assistance', 'Youth Services', '
 export default function VolunteerOpportunities() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState('All')
+  const [applicationDialogOpen, setApplicationDialogOpen] = useState(false)
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
 
   const filteredOpportunities = selectedCategory === 'All'
     ? opportunities
@@ -99,9 +102,15 @@ export default function VolunteerOpportunities() {
       return
     }
     
-    // User is authenticated, proceed with volunteer signup
-    // TODO: Implement actual volunteer application logic
-    alert(`Signing up for ${opportunity.title} - This feature will be implemented soon!`)
+    // User is authenticated, open application dialog
+    setSelectedOpportunity(opportunity)
+    setApplicationDialogOpen(true)
+  }
+
+  const handleApplicationSuccess = () => {
+    setApplicationDialogOpen(false)
+    // Optionally refresh the page or update state
+    window.location.reload()
   }
 
   return (
@@ -281,6 +290,28 @@ export default function VolunteerOpportunities() {
           </motion.button>
         </motion.div>
       </div>
+
+      {/* Application Dialog */}
+      {selectedOpportunity && (
+        <VolunteerApplicationDialog
+          open={applicationDialogOpen}
+          onClose={() => {
+            setApplicationDialogOpen(false)
+            setSelectedOpportunity(null)
+          }}
+          opportunity={{
+            id: selectedOpportunity.id,
+            title: selectedOpportunity.title,
+            organization: selectedOpportunity.organization,
+            date: selectedOpportunity.date,
+            time: selectedOpportunity.time,
+            location: selectedOpportunity.location,
+            volunteersNeeded: selectedOpportunity.volunteersNeeded,
+            volunteersSignedUp: selectedOpportunity.volunteersSignedUp,
+          }}
+          onSuccess={handleApplicationSuccess}
+        />
+      )}
     </section>
   )
 }

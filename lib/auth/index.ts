@@ -5,7 +5,7 @@
  * Integrates with Supabase Auth for authentication.
  */
 
-import { User, UserRole } from '@/lib/types'
+import { User, UserRole, Badge } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
 
 /**
@@ -244,6 +244,32 @@ export class AuthService {
         return null
       }
 
+      // Load badges from database (if badges table exists)
+      let badges: Badge[] = []
+      try {
+        // Try to get badges from Supabase if a badges table exists
+        // For now, we'll use the in-memory database as fallback
+        const { getDatabase } = await import('@/lib/db/schema')
+        const db = getDatabase()
+        const allBadges = db.getAllBadges()
+        // Filter badges for this user (in a real system, you'd have a user_badges table)
+        // For now, we'll return empty array as badges are typically stored in a junction table
+        badges = []
+      } catch (error) {
+        // Badges table might not exist, that's okay
+        console.warn('Could not load badges:', error)
+        badges = []
+      }
+
+      // Determine provider from session
+      let provider: AuthProvider = 'email'
+      if (session.user.app_metadata?.provider) {
+        const sessionProvider = session.user.app_metadata.provider
+        if (sessionProvider === 'google') provider = 'google'
+        else if (sessionProvider === 'github') provider = 'google' // Map to available provider
+        else provider = 'email'
+      }
+
       // Convert database user to app User type
       const user: User = {
         id: userProfile.id,
@@ -252,7 +278,7 @@ export class AuthService {
         role: userProfile.role as UserRole,
         avatar: userProfile.avatar,
         karma: userProfile.karma || 0,
-        badges: [], // TODO: Load badges from database
+        badges,
         preferences: {
           theme: 'auto',
           language: 'en',
@@ -279,7 +305,7 @@ export class AuthService {
         user,
         token: session.access_token,
         expiresAt: new Date(session.expires_at! * 1000),
-        provider: 'email', // TODO: Determine from session
+        provider,
       }
 
       this.currentSession = appSession

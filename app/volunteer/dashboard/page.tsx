@@ -252,14 +252,95 @@ function OpportunitiesTab({ opportunities }: any) {
 }
 
 function HistoryTab() {
+  // Example volunteer history data
+  const history = [
+    {
+      id: 'history-1',
+      opportunityTitle: 'Food Bank Distribution Assistant',
+      organization: 'Greater Pittsburgh Community Food Bank',
+      date: new Date('2026-01-15'),
+      hours: 6,
+      status: 'completed',
+    },
+    {
+      id: 'history-2',
+      opportunityTitle: 'Community Garden Volunteer',
+      organization: 'Grow Pittsburgh',
+      date: new Date('2026-01-22'),
+      hours: 3,
+      status: 'completed',
+    },
+    {
+      id: 'history-3',
+      opportunityTitle: 'Park Cleanup Volunteer',
+      organization: 'Pittsburgh Parks Conservancy',
+      date: new Date('2026-02-01'),
+      hours: 3,
+      status: 'completed',
+    },
+    {
+      id: 'history-4',
+      opportunityTitle: 'Community Health Fair Volunteer',
+      organization: 'South Fayette Township',
+      date: new Date('2026-02-10'),
+      hours: 6,
+      status: 'completed',
+    },
+    {
+      id: 'history-5',
+      opportunityTitle: 'Youth Mentoring Session',
+      organization: 'Boys & Girls Clubs of Western Pennsylvania',
+      date: new Date('2026-02-05'),
+      hours: 2,
+      status: 'completed',
+    },
+  ]
+
+  const totalHours = history.reduce((sum, h) => sum + h.hours, 0)
+
   return (
     <LiquidGlass intensity="medium">
       <div className="p-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Volunteer History</h3>
-        <div className="text-center py-12">
-          <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Your volunteer history will appear here</p>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Volunteer History</h3>
+          <div className="text-right">
+            <div className="text-2xl font-bold text-primary-600 dark:text-primary-400">{totalHours}</div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Total Hours</div>
+          </div>
         </div>
+        
+        {history.length === 0 ? (
+          <div className="text-center py-12">
+            <Clock className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 dark:text-gray-400">Your volunteer history will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {history.map((item) => (
+              <div key={item.id} className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-2xl">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <div className="font-semibold text-gray-900 dark:text-white">{item.opportunityTitle}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{item.organization}</div>
+                  </div>
+                  <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 text-xs rounded-full font-medium">
+                    {item.status}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {item.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    {item.hours} {item.hours === 1 ? 'hour' : 'hours'}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </LiquidGlass>
   )

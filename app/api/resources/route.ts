@@ -11,13 +11,15 @@
  * - DELETE /api/resources/[id] - Delete resource
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDatabase } from '@/lib/db/schema'
 import { getSupabaseDatabase } from '@/lib/supabase/database'
 import { createServerClient } from '@/lib/supabase/server'
-import { getAuthService, requireAuth } from '@/lib/auth'
 import { validateResource } from '@/lib/utils/validation'
-import { ApiResponse, Resource, PaginatedResponse } from '@/lib/types'
+import { Resource, PaginatedResponse } from '@/lib/types'
+import { successResponse, errorResponse, validationErrorResponse, createdResponse } from '@/lib/api/response'
+import { handleApiError } from '@/lib/api/error-handler'
+import { getPaginationParams } from '@/lib/api/middleware'
 
 const db = getDatabase()
 const supabaseDb = getSupabaseDatabase()
@@ -32,8 +34,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const category = searchParams.get('category')
     const search = searchParams.get('search')
-    const page = parseInt(searchParams.get('page') || '1')
-    const pageSize = parseInt(searchParams.get('pageSize') || '20')
+    const { page, pageSize } = getPaginationParams(request)
     const featured = searchParams.get('featured') === 'true'
 
     let resources: Resource[] = []
@@ -62,24 +63,17 @@ export async function GET(request: NextRequest) {
     const startIndex = (page - 1) * pageSize
     const paginatedResources = resources.slice(startIndex, startIndex + pageSize)
 
-    const response: ApiResponse<PaginatedResponse<Resource>> = {
-      success: true,
-      data: {
-        items: paginatedResources,
-        total,
-        page,
-        pageSize,
-        totalPages,
-      },
+    const paginatedResponse: PaginatedResponse<Resource> = {
+      items: paginatedResources,
+      total,
+      page,
+      pageSize,
+      totalPages,
     }
 
-    return NextResponse.json(response)
+    return successResponse(paginatedResponse)
   } catch (error) {
-    console.error('Error fetching resources:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch resources' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Failed to fetch resources')
   }
 }
 
@@ -114,15 +108,7 @@ export async function POST(request: NextRequest) {
     // Validate resource data
     const validation = validateResource(body)
     if (!validation.valid) {
-      console.log('Validation errors:', validation.errors)
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Validation failed. Please check the form fields.',
-          errors: validation.errors 
-        },
-        { status: 400 }
-      )
+      return validationErrorResponse(validation)
     }
 
     // Create resource (pending approval)
@@ -186,7 +172,7 @@ export async function POST(request: NextRequest) {
       created = {
         id: data.id,
         name: data.name,
-        category: data.category as any,
+        category: data.category as Resource['category'],
         description: data.description,
         address: data.address,
         location: data.location || { lat: 0, lng: 0, address: data.address, city: '', state: '', zipCode: '' },
@@ -209,43 +195,28 @@ export async function POST(request: NextRequest) {
       }
       
       console.log('Resource successfully created in Supabase:', created.id)
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error creating resource in Supabase:', error)
-      console.error('Error message:', error.message)
-      console.error('Error code:', error.code)
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create resource in database'
+      const errorCode = (error as { code?: string }).code || 'Unknown error'
       
       // Return error instead of falling back to local DB
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: error.message || 'Failed to create resource in database',
-          details: error.code || 'Unknown error'
-        },
-        { status: 500 }
+      return errorResponse(
+        errorMessage,
+        500,
+        errorCode
       )
     }
 
-    const response: ApiResponse<Resource> = {
-      success: true,
-      data: created,
-      message: 'Your request has been submitted. If approved, you should see your resource up shortly.',
-    }
-
-    return NextResponse.json(response, { status: 201 })
-  } catch (error: any) {
-    console.error('Error creating resource:', error)
-    
-    if (error.message === 'Authentication required') {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    return NextResponse.json(
-      { success: false, error: 'Failed to create resource' },
-      { status: 500 }
+    return createdResponse(
+      created,
+      'Your request has been submitted. If approved, you should see your resource up shortly.'
     )
+  } catch (error) {
+    return handleApiError(error, 'Failed to create resource')
   }
 }
+
+
+
 

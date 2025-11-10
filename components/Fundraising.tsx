@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { DollarSign, TrendingUp, Users, Target, Heart, ArrowRight, Sparkles } from 'lucide-react'
 import LiquidGlass from './LiquidGlass'
+import DonationDialog from './DonationDialog'
 import { getAuthService } from '@/lib/auth'
 
 interface FundraisingCampaign {
@@ -65,6 +66,8 @@ const campaigns: FundraisingCampaign[] = [
 export default function Fundraising() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
+  const [donationDialogOpen, setDonationDialogOpen] = useState(false)
+  const [selectedCampaign, setSelectedCampaign] = useState<FundraisingCampaign | null>(null)
 
   const categories = ['All', 'Small Business', 'Food Security', 'Youth Services', 'Community']
 
@@ -85,9 +88,17 @@ export default function Fundraising() {
       return
     }
     
-    // User is authenticated, proceed with donation
-    // TODO: Implement actual donation logic
-    alert(`Donating to ${campaign.title} - This feature will be implemented soon!`)
+    // User is authenticated, open donation dialog
+    setSelectedCampaign(campaign)
+    setDonationDialogOpen(true)
+  }
+
+  const handleDonationSuccess = () => {
+    // Refresh campaign data or show success message
+    // The webhook will update the campaign totals
+    setDonationDialogOpen(false)
+    // Optionally refresh the page or update state
+    window.location.reload()
   }
 
   return (
@@ -293,6 +304,24 @@ export default function Fundraising() {
           </motion.button>
         </motion.div>
       </div>
+
+      {/* Donation Dialog */}
+      {selectedCampaign && (
+        <DonationDialog
+          open={donationDialogOpen}
+          onClose={() => {
+            setDonationDialogOpen(false)
+            setSelectedCampaign(null)
+          }}
+          campaign={{
+            id: selectedCampaign.id,
+            title: selectedCampaign.title,
+            goal: selectedCampaign.goal,
+            raised: selectedCampaign.raised,
+          }}
+          onSuccess={handleDonationSuccess}
+        />
+      )}
     </section>
   )
 }

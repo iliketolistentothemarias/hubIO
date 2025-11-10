@@ -52,16 +52,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check if user already applied
+    const existingApplications = db.getApplicationsByOpportunity(opportunityId)
+    const hasExistingApplication = existingApplications.some(
+      app => app.userId === user.id && app.status !== 'rejected'
+    )
+
+    if (hasExistingApplication) {
+      return NextResponse.json(
+        { success: false, error: 'You have already applied to this opportunity' },
+        { status: 400 }
+      )
+    }
+
     // Create application
     const application: VolunteerApplication = {
-      id: `app_${Date.now()}`,
+      id: `app_${Date.now()}_${user.id}`,
       opportunityId,
       userId: user.id,
       status: 'pending',
       appliedAt: new Date(),
     }
 
-    // Update opportunity signup count
+    // Save application
+    db.createVolunteerApplication(application)
+
+    // Update opportunity signup count (only if auto-approved, otherwise wait for approval)
+    // For now, we'll increment immediately
     const updated = {
       ...opportunity,
       volunteersSignedUp: opportunity.volunteersSignedUp + 1,
@@ -69,8 +86,8 @@ export async function POST(request: NextRequest) {
     }
     db.createVolunteerOpportunity(updated)
 
-    // In production, would save application to database
-    // For demo, we'll just return success
+    // Send notification (would be implemented with notification service)
+    // TODO: Send notification to opportunity organizer
 
     const response: ApiResponse<VolunteerApplication> = {
       success: true,

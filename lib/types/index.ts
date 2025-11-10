@@ -235,8 +235,11 @@ export interface EventRegistration {
   id: string
   eventId: string
   userId: string
-  status: 'registered' | 'attended' | 'cancelled'
+  status: 'registered' | 'attended' | 'cancelled' | 'waitlist'
   registeredAt: Date
+  checkedInAt?: Date
+  reminderSent?: boolean
+  calendarAdded?: boolean
 }
 
 // ============================================================================

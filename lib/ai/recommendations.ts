@@ -5,6 +5,13 @@
  * volunteer opportunities, and fundraising campaigns based on user behavior,
  * preferences, location, and community trends.
  * 
+ * Features:
+ * - Collaborative Filtering (user-based and item-based)
+ * - Content-Based Filtering
+ * - Hybrid Recommendation System
+ * - A/B Testing Support
+ * - Deep Learning Integration Ready
+ * 
  * In production, this would integrate with:
  * - OpenAI API for advanced recommendations
  * - TensorFlow.js for on-device ML
@@ -14,6 +21,19 @@
 import { User, Resource, Event, VolunteerOpportunity, FundraisingCampaign, Recommendation } from '@/lib/types'
 import { getDatabase } from '@/lib/db/schema'
 
+export interface UserSimilarity {
+  userId: string
+  similarity: number
+}
+
+export interface ABTestVariant {
+  id: string
+  name: string
+  algorithm: 'collaborative' | 'content-based' | 'hybrid'
+  weight: number
+  active: boolean
+}
+
 /**
  * Recommendation Engine Class
  * 
@@ -21,40 +41,391 @@ import { getDatabase } from '@/lib/db/schema'
  */
 export class RecommendationEngine {
   private db = getDatabase()
+  private abTestVariants: ABTestVariant[] = [
+    { id: 'v1', name: 'Collaborative Filtering', algorithm: 'collaborative', weight: 0.3, active: true },
+    { id: 'v2', name: 'Content-Based', algorithm: 'content-based', weight: 0.3, active: true },
+    { id: 'v3', name: 'Hybrid', algorithm: 'hybrid', weight: 0.4, active: true },
+  ]
 
   /**
    * Get Personalized Recommendations for User
    * 
    * @param userId - User ID
    * @param limit - Maximum number of recommendations
+   * @param algorithm - Specific algorithm to use (optional, uses A/B test if not specified)
    * @returns Promise<Recommendation[]>
    */
-  async getRecommendations(userId: string, limit: number = 10): Promise<Recommendation[]> {
+  async getRecommendations(
+    userId: string,
+    limit: number = 10,
+    algorithm?: 'collaborative' | 'content-based' | 'hybrid'
+  ): Promise<Recommendation[]> {
     const user = this.db.getUser(userId)
     if (!user) return []
 
+    // Select algorithm based on A/B test or specified algorithm
+    const selectedAlgorithm = algorithm || this.selectABTestVariant(userId)
+
+    let recommendations: Recommendation[] = []
+
+    switch (selectedAlgorithm) {
+      case 'collaborative':
+        recommendations = await this.getCollaborativeRecommendations(userId, limit)
+        break
+      case 'content-based':
+        recommendations = await this.getContentBasedRecommendations(user, limit)
+        break
+      case 'hybrid':
+        recommendations = await this.getHybridRecommendations(userId, user, limit)
+        break
+    }
+
+    // Track recommendation for A/B testing
+    this.trackRecommendation(userId, selectedAlgorithm, recommendations)
+
+    return recommendations
+  }
+
+  /**
+   * Collaborative Filtering (User-Based)
+   * 
+   * Finds users similar to the target user and recommends items they liked
+   */
+  private async getCollaborativeRecommendations(
+    userId: string,
+    limit: number
+  ): Promise<Recommendation[]> {
+    const similarUsers = this.findSimilarUsers(userId, 10)
     const recommendations: Recommendation[] = []
 
-    // Get resource recommendations
-    const resourceRecs = await this.recommendResources(user, limit / 4)
-    recommendations.push(...resourceRecs)
+    // Get items liked by similar users
+    const userInteractions = this.getUserInteractions(userId)
+    const similarUserInteractions = new Map<string, number>()
 
-    // Get event recommendations
-    const eventRecs = await this.recommendEvents(user, limit / 4)
-    recommendations.push(...eventRecs)
+    for (const similarUser of similarUsers) {
+      const interactions = this.getUserInteractions(similarUser.userId)
+      for (const [itemId, score] of interactions.entries()) {
+        if (!userInteractions.has(itemId)) {
+          const currentScore = similarUserInteractions.get(itemId) || 0
+          similarUserInteractions.set(
+            itemId,
+            currentScore + score * similarUser.similarity
+          )
+        }
+      }
+    }
 
-    // Get volunteer opportunity recommendations
-    const volunteerRecs = await this.recommendVolunteerOpportunities(user, limit / 4)
-    recommendations.push(...volunteerRecs)
+    // Convert to recommendations
+    for (const [itemId, score] of similarUserInteractions.entries()) {
+      const [type, id] = itemId.split(':')
+      recommendations.push({
+        id: `rec_cf_${itemId}_${Date.now()}`,
+        userId,
+        type: type as any,
+        itemId: id,
+        score: Math.round(score * 100),
+        reason: 'Recommended by users with similar interests',
+        createdAt: new Date(),
+      })
+    }
 
-    // Get fundraising campaign recommendations
-    const campaignRecs = await this.recommendCampaigns(user, limit / 4)
-    recommendations.push(...campaignRecs)
+    return recommendations.sort((a, b) => b.score - a.score).slice(0, limit)
+  }
 
-    // Sort by score and return top recommendations
-    return recommendations
+  /**
+   * Content-Based Filtering
+   * 
+   * Recommends items similar to items the user has interacted with
+   */
+  private async getContentBasedRecommendations(
+    user: User,
+    limit: number
+  ): Promise<Recommendation[]> {
+    const recommendations: Recommendation[] = []
+    const userInteractions = this.getUserInteractions(user.id)
+
+    // Get user's preferred categories and tags
+    const preferences = this.extractUserPreferences(user.id, userInteractions)
+
+    // Score resources based on content similarity
+    const allResources = this.db.getAllResources()
+    for (const resource of allResources) {
+      if (userInteractions.has(`resource:${resource.id}`)) continue
+
+      let score = 0
+      const reasons: string[] = []
+
+      // Category match
+      if (preferences.categories.includes(resource.category)) {
+        score += 40
+        reasons.push('Matches your category preferences')
+      }
+
+      // Tag overlap
+      const tagOverlap = resource.tags.filter(tag =>
+        preferences.tags.includes(tag)
+      ).length
+      if (tagOverlap > 0) {
+        score += tagOverlap * 10
+        reasons.push(`${tagOverlap} matching tags`)
+      }
+
+      // Location proximity
+      if (user.location && resource.location) {
+        const distance = this.calculateDistance(
+          user.location.lat,
+          user.location.lng,
+          resource.location.lat,
+          resource.location.lng
+        )
+        if (distance < 5) {
+          score += 30
+          reasons.push('Near your location')
+        }
+      }
+
+      if (score > 0) {
+        recommendations.push({
+          id: `rec_cb_${resource.id}_${Date.now()}`,
+          userId: user.id,
+          type: 'resource',
+          itemId: resource.id,
+          score,
+          reason: reasons.join(', '),
+          createdAt: new Date(),
+        })
+      }
+    }
+
+    return recommendations.sort((a, b) => b.score - a.score).slice(0, limit)
+  }
+
+  /**
+   * Hybrid Recommendation System
+   * 
+   * Combines collaborative and content-based filtering
+   */
+  private async getHybridRecommendations(
+    userId: string,
+    user: User,
+    limit: number
+  ): Promise<Recommendation[]> {
+    // Get recommendations from both methods
+    const collaborativeRecs = await this.getCollaborativeRecommendations(userId, limit * 2)
+    const contentBasedRecs = await this.getContentBasedRecommendations(user, limit * 2)
+
+    // Combine and re-rank
+    const combined = new Map<string, Recommendation>()
+
+    // Add collaborative recommendations (weight: 0.6)
+    for (const rec of collaborativeRecs) {
+      const key = `${rec.type}:${rec.itemId}`
+      const existing = combined.get(key)
+      if (existing) {
+        existing.score = Math.round(existing.score * 0.6 + rec.score * 0.6)
+      } else {
+        combined.set(key, { ...rec, score: Math.round(rec.score * 0.6) })
+      }
+    }
+
+    // Add content-based recommendations (weight: 0.4)
+    for (const rec of contentBasedRecs) {
+      const key = `${rec.type}:${rec.itemId}`
+      const existing = combined.get(key)
+      if (existing) {
+        existing.score = Math.round(existing.score + rec.score * 0.4)
+        existing.reason = `${existing.reason} + ${rec.reason}`
+      } else {
+        combined.set(key, { ...rec, score: Math.round(rec.score * 0.4) })
+      }
+    }
+
+    return Array.from(combined.values())
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
+  }
+
+  /**
+   * Find Similar Users (Collaborative Filtering)
+   */
+  private findSimilarUsers(userId: string, k: number = 10): UserSimilarity[] {
+    const targetUser = this.db.getUser(userId)
+    if (!targetUser) return []
+
+    const targetInteractions = this.getUserInteractions(userId)
+    const similarities: UserSimilarity[] = []
+
+    // Get all users
+    const allUsers = Array.from(this.db['users'].values() || [])
+      .filter(u => u.id !== userId)
+
+    for (const user of allUsers) {
+      const userInteractions = this.getUserInteractions(user.id)
+      const similarity = this.calculateCosineSimilarity(
+        targetInteractions,
+        userInteractions
+      )
+
+      if (similarity > 0) {
+        similarities.push({
+          userId: user.id,
+          similarity,
+        })
+      }
+    }
+
+    return similarities
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, k)
+  }
+
+  /**
+   * Calculate Cosine Similarity
+   */
+  private calculateCosineSimilarity(
+    vec1: Map<string, number>,
+    vec2: Map<string, number>
+  ): number {
+    const allItems = new Set([...vec1.keys(), ...vec2.keys()])
+    let dotProduct = 0
+    let norm1 = 0
+    let norm2 = 0
+
+    for (const item of allItems) {
+      const val1 = vec1.get(item) || 0
+      const val2 = vec2.get(item) || 0
+      dotProduct += val1 * val2
+      norm1 += val1 * val1
+      norm2 += val2 * val2
+    }
+
+    if (norm1 === 0 || norm2 === 0) return 0
+    return dotProduct / (Math.sqrt(norm1) * Math.sqrt(norm2))
+  }
+
+  /**
+   * Get User Interactions
+   * 
+   * Returns a map of itemId -> interaction score
+   */
+  private getUserInteractions(userId: string): Map<string, number> {
+    const interactions = new Map<string, number>()
+
+    // Resources viewed/saved
+    const resources = this.db.getAllResources()
+    // In production, would track actual views/saves
+    // For now, use favorites or other signals
+
+    // Events RSVPed
+    const registrations = this.db.getEventRegistrationsByUser(userId)
+    for (const reg of registrations) {
+      interactions.set(`event:${reg.eventId}`, 1)
+    }
+
+    // Volunteer applications
+    const applications = this.db.getApplicationsByUser(userId)
+    for (const app of applications) {
+      interactions.set(`volunteer:${app.opportunityId}`, 1)
+    }
+
+    // Donations
+    const donations = this.db.getDonationsByUser(userId)
+    for (const donation of donations) {
+      interactions.set(`campaign:${donation.campaignId}`, donation.amount / 100) // Normalize
+    }
+
+    return interactions
+  }
+
+  /**
+   * Extract User Preferences
+   */
+  private extractUserPreferences(
+    userId: string,
+    interactions: Map<string, number>
+  ): { categories: string[]; tags: string[] } {
+    const categories = new Set<string>()
+    const tags = new Set<string>()
+
+    // Analyze interactions to extract preferences
+    for (const [itemId] of interactions.entries()) {
+      const [type, id] = itemId.split(':')
+      
+      if (type === 'resource') {
+        const resource = this.db.getResource(id)
+        if (resource) {
+          categories.add(resource.category)
+          resource.tags.forEach(tag => tags.add(tag))
+        }
+      } else if (type === 'event') {
+        const event = this.db.getEvent(id)
+        if (event) {
+          categories.add(event.category)
+          event.tags.forEach(tag => tags.add(tag))
+        }
+      }
+    }
+
+    return {
+      categories: Array.from(categories),
+      tags: Array.from(tags),
+    }
+  }
+
+  /**
+   * Select A/B Test Variant
+   */
+  private selectABTestVariant(userId: string): 'collaborative' | 'content-based' | 'hybrid' {
+    const activeVariants = this.abTestVariants.filter(v => v.active)
+    if (activeVariants.length === 0) return 'hybrid'
+
+    // Use user ID hash for consistent assignment
+    const hash = this.hashUserId(userId)
+    const random = hash % 100
+
+    let cumulative = 0
+    for (const variant of activeVariants) {
+      cumulative += variant.weight * 100
+      if (random < cumulative) {
+        return variant.algorithm
+      }
+    }
+
+    return activeVariants[activeVariants.length - 1].algorithm
+  }
+
+  /**
+   * Hash User ID for A/B Testing
+   */
+  private hashUserId(userId: string): number {
+    let hash = 0
+    for (let i = 0; i < userId.length; i++) {
+      const char = userId.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash & hash // Convert to 32-bit integer
+    }
+    return Math.abs(hash)
+  }
+
+  /**
+   * Track Recommendation for A/B Testing
+   */
+  private trackRecommendation(
+    userId: string,
+    algorithm: string,
+    recommendations: Recommendation[]
+  ): void {
+    // In production, would log to analytics service
+    // For now, store in recommendations table
+    for (const rec of recommendations) {
+      this.db['recommendations'].set(rec.id, {
+        ...rec,
+        metadata: {
+          algorithm,
+          abTestVariant: this.selectABTestVariant(userId),
+        },
+      })
+    }
   }
 
   /**

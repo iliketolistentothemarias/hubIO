@@ -59,11 +59,29 @@ export function initializeDatabaseData() {
     })
   }
   
+  // Initialize Posts (only if not already in database)
+  const existingPosts = db.getAllPosts()
+  if (existingPosts.length === 0) {
+    try {
+      const { seedPosts } = require('@/data/seed-data')
+      seedPosts.forEach((post: any) => {
+        db.createPost({
+          ...post,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+      })
+    } catch (error) {
+      console.warn('Could not load seed posts:', error)
+    }
+  }
+  
   console.log('✅ Database initialized with sample data')
   console.log(`   - ${db.getAllResources().length} resources`)
   console.log(`   - ${Array.from((db as any).db.events.values()).length} events`)
   console.log(`   - ${db.getAllVolunteerOpportunities().length} volunteer opportunities`)
   console.log(`   - ${db.getAllCampaigns().length} fundraising campaigns`)
+  console.log(`   - ${db.getAllPosts().length} posts`)
 }
 
 // Auto-initialize on client-side
