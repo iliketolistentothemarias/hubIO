@@ -136,31 +136,49 @@ export async function POST(request: NextRequest) {
     let existingUser: any = null
 
     if (useAdminClient && adminClient) {
-      // Create user profile in database using admin client to bypass RLS
-      const { error, data } = await adminClient
-        .from('users')
-        .upsert({
-          id: authData.user.id,
-          email: authData.user.email!,
-          name,
-          role: 'resident',
-          karma: 0,
-          created_at: new Date().toISOString(),
-          last_active_at: new Date().toISOString(),
-        }, {
-          onConflict: 'id'
-        })
+      // Wait a moment for trigger to potentially create the user
+      await new Promise(resolve => setTimeout(resolve, 300))
       
-      dbError = error
-
-      if (dbError) {
-        // Check if user already exists (from trigger)
-        const { data: userData } = await adminClient
+      // Check if user already exists (from trigger)
+      const { data: existingUserData, error: checkError } = await adminClient
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .maybeSingle()
+      
+      if (existingUserData) {
+        existingUser = existingUserData
+      } else {
+        // Create user profile in database using admin client to bypass RLS
+        const { error, data } = await adminClient
           .from('users')
-          .select('*')
-          .eq('id', authData.user.id)
+          .insert({
+            id: authData.user.id,
+            email: authData.user.email!,
+            name,
+            role: 'resident',
+            karma: 0,
+            created_at: new Date().toISOString(),
+            last_active_at: new Date().toISOString(),
+          })
+          .select()
           .single()
-        existingUser = userData
+        
+        if (error) {
+          dbError = error
+          // Try one more time to get the user (in case trigger created it)
+          const { data: retryData } = await adminClient
+            .from('users')
+            .select('*')
+            .eq('id', authData.user.id)
+            .maybeSingle()
+          if (retryData) {
+            existingUser = retryData
+            dbError = null
+          }
+        } else {
+          existingUser = data
+        }
       }
     } else {
       // With regular client, the trigger should create the user profile automatically
@@ -177,11 +195,31 @@ export async function POST(request: NextRequest) {
         .from('users')
         .select('*')
         .eq('id', authData.user.id)
-        .single()
+        .maybeSingle()
       
-      existingUser = userData
-      if (!existingUser && checkError) {
-        dbError = checkError
+      if (userData) {
+        existingUser = userData
+      } else if (checkError) {
+        // If user doesn't exist and we got an error, try to create it
+        const { error: insertError, data: insertData } = await regularClient
+          .from('users')
+          .insert({
+            id: authData.user.id,
+            email: authData.user.email!,
+            name,
+            role: 'resident',
+            karma: 0,
+            created_at: new Date().toISOString(),
+            last_active_at: new Date().toISOString(),
+          })
+          .select()
+          .single()
+        
+        if (insertError) {
+          dbError = insertError
+        } else {
+          existingUser = insertData
+        }
       }
     }
 

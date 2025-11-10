@@ -50,12 +50,12 @@ export async function POST(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', authData.user.id)
-      .single()
+      .maybeSingle()
 
-    if (profileError) {
+    if (profileError || !userProfile) {
       console.error('Failed to fetch user profile:', profileError)
       // If profile doesn't exist, create it
-      const { error: createError } = await supabase
+      const { error: createError, data: createData } = await supabase
         .from('users')
         .insert({
           id: authData.user.id,
@@ -66,20 +66,37 @@ export async function POST(request: NextRequest) {
           created_at: new Date().toISOString(),
           last_active_at: new Date().toISOString(),
         })
+        .select()
+        .single()
 
       if (createError) {
-        return NextResponse.json(
-          { success: false, error: 'Failed to load user profile' },
-          { status: 500 }
-        )
+        // Try to fetch again in case trigger created it
+        const { data: retryProfile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .maybeSingle()
+        
+        if (!retryProfile) {
+          return NextResponse.json(
+            { success: false, error: 'Failed to load user profile' },
+            { status: 500 }
+          )
+        }
+        
+        // Use the retry profile
+        const response: ApiResponse<{ user: any; session: any }> = {
+          success: true,
+          data: {
+            user: retryProfile,
+            session: authData.session,
+          },
+        }
+        return NextResponse.json(response)
       }
 
-      // Fetch the newly created profile
-      const { data: newProfile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .single()
+      // Use the newly created profile
+      const newProfile = createData
 
       // Update last_active_at
       await supabase

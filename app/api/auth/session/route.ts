@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       .from('users')
       .select('*')
       .eq('id', session.user.id)
-      .single()
+      .maybeSingle()
 
     if (profileError || !userProfile) {
       return NextResponse.json(
