@@ -192,16 +192,38 @@ export async function POST(request: NextRequest) {
         email: authData.user.email,
         useAdminClient,
         errorMessage: dbError?.message,
+        errorCode: dbError?.code,
         errorDetails: dbError,
       })
-      // Clean up auth user if profile creation failed
-      if (useAdminClient && adminClient) {
+      
+      // Check if the error is due to missing table
+      const isTableMissing = dbError?.message?.includes('schema cache') || 
+                            dbError?.message?.includes('relation') ||
+                            dbError?.code === 'PGRST204' ||
+                            dbError?.code === '42P01'
+      
+      // Clean up auth user if profile creation failed (but not if table is missing - user can still sign in)
+      if (useAdminClient && adminClient && !isTableMissing) {
         try {
           await adminClient.auth.admin.deleteUser(authData.user.id)
         } catch (deleteError) {
           console.error('Failed to clean up auth user:', deleteError)
         }
       }
+      
+      // If table is missing, provide helpful error message
+      if (isTableMissing) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: 'Database table not found. Please run the migration script to create the users table. See lib/db/migrations/create_users_table.sql',
+            errorCode: 'TABLE_NOT_FOUND',
+            details: 'The users table does not exist in your Supabase database. Please run the SQL migration in the Supabase SQL Editor.'
+          },
+          { status: 500 }
+        )
+      }
+      
       return NextResponse.json(
         { 
           success: false, 

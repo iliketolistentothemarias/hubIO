@@ -79,6 +79,18 @@ function AuthCallbackContent() {
 
       // Create user profile if it doesn't exist
       if (profileError || !userProfile) {
+        // Check if error is due to missing table
+        const isTableMissing = profileError?.message?.includes('schema cache') || 
+                              profileError?.message?.includes('relation') ||
+                              profileError?.code === 'PGRST204' ||
+                              profileError?.code === '42P01'
+        
+        if (isTableMissing) {
+          console.error('Users table not found. Please run the migration script:', profileError)
+          // Still continue - user can sign in, but profile won't be created
+          return
+        }
+        
         const { error: insertError } = await supabase
           .from('users')
           .insert({
