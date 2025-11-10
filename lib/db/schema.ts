@@ -8,12 +8,12 @@
  * or a simple JSON file structure that simulates a real database.
  */
 
-import { 
-  User, 
-  Resource, 
-  VolunteerOpportunity, 
-  FundraisingCampaign, 
-  Event, 
+import {
+  User,
+  Resource,
+  VolunteerOpportunity,
+  FundraisingCampaign,
+  Event,
   Post,
   Donation,
   Badge,
@@ -30,6 +30,39 @@ import {
 
 import { ModerationAction, ContentFlag, ModerationRule } from '@/lib/types/moderation'
 import { Vendor, Product, ShoppingCart, Order, Commission } from '@/lib/types/marketplace'
+
+type DatabaseTableKey = keyof Database
+
+function isIsoDateString(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(value)) return false
+  const date = new Date(value)
+  return !Number.isNaN(date.getTime())
+}
+
+function reviveDates<T>(value: T): T {
+  if (!value || typeof value !== 'object') {
+    if (isIsoDateString(value)) {
+      return new Date(value) as unknown as T
+    }
+    return value
+  }
+
+  if (value instanceof Date) {
+    return value
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(item => reviveDates(item)) as unknown as T
+  }
+
+  const revived: Record<string, unknown> = {}
+  for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+    revived[key] = reviveDates(entry)
+  }
+
+  return revived as unknown as T
+}
 
 export interface Database {
   users: Map<string, User>
@@ -146,20 +179,18 @@ export class DatabaseService {
 
     try {
       const stored = localStorage.getItem('hubio_db')
-      if (stored) {
-        const data = JSON.parse(stored)
-        // Reconstruct Maps from stored data
-        if (data.users) this.db.users = new Map(data.users)
-        if (data.resources) this.db.resources = new Map(data.resources)
-        if (data.volunteerOpportunities) this.db.volunteerOpportunities = new Map(data.volunteerOpportunities)
-        if (data.employmentOpportunities) this.db.employmentOpportunities = new Map(data.employmentOpportunities)
-        if (data.fundraisingCampaigns) this.db.fundraisingCampaigns = new Map(data.fundraisingCampaigns)
-        if (data.donations) this.db.donations = new Map(data.donations)
-        if (data.events) this.db.events = new Map(data.events)
-        if (data.posts) this.db.posts = new Map(data.posts)
-        if (data.badges) this.db.badges = new Map(data.badges)
-        if (data.recommendations) this.db.recommendations = new Map(data.recommendations)
-      }
+      if (!stored) return
+
+      const data = JSON.parse(stored) as Record<string, [string, unknown][]>
+      ;(Object.keys(data) as DatabaseTableKey[]).forEach(tableKey => {
+        if (!(tableKey in this.db)) return
+
+        const entries = data[tableKey]
+        if (!Array.isArray(entries)) return
+
+        const revivedEntries = entries.map(([entityId, value]) => [entityId, reviveDates(value)]) as [string, unknown][]
+        this.db[tableKey] = new Map(revivedEntries) as Database[typeof tableKey]
+      })
     } catch (error) {
       console.error('Failed to load database from storage:', error)
     }
