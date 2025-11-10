@@ -5,11 +5,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase/client'
+import { createServerClient } from '@/lib/supabase/server'
 import { ApiResponse } from '@/lib/types'
 
 export async function POST(request: NextRequest) {
   try {
+    // Create server client
+    const supabase = createServerClient(request)
+    
     // Sign out from Supabase Auth
     const { error } = await supabase.auth.signOut()
 

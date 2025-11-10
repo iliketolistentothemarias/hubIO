@@ -107,7 +107,17 @@ export default function AdminPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-        }).then(r => r.json()).then(r => r.data || []),
+        }).then(async r => {
+          const json = await r.json()
+          if (!r.ok) {
+            console.error('Admin users API error:', json)
+            return []
+          }
+          return json.data || []
+        }).catch(err => {
+          console.error('Error fetching users:', err)
+          return []
+        }),
       ])
       console.log('Loaded pending resources:', pendingResResponse)
       setResources(resData.filter((r: Resource) => r.verified))
@@ -175,6 +185,7 @@ export default function AdminPage() {
     try {
       const response = await fetch('/api/admin/users', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -183,13 +194,16 @@ export default function AdminPage() {
       const result = await response.json()
       
       if (result.success) {
-        loadAllData() // Reload data
+        // Update local state immediately for better UX
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u))
+        alert(`User role updated to ${newRole}`)
+        loadAllData() // Reload data to ensure consistency
       } else {
-        alert('Failed to update user role: ' + result.error)
+        alert('Failed to update user role: ' + (result.error || 'Unknown error'))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating user role:', error)
-      alert('Failed to update user role')
+      alert('Failed to update user role: ' + (error.message || 'Network error'))
     }
   }
 
