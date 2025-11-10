@@ -29,7 +29,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth()
+    const user = await requireAuth()
     const body = await request.json()
 
     // Validate donation amount

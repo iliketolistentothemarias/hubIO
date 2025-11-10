@@ -16,7 +16,7 @@ import { ApiResponse } from '@/lib/types'
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = requireAuth()
+    const user = await requireAuth()
     const volunteerService = getVolunteerService()
 
     const stats = {

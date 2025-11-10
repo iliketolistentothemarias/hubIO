@@ -17,20 +17,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true)
-    const savedTheme = localStorage.getItem('theme') as Theme
-    if (savedTheme) {
-      setTheme(savedTheme)
-      document.documentElement.classList.toggle('dark', savedTheme === 'dark')
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      setTheme('dark')
-      document.documentElement.classList.add('dark')
+    try {
+      const savedTheme = localStorage.getItem('theme') as Theme
+      if (savedTheme) {
+        setTheme(savedTheme)
+        document.documentElement.classList.toggle('dark', savedTheme === 'dark')
+      } else if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        setTheme('dark')
+        document.documentElement.classList.add('dark')
+      }
+    } catch (error) {
+      // Ignore localStorage errors
+      console.error('Theme initialization error:', error)
     }
   }, [])
 
   useEffect(() => {
     if (mounted) {
-      document.documentElement.classList.toggle('dark', theme === 'dark')
-      localStorage.setItem('theme', theme)
+      try {
+        document.documentElement.classList.toggle('dark', theme === 'dark')
+        localStorage.setItem('theme', theme)
+      } catch (error) {
+        // Ignore localStorage errors
+        console.error('Theme update error:', error)
+      }
     }
   }, [theme, mounted])
 

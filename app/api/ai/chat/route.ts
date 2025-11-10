@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Get current user (optional - for personalized responses)
     const auth = getAuthService()
-    const user = auth.getCurrentUser()
+    const user = await auth.getCurrentUser()
 
     // Process query with AI assistant
     const assistant = getAIAssistant()

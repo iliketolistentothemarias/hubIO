@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     // In production, you'd want to require auth for personalized recommendations
     let userId: string | null = null
     try {
-      const user = requireAuth()
+      const user = await requireAuth()
       userId = user.id
     } catch {
       // No auth - use anonymous recommendations

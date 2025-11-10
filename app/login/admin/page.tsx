@@ -50,8 +50,8 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 
-                    dark:from-gray-900 dark:via-gray-800 dark:to-purple-900/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 
+                    dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/10 flex items-center justify-center p-4">
       <div className="w-full max-w-4xl grid md:grid-cols-2 gap-8">
         {/* Left Side - Info */}
         <motion.div
@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
         >
           <LiquidGlass intensity="medium">
             <div className="p-8">
-              <div className="inline-flex p-4 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-3xl mb-6">
+              <div className="inline-flex p-4 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-3xl mb-6">
                 <Shield className="w-12 h-12 text-white" />
               </div>
               <h2 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-4">
@@ -135,7 +135,7 @@ export default function AdminLoginPage() {
           <LiquidGlass intensity="strong">
             <div className="p-8 w-full">
               <div className="text-center mb-8">
-                <div className="inline-flex p-3 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl mb-4">
+                <div className="inline-flex p-3 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl mb-4">
                   <Shield className="w-8 h-8 text-white" />
                 </div>
                 <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-2">
@@ -207,7 +207,7 @@ export default function AdminLoginPage() {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-2xl 
+                  className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-3 rounded-2xl 
                            font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl 
                            transition-all disabled:opacity-50"
                 >

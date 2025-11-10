@@ -314,10 +314,10 @@ export class AuthService {
    * Check if User has Role
    * 
    * @param role - Required role
-   * @returns boolean
+   * @returns Promise<boolean>
    */
-  hasRole(role: UserRole): boolean {
-    const user = this.getCurrentUser()
+  async hasRole(role: UserRole): Promise<boolean> {
+    const user = await this.getCurrentUser()
     return user?.role === role || user?.role === 'admin'
   }
 
@@ -325,10 +325,10 @@ export class AuthService {
    * Check if User has Any of the Roles
    * 
    * @param roles - Array of roles
-   * @returns boolean
+   * @returns Promise<boolean>
    */
-  hasAnyRole(roles: UserRole[]): boolean {
-    const user = this.getCurrentUser()
+  async hasAnyRole(roles: UserRole[]): Promise<boolean> {
+    const user = await this.getCurrentUser()
     if (!user) return false
     return roles.includes(user.role) || user.role === 'admin'
   }
@@ -438,7 +438,7 @@ export async function requireRole(role: UserRole): Promise<User> {
     throw new Error('Authentication required')
   }
   
-  if (!auth.hasRole(role)) {
+  if (!(await auth.hasRole(role))) {
     throw new Error(`Role '${role}' required`)
   }
   

@@ -11,10 +11,10 @@ export default function HighlightsPage() {
   const { isFavorite, toggleFavorite } = useFavorites()
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-900 dark:to-primary-900/10 pt-20">
       {/* Hero Section */}
       <section className="section-padding bg-gradient-to-br from-primary-50 via-white to-secondary-50 
-                          dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+                          dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/20">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -41,7 +41,7 @@ export default function HighlightsPage() {
       </section>
 
       {/* Featured Resources */}
-      <section className="section-padding bg-white dark:bg-gray-900">
+      <section className="section-padding bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-900 dark:to-primary-900/10">
         <div className="container-custom">
           <div className="space-y-16">
             {featuredResources.map((resource, index) => (

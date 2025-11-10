@@ -16,7 +16,7 @@ import { ApiResponse } from '@/lib/types'
 export async function GET(request: NextRequest) {
   try {
     const adminService = getAdminService()
-    const stats = adminService.getSystemStats()
+    const stats = await adminService.getSystemStats()
 
     const response: ApiResponse<any> = {
       success: true,

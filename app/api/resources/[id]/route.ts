@@ -61,7 +61,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = requireAuth()
+    const user = await requireAuth()
     const resource = db.getResource(params.id)
 
     if (!resource) {
@@ -133,7 +133,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    requireRole('admin')
+    await requireRole('admin')
     
     const resource = db.getResource(params.id)
 

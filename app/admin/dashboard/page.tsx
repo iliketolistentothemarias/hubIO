@@ -122,8 +122,8 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50/30 
-                    dark:from-gray-900 dark:via-gray-800 dark:to-purple-900/10 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 
+                    dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/10 pt-20">
       <div className="container-custom section-padding">
         {/* Header */}
         <motion.div

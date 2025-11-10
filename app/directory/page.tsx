@@ -373,8 +373,8 @@ function DirectoryContent() {
           </div>
 
           {/* Resources Display */}
-          <AnimatePresence mode="wait">
-            {viewMode === 'map' ? (
+          <AnimatePresence mode="wait" initial={false}>
+            {viewMode === 'map' && (
               <motion.div
                 key="map"
                 initial={{ opacity: 0 }}
@@ -383,7 +383,8 @@ function DirectoryContent() {
               >
                 <InteractiveMap resources={filteredResources} />
               </motion.div>
-            ) : filteredResources.length > 0 ? (
+            )}
+            {viewMode !== 'map' && filteredResources.length > 0 && (
               <motion.div
                 key="resources"
                 initial={{ opacity: 0 }}
@@ -406,7 +407,8 @@ function DirectoryContent() {
                   />
                 ))}
               </motion.div>
-            ) : (
+            )}
+            {viewMode !== 'map' && filteredResources.length === 0 && (
               <motion.div
                 key="no-results"
                 initial={{ opacity: 0 }}

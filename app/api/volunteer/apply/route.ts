@@ -18,7 +18,7 @@ const db = getDatabase()
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = requireAuth()
+    const user = await requireAuth()
     const body = await request.json()
 
     const { opportunityId } = body

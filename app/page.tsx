@@ -154,7 +154,7 @@ export default function Home() {
       </section>
 
       {/* Interactive Map Section */}
-      <section id="map" className="section-padding bg-gray-50 dark:bg-gray-800">
+      <section id="map" className="section-padding bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/10">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -185,7 +185,7 @@ export default function Home() {
       </section>
 
       {/* Resource Insights Section */}
-      <section className="section-padding bg-white dark:bg-gray-900">
+      <section className="section-padding bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-900 dark:to-primary-900/10">
         <div className="container-custom">
           <ResourceInsights />
         </div>
@@ -288,7 +288,7 @@ export default function Home() {
       </section>
 
       {/* Quick Links Section */}
-      <section className="section-padding bg-gray-50 dark:bg-gray-800">
+      <section className="section-padding bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/10">
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}

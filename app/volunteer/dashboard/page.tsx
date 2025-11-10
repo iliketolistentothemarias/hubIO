@@ -35,16 +35,20 @@ export default function VolunteerDashboard() {
   const [upcomingOpportunities, setUpcomingOpportunities] = useState<any[]>([])
 
   useEffect(() => {
-    const auth = getAuthService()
-    const currentUser = auth.getCurrentUser()
-    
-    if (!currentUser) {
-      router.push('/login/volunteer')
-      return
-    }
+    const loadUser = async () => {
+      const auth = getAuthService()
+      const currentUser = await auth.getCurrentUser()
+      
+      if (!currentUser) {
+        router.push('/login/volunteer')
+        return
+      }
 
-    setUser(currentUser)
-    loadVolunteerData()
+      setUser(currentUser)
+      loadVolunteerData()
+    }
+    
+    loadUser()
   }, [router])
 
   const loadVolunteerData = () => {
@@ -95,8 +99,8 @@ export default function VolunteerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50/30 
-                    dark:from-gray-900 dark:via-gray-800 dark:to-green-900/10 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 
+                    dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/10 pt-20">
       <div className="container-custom section-padding">
         {/* Header */}
         <motion.div
@@ -173,7 +177,7 @@ function VolunteerOverviewTab({ stats, upcoming }: any) {
                 <span className="font-bold text-gray-900 dark:text-white">24 hours</span>
               </div>
               <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full" style={{ width: '60%' }} />
+                <div className="h-full bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full" style={{ width: '60%' }} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">

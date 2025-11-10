@@ -23,8 +23,8 @@ export class AdminService {
    * @param adminId - Admin user ID
    * @returns Updated resource
    */
-  approveResource(resourceId: string, adminId: string): Resource {
-    const admin = this.auth.getCurrentUser()
+  async approveResource(resourceId: string, adminId: string): Promise<Resource> {
+    const admin = await this.auth.getCurrentUser()
     if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
       throw new Error('Unauthorized. Admin access required.')
     }
@@ -51,8 +51,8 @@ export class AdminService {
    * @param reason - Rejection reason
    * @returns Success status
    */
-  rejectResource(resourceId: string, reason: string): boolean {
-    const admin = this.auth.getCurrentUser()
+  async rejectResource(resourceId: string, reason: string): Promise<boolean> {
+    const admin = await this.auth.getCurrentUser()
     if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
       throw new Error('Unauthorized. Admin access required.')
     }
@@ -72,8 +72,8 @@ export class AdminService {
    * 
    * @returns Array of unverified resources
    */
-  getPendingResources(): Resource[] {
-    const admin = this.auth.getCurrentUser()
+  async getPendingResources(): Promise<Resource[]> {
+    const admin = await this.auth.getCurrentUser()
     if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
       throw new Error('Unauthorized. Admin access required.')
     }
@@ -86,8 +86,8 @@ export class AdminService {
    * 
    * @returns Array of all users
    */
-  getAllUsers(): User[] {
-    const admin = this.auth.getCurrentUser()
+  async getAllUsers(): Promise<User[]> {
+    const admin = await this.auth.getCurrentUser()
     if (!admin || admin.role !== 'admin') {
       throw new Error('Unauthorized. Admin access required.')
     }
@@ -104,8 +104,8 @@ export class AdminService {
    * @param newRole - New role
    * @returns Updated user
    */
-  updateUserRole(userId: string, newRole: string): User {
-    const admin = this.auth.getCurrentUser()
+  async updateUserRole(userId: string, newRole: string): Promise<User> {
+    const admin = await this.auth.getCurrentUser()
     if (!admin || admin.role !== 'admin') {
       throw new Error('Unauthorized. Admin access required.')
     }
@@ -128,8 +128,8 @@ export class AdminService {
    * 
    * @returns System stats
    */
-  getSystemStats() {
-    const admin = this.auth.getCurrentUser()
+  async getSystemStats() {
+    const admin = await this.auth.getCurrentUser()
     if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
       throw new Error('Unauthorized. Admin access required.')
     }

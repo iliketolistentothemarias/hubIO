@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = requireAuth()
+    const user = await requireAuth()
     
     if (user.role !== 'organizer' && user.role !== 'admin') {
       return NextResponse.json(
