@@ -80,11 +80,8 @@ export default function AdminPage() {
   const loadAllData = async () => {
     setLoading(true)
     try {
-      const [resData, campData, evtData, volData, pendingResResponse, usersData] = await Promise.all([
-        db.getAllResources(),
-        db.getAllCampaigns(),
-        db.getAllEvents(),
-        db.getAllVolunteerOpportunities(),
+      const [resData, pendingResResponse, usersData, eventsData, campaignsData, volunteersData] = await Promise.all([
+        db.getAllResources().catch(() => []),
         fetch('/api/admin/pending-resources', {
           credentials: 'include',
           headers: {
@@ -92,7 +89,6 @@ export default function AdminPage() {
           },
         }).then(async r => {
           const json = await r.json()
-          console.log('Pending resources API response:', json)
           if (!r.ok) {
             console.error('Pending resources API error:', json)
             return []
@@ -118,13 +114,112 @@ export default function AdminPage() {
           console.error('Error fetching users:', err)
           return []
         }),
+        fetch('/api/admin/events', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then(async r => {
+          const json = await r.json()
+          if (!r.ok) {
+            console.error('Events API error:', json)
+            return []
+          }
+          return (json.data || []).map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            category: item.category,
+            date: new Date(item.date),
+            time: item.time,
+            location: item.location || { lat: 0, lng: 0, address: '', city: '', state: '', zipCode: '' },
+            organizer: item.organizer,
+            organizerId: item.organizer_id,
+            capacity: item.capacity,
+            registered: item.registered,
+            rsvpRequired: item.rsvp_required,
+            tags: item.tags || [],
+            status: item.status,
+            createdAt: new Date(item.created_at),
+            updatedAt: new Date(item.updated_at),
+          }))
+        }).catch(err => {
+          console.error('Error fetching events:', err)
+          return []
+        }),
+        fetch('/api/admin/campaigns', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then(async r => {
+          const json = await r.json()
+          if (!r.ok) {
+            console.error('Campaigns API error:', json)
+            return []
+          }
+          return (json.data || []).map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            category: item.category,
+            goal: parseFloat(item.goal) || 0,
+            raised: parseFloat(item.raised) || 0,
+            donors: item.donors || 0,
+            organizer: item.organizer,
+            organizerId: item.organizer_id,
+            location: item.location,
+            deadline: item.deadline ? new Date(item.deadline) : undefined,
+            status: item.status,
+            tags: item.tags || [],
+            createdAt: new Date(item.created_at),
+            updatedAt: item.updated_at ? new Date(item.updated_at) : undefined,
+          }))
+        }).catch(err => {
+          console.error('Error fetching campaigns:', err)
+          return []
+        }),
+        fetch('/api/admin/volunteers', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }).then(async r => {
+          const json = await r.json()
+          if (!r.ok) {
+            console.error('Volunteers API error:', json)
+            return []
+          }
+          return (json.data || []).map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            organization: item.organization,
+            organizationId: item.organization_id,
+            category: item.category,
+            date: new Date(),
+            time: '',
+            location: item.location || { lat: 0, lng: 0, address: '', city: '', state: '', zipCode: '' },
+            volunteersNeeded: 0,
+            volunteersSignedUp: 0,
+            skills: item.skills_required || [],
+            requirements: [],
+            remote: false,
+            duration: item.time_commitment || '',
+            status: item.status,
+            createdAt: new Date(item.created_at),
+            updatedAt: new Date(item.updated_at),
+          }))
+        }).catch(err => {
+          console.error('Error fetching volunteers:', err)
+          return []
+        }),
       ])
-      console.log('Loaded pending resources:', pendingResResponse)
       setResources(resData.filter((r: Resource) => r.verified))
       setPendingResources(pendingResResponse)
-      setCampaigns(campData)
-      setEvents(evtData)
-      setVolunteers(volData)
+      setEvents(eventsData)
+      setCampaigns(campaignsData)
+      setVolunteers(volunteersData)
       setUsers(usersData)
     } catch (error) {
       console.error('Error loading data:', error)
@@ -209,6 +304,27 @@ export default function AdminPage() {
 
   const handleUpdateCampaign = async (id: string, updates: Partial<FundraisingCampaign>) => {
     try {
+      // Try to update via API first, fall back to local DB
+      try {
+        const response = await fetch(`/api/campaigns/${id}`, {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates),
+        })
+        const result = await response.json()
+        if (result.success && result.data) {
+          setCampaigns(prev => prev.map(c => c.id === id ? result.data : c))
+          setEditing(null)
+          return
+        }
+      } catch (apiError) {
+        console.warn('API update failed, trying local DB:', apiError)
+      }
+      
+      // Fall back to local DB
       const updated = await db.updateCampaign(id, updates)
       if (updated) {
         setCampaigns(prev => prev.map(c => c.id === id ? updated : c))
@@ -222,9 +338,32 @@ export default function AdminPage() {
 
   const handleUpdateResource = async (id: string, updates: Partial<Resource>) => {
     try {
+      // Try to update via API first
+      try {
+        const response = await fetch(`/api/resources/${id}`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updates),
+        })
+        const result = await response.json()
+        if (result.success && result.data) {
+          setResources(prev => prev.map(r => r.id === id ? result.data : r))
+          setPendingResources(prev => prev.map(r => r.id === id ? result.data : r))
+          setEditing(null)
+          return
+        }
+      } catch (apiError) {
+        console.warn('API update failed, trying local DB:', apiError)
+      }
+      
+      // Fall back to local DB
       const updated = await db.updateResource(id, updates)
       if (updated) {
         setResources(prev => prev.map(r => r.id === id ? updated : r))
+        setPendingResources(prev => prev.map(r => r.id === id ? updated : r))
         setEditing(null)
       }
     } catch (error) {
@@ -237,29 +376,60 @@ export default function AdminPage() {
     if (!confirm('Are you sure you want to delete this item?')) return
 
     try {
-      let success = false
+      let endpoint = ''
+      
       switch (type) {
         case 'campaign':
-          success = await db.deleteCampaign(id)
-          if (success) setCampaigns(prev => prev.filter(c => c.id !== id))
+          endpoint = `/api/admin/campaigns?id=${id}`
           break
         case 'resource':
-          success = await db.deleteResource(id)
-          if (success) setResources(prev => prev.filter(r => r.id !== id))
+          endpoint = `/api/resources/${id}`
           break
         case 'event':
-          success = await db.deleteEvent(id)
-          if (success) setEvents(prev => prev.filter(e => e.id !== id))
+          endpoint = `/api/admin/events?id=${id}`
           break
         case 'volunteer':
-          success = await db.deleteVolunteerOpportunity(id)
-          if (success) setVolunteers(prev => prev.filter(v => v.id !== id))
+          endpoint = `/api/admin/volunteers?id=${id}`
           break
+        default:
+          alert('Unknown item type')
+          return
       }
-      if (!success) alert('Failed to delete item')
-    } catch (error) {
+      
+      const response = await fetch(endpoint, {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      const result = await response.json()
+      
+      if (result.success) {
+        switch (type) {
+          case 'campaign':
+            setCampaigns(prev => prev.filter(c => c.id !== id))
+            break
+          case 'resource':
+            setResources(prev => prev.filter(r => r.id !== id))
+            setPendingResources(prev => prev.filter(r => r.id !== id))
+            break
+          case 'event':
+            setEvents(prev => prev.filter(e => e.id !== id))
+            break
+          case 'volunteer':
+            setVolunteers(prev => prev.filter(v => v.id !== id))
+            break
+        }
+        alert('Item deleted successfully')
+        // Reload data to ensure consistency
+        loadAllData()
+      } else {
+        alert('Failed to delete item: ' + (result.error || 'Unknown error'))
+      }
+    } catch (error: any) {
       console.error('Error deleting:', error)
-      alert('Failed to delete item')
+      alert('Failed to delete item: ' + (error.message || 'Network error'))
     }
   }
 

@@ -1,76 +1,148 @@
-# Admin Setup Guide
+# Admin Panel Setup Guide
 
-This guide explains how to set up admin access for your HubIO application.
+## Quick Start
 
-## Making a User an Admin
+### 1. Run SQL Setup
 
-### Option 1: Using the API Endpoint (Recommended)
-
-You can make a user an admin by calling the API endpoint:
-
-```bash
-curl -X POST http://localhost:3000/api/admin/make-admin \
-  -H "Content-Type: application/json" \
-  -d '{"email": "ameyaparnerkar@gmail.com"}'
-```
-
-### Option 2: Using the Script
-
-Run the script directly:
-
-```bash
-npx tsx scripts/make-admin.ts ameyaparnerkar@gmail.com
-```
-
-### Option 3: Direct Database Update
-
-If you have direct database access, you can update the user's role:
+Run the complete setup script in Supabase SQL Editor:
 
 ```sql
-UPDATE users SET role = 'admin' WHERE email = 'ameyaparnerkar@gmail.com';
+-- Copy and paste the entire contents of COMPLETE_SETUP.sql
+-- Or run each migration file individually:
+-- 1. lib/db/migrations/create_users_table.sql
+-- 2. lib/db/migrations/create_events_table.sql
+-- 3. lib/db/migrations/create_volunteer_opportunities_table.sql
+-- 4. lib/db/migrations/create_fundraising_campaigns_table.sql
+-- 5. lib/db/migrations/seed_data.sql (adds mock data)
 ```
 
-## Setting Up the Notifications Table
-
-Run the migration to create the notifications table:
+### 2. Make Yourself Admin
 
 ```sql
--- Run the SQL in lib/db/migrations/create_notifications_table.sql
+UPDATE public.users 
+SET role = 'admin' 
+WHERE email = 'your-email@example.com';
 ```
 
-Or if using Supabase, you can run it in the SQL Editor.
+### 3. Start the App
 
-## Admin Features
+```bash
+cd hubIO
+npm run dev
+```
 
-Once you're an admin, you can:
+### 4. Login and Access Admin Panel
 
-1. **Access Admin Panel**: Navigate to `/admin` or `/admin/dashboard`
-2. **Review Pending Resources**: View and approve/deny resource submissions
-3. **Manage Admins**: Add or remove admin privileges from users
-4. **Manage Resources**: Edit, delete, and manage all resources
-5. **View System Stats**: See platform statistics and metrics
+1. Go to `http://localhost:3001/login`
+2. Login with your credentials
+3. Navigate to `http://localhost:3001/admin`
+4. You should see the admin dashboard
 
-## Admin Panel Tabs
+## Admin Panel Features
 
-- **Pending Resources**: Review and approve/deny submitted resources
-- **Campaigns**: Manage fundraising campaigns
-- **Resources**: Manage all approved resources
-- **Events**: Manage community events
-- **Volunteers**: Manage volunteer opportunities
-- **Admin Management**: Add/remove admin privileges
+### ✅ Working Features
 
-## Notification System
+1. **Pending Resources Tab**
+   - View all pending resource submissions
+   - Approve resources (makes them verified and visible)
+   - Deny resources (deletes them with optional reason)
 
-The notification system automatically sends notifications when:
-- A resource is approved
-- A resource is denied
+2. **Campaigns Tab**
+   - View all fundraising campaigns
+   - Edit campaign details
+   - Delete campaigns
 
-Users can view notifications by clicking the bell icon in the navigation (when implemented).
+3. **Resources Tab**
+   - View all verified resources
+   - Edit resource details
+   - Delete resources
 
-## Security Notes
+4. **Events Tab**
+   - View all events
+   - Delete events
 
-- Admin routes are protected and only accessible to users with `role = 'admin'`
-- The admin panel checks authentication on every page load
-- Non-admin users are automatically redirected to the login page
-- Admin operations use the Supabase service role key to bypass RLS
+5. **Volunteers Tab**
+   - View all volunteer opportunities
+   - Delete volunteer opportunities
 
+6. **Admin Management Tab**
+   - View all users
+   - Make users admin
+   - Remove admin status from users
+   - Update user roles (resident, volunteer, organizer, admin, moderator)
+
+## API Endpoints
+
+### Admin Endpoints
+
+- `GET /api/admin/pending-resources` - Get pending resources (admin only)
+- `GET /api/admin/users` - Get all users (admin only)
+- `POST /api/admin/users` - Update user role (admin only)
+- `GET /api/admin/events` - Get all events (admin only)
+- `DELETE /api/admin/events?id={id}` - Delete event (admin only)
+- `GET /api/admin/campaigns` - Get all campaigns (admin only)
+- `DELETE /api/admin/campaigns?id={id}` - Delete campaign (admin only)
+- `GET /api/admin/volunteers` - Get all volunteer opportunities (admin only)
+- `DELETE /api/admin/volunteers?id={id}` - Delete volunteer opportunity (admin only)
+- `POST /api/admin/resources/{id}/approve` - Approve resource (admin only)
+- `POST /api/admin/resources/{id}/deny` - Deny resource (admin only)
+
+### Resource Endpoints
+
+- `PUT /api/resources/{id}` - Update resource (owner or admin)
+- `DELETE /api/resources/{id}` - Delete resource (admin only)
+
+### Campaign Endpoints
+
+- `PATCH /api/campaigns/{id}` - Update campaign (owner or admin)
+- `DELETE /api/campaigns/{id}` - Delete campaign (admin only)
+
+## Mock Data
+
+The seed data includes:
+
+- **5 Volunteer Opportunities**: Food Bank, Tutoring, Park Cleanup, Senior Companion, Animal Shelter
+- **5 Events**: Health Fair, Job Fair, Garden Workshop, Youth Sports Day, Financial Literacy Workshop
+- **5 Fundraising Campaigns**: School Supplies, Housing Assistance, Food Bank Expansion, Youth Scholarships, Emergency Relief
+
+All data is located in Pittsburgh, PA and has realistic details.
+
+## Troubleshooting
+
+### Admin Panel Not Loading
+
+1. Check if you're logged in
+2. Verify your user role is 'admin' in the database
+3. Check browser console for errors
+4. Verify API endpoints are returning data
+
+### API Errors
+
+1. Check if tables exist in Supabase
+2. Verify RLS policies are set up correctly
+3. Check if user is authenticated
+4. Verify user has admin role
+
+### Buttons Not Working
+
+1. Check browser console for errors
+2. Verify API endpoints are accessible
+3. Check network tab for failed requests
+4. Verify authentication is working
+
+## Environment Variables
+
+Make sure these are set in your `.env.local`:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key (optional, but recommended for admin operations)
+```
+
+## Notes
+
+- Admin client (service role) is optional but recommended for admin operations
+- If service role key is not set, the app will use regular client with RLS policies
+- All admin endpoints check authentication and admin role
+- Error handling is in place for missing tables or failed operations

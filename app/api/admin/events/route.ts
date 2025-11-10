@@ -1,7 +1,7 @@
 /**
- * Admin Users API
+ * Admin Events API
  * 
- * Manage admin users (add/remove admins)
+ * Manage events (admin only)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -10,9 +10,9 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { ApiResponse } from '@/lib/types'
 
 /**
- * GET /api/admin/users
+ * GET /api/admin/events
  * 
- * Get all users (admin only)
+ * Get all events (admin only)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -41,58 +41,56 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Try to use admin client if available, otherwise use regular client
+    // Try to use admin client if available
     let client = supabase
     try {
       const adminClient = createAdminClient()
       client = adminClient
     } catch (error) {
-      // Fall back to regular client
       console.warn('Admin client not available, using regular client')
     }
 
-    // Get all users
-    const { data: users, error: usersError } = await client
-      .from('users')
-      .select('id, email, name, role, created_at')
+    // Get all events
+    const { data: events, error: eventsError } = await client
+      .from('events')
+      .select('*')
       .order('created_at', { ascending: false })
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError)
+    if (eventsError) {
       // Return empty array if table doesn't exist
-      if (usersError.code === 'PGRST204' || usersError.message?.includes('relation') || usersError.message?.includes('schema cache')) {
+      if (eventsError.code === 'PGRST204' || eventsError.message?.includes('relation') || eventsError.message?.includes('schema cache')) {
         return NextResponse.json(
           { success: true, data: [] },
           { status: 200 }
         )
       }
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch users' },
+        { success: false, error: 'Failed to fetch events' },
         { status: 500 }
       )
     }
 
     const response: ApiResponse<any> = {
       success: true,
-      data: users || [],
+      data: events || [],
     }
 
     return NextResponse.json(response)
   } catch (error: any) {
-    console.error('Error fetching users:', error)
+    console.error('Error fetching events:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch users' },
+      { success: false, error: 'Failed to fetch events' },
       { status: 500 }
     )
   }
 }
 
 /**
- * POST /api/admin/users
+ * DELETE /api/admin/events
  * 
- * Update user role (make admin or remove admin)
+ * Delete an event (admin only)
  */
-export async function POST(request: NextRequest) {
+export async function DELETE(request: NextRequest) {
   try {
     const supabase = createServerClient(request)
     
@@ -119,70 +117,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { userId, role } = body
+    const { searchParams } = new URL(request.url)
+    const eventId = searchParams.get('id')
 
-    if (!userId || !role) {
+    if (!eventId) {
       return NextResponse.json(
-        { success: false, error: 'User ID and role are required' },
+        { success: false, error: 'Event ID is required' },
         { status: 400 }
       )
     }
 
-    // Validate role
-    const validRoles = ['resident', 'volunteer', 'organizer', 'admin', 'moderator']
-    if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid role' },
-        { status: 400 }
-      )
-    }
-
-    // Prevent removing your own admin status
-    if (userId === session.user.id && role !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'You cannot remove your own admin status' },
-        { status: 400 }
-      )
-    }
-
-    // Try to use admin client if available, otherwise use regular client
+    // Try to use admin client if available
     let client = supabase
     try {
       const adminClient = createAdminClient()
       client = adminClient
     } catch (error) {
-      // Fall back to regular client
       console.warn('Admin client not available, using regular client')
     }
 
-    // Update user role
-    const { data: updatedUser, error: updateError } = await client
-      .from('users')
-      .update({ role })
-      .eq('id', userId)
-      .select()
-      .maybeSingle()
+    // Delete event
+    const { error: deleteError } = await client
+      .from('events')
+      .delete()
+      .eq('id', eventId)
 
-    if (updateError) {
-      console.error('Error updating user role:', updateError)
+    if (deleteError) {
       return NextResponse.json(
-        { success: false, error: 'Failed to update user role' },
+        { success: false, error: 'Failed to delete event' },
         { status: 500 }
       )
     }
 
-    const response: ApiResponse<any> = {
+    return NextResponse.json({
       success: true,
-      message: `User role updated to ${role}`,
-      data: updatedUser,
-    }
-
-    return NextResponse.json(response)
+      message: 'Event deleted successfully',
+    })
   } catch (error: any) {
-    console.error('Error updating user role:', error)
+    console.error('Error deleting event:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to update user role' },
+      { success: false, error: 'Failed to delete event' },
       { status: 500 }
     )
   }

@@ -179,10 +179,40 @@ WHERE u.id IS NULL
 ON CONFLICT (id) DO NOTHING;
 ```
 
-## 7. Grant Admin Access to Service Role (for API operations)
+## 7. Create Events Table
+
+```sql
+-- Run the migration file: lib/db/migrations/create_events_table.sql
+-- Or copy the contents and run in SQL Editor
+```
+
+## 8. Create Volunteer Opportunities Table
+
+```sql
+-- Run the migration file: lib/db/migrations/create_volunteer_opportunities_table.sql
+-- Or copy the contents and run in SQL Editor
+```
+
+## 9. Create Fundraising Campaigns Table
+
+```sql
+-- Run the migration file: lib/db/migrations/create_fundraising_campaigns_table.sql
+-- Or copy the contents and run in SQL Editor
+```
+
+## 10. Seed Data (Add Mock Data)
+
+```sql
+-- Run the seed file: lib/db/migrations/seed_data.sql
+-- This will add sample events, volunteer opportunities, and fundraising campaigns
+-- Or copy the contents and run in SQL Editor
+```
+
+## 11. Grant Admin Access to Service Role (for API operations)
 
 ```sql
 -- Allow service role to bypass RLS (needed for admin operations)
+-- This is optional but recommended for admin operations
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
 -- Service role can do everything (this is safe, service role is server-side only)

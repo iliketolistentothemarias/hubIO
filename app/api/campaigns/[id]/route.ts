@@ -1,24 +1,24 @@
 /**
- * Individual Resource API Route
+ * Individual Campaign API Route
  * 
- * Handles operations for a specific resource.
+ * Handles operations for a specific campaign.
  * 
  * Endpoints:
- * - GET /api/resources/[id] - Get resource by ID
- * - PUT /api/resources/[id] - Update resource
- * - DELETE /api/resources/[id] - Delete resource
+ * - GET /api/campaigns/[id] - Get campaign by ID
+ * - PATCH /api/campaigns/[id] - Update campaign
+ * - DELETE /api/campaigns/[id] - Delete campaign
  */
 
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getSupabaseDatabase } from '@/lib/supabase/database'
-import { ApiResponse, Resource } from '@/lib/types'
+import { ApiResponse, FundraisingCampaign } from '@/lib/types'
 
 /**
- * GET /api/resources/[id]
+ * GET /api/campaigns/[id]
  * 
- * Get resource by ID
+ * Get campaign by ID
  */
 export async function GET(
   request: NextRequest,
@@ -26,36 +26,36 @@ export async function GET(
 ) {
   try {
     const db = getSupabaseDatabase()
-    const resource = await db.getResourceById(params.id)
+    const campaign = await db.getCampaignById(params.id)
 
-    if (!resource) {
+    if (!campaign) {
       return NextResponse.json(
-        { success: false, error: 'Resource not found' },
+        { success: false, error: 'Campaign not found' },
         { status: 404 }
       )
     }
 
-    const response: ApiResponse<Resource> = {
+    const response: ApiResponse<FundraisingCampaign> = {
       success: true,
-      data: resource,
+      data: campaign,
     }
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error('Error fetching resource:', error)
+    console.error('Error fetching campaign:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch resource' },
+      { success: false, error: 'Failed to fetch campaign' },
       { status: 500 }
     )
   }
 }
 
 /**
- * PUT /api/resources/[id]
+ * PATCH /api/campaigns/[id]
  * 
- * Update resource (requires authentication and ownership or admin role)
+ * Update campaign (requires authentication and ownership or admin role)
  */
-export async function PUT(
+export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
@@ -87,19 +87,19 @@ export async function PUT(
       console.warn('Admin client not available, using regular client')
     }
 
-    // Get the resource
+    // Get the campaign
     const db = getSupabaseDatabase()
-    const resource = await db.getResourceById(params.id)
+    const campaign = await db.getCampaignById(params.id)
 
-    if (!resource) {
+    if (!campaign) {
       return NextResponse.json(
-        { success: false, error: 'Resource not found' },
+        { success: false, error: 'Campaign not found' },
         { status: 404 }
       )
     }
 
     // Check permissions (owner or admin)
-    if (resource.submittedBy !== session.user.id && user?.role !== 'admin') {
+    if (campaign.organizerId !== session.user.id && user?.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -108,23 +108,21 @@ export async function PUT(
 
     const body = await request.json()
     
-    // Update resource in Supabase
+    // Update campaign in Supabase
     const updateData: any = {}
-    if (body.name !== undefined) updateData.name = body.name
-    if (body.category !== undefined) updateData.category = body.category
+    if (body.title !== undefined) updateData.title = body.title
     if (body.description !== undefined) updateData.description = body.description
-    if (body.address !== undefined) updateData.address = body.address
-    if (body.location !== undefined) updateData.location = body.location
-    if (body.phone !== undefined) updateData.phone = body.phone
-    if (body.email !== undefined) updateData.email = body.email
-    if (body.website !== undefined) updateData.website = body.website
+    if (body.category !== undefined) updateData.category = body.category
+    if (body.goal !== undefined) updateData.goal = body.goal
+    if (body.raised !== undefined) updateData.raised = body.raised
+    if (body.donors !== undefined) updateData.donors = body.donors
+    if (body.status !== undefined) updateData.status = body.status
+    if (body.deadline !== undefined) updateData.deadline = body.deadline ? new Date(body.deadline).toISOString().split('T')[0] : null
     if (body.tags !== undefined) updateData.tags = body.tags
-    if (body.featured !== undefined) updateData.featured = body.featured
-    if (body.verified !== undefined) updateData.verified = body.verified
     updateData.updated_at = new Date().toISOString()
 
     const { data: updated, error: updateError } = await client
-      .from('resources')
+      .from('fundraising_campaigns')
       .update(updateData)
       .eq('id', params.id)
       .select()
@@ -132,57 +130,50 @@ export async function PUT(
 
     if (updateError || !updated) {
       return NextResponse.json(
-        { success: false, error: 'Failed to update resource' },
+        { success: false, error: 'Failed to update campaign' },
         { status: 500 }
       )
     }
 
-    // Map to Resource type
-    const updatedResource: Resource = {
+    // Map to FundraisingCampaign type
+    const updatedCampaign: FundraisingCampaign = {
       id: updated.id,
-      name: updated.name,
-      category: updated.category as any,
+      title: updated.title,
       description: updated.description,
-      address: updated.address,
-      location: updated.location || { lat: 0, lng: 0, address: updated.address, city: '', state: '', zipCode: '' },
-      phone: updated.phone,
-      email: updated.email,
-      website: updated.website || '',
+      category: updated.category,
+      goal: parseFloat(updated.goal) || 0,
+      raised: parseFloat(updated.raised) || 0,
+      donors: updated.donors || 0,
+      organizer: updated.organizer,
+      organizerId: updated.organizer_id,
+      location: updated.location,
+      deadline: updated.deadline ? new Date(updated.deadline) : undefined,
+      status: updated.status as any,
       tags: updated.tags || [],
-      featured: updated.featured || false,
-      verified: updated.verified || false,
-      rating: updated.rating,
-      reviewCount: updated.review_count,
-      hours: updated.hours,
-      services: updated.services,
-      capacity: updated.capacity,
-      languages: updated.languages,
-      accessibility: updated.accessibility,
-      submittedBy: updated.submitted_by,
       createdAt: new Date(updated.created_at),
-      updatedAt: new Date(updated.updated_at),
+      updatedAt: updated.updated_at ? new Date(updated.updated_at) : undefined,
     }
 
-    const response: ApiResponse<Resource> = {
+    const response: ApiResponse<FundraisingCampaign> = {
       success: true,
-      data: updatedResource,
-      message: 'Resource updated successfully',
+      data: updatedCampaign,
+      message: 'Campaign updated successfully',
     }
 
     return NextResponse.json(response)
   } catch (error: any) {
-    console.error('Error updating resource:', error)
+    console.error('Error updating campaign:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to update resource' },
+      { success: false, error: 'Failed to update campaign' },
       { status: 500 }
     )
   }
 }
 
 /**
- * DELETE /api/resources/[id]
+ * DELETE /api/campaigns/[id]
  * 
- * Delete resource (requires admin role)
+ * Delete campaign (requires admin role)
  */
 export async function DELETE(
   request: NextRequest,
@@ -223,29 +214,29 @@ export async function DELETE(
       console.warn('Admin client not available, using regular client')
     }
 
-    // Delete resource
+    // Delete campaign
     const { error: deleteError } = await client
-      .from('resources')
+      .from('fundraising_campaigns')
       .delete()
       .eq('id', params.id)
 
     if (deleteError) {
       return NextResponse.json(
-        { success: false, error: 'Failed to delete resource' },
+        { success: false, error: 'Failed to delete campaign' },
         { status: 500 }
       )
     }
 
     const response: ApiResponse<null> = {
       success: true,
-      message: 'Resource deleted successfully',
+      message: 'Campaign deleted successfully',
     }
 
     return NextResponse.json(response)
   } catch (error: any) {
-    console.error('Error deleting resource:', error)
+    console.error('Error deleting campaign:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to delete resource' },
+      { success: false, error: 'Failed to delete campaign' },
       { status: 500 }
     )
   }

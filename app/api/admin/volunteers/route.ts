@@ -1,7 +1,7 @@
 /**
- * Admin Users API
+ * Admin Volunteers API
  * 
- * Manage admin users (add/remove admins)
+ * Manage volunteer opportunities (admin only)
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -10,9 +10,9 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { ApiResponse } from '@/lib/types'
 
 /**
- * GET /api/admin/users
+ * GET /api/admin/volunteers
  * 
- * Get all users (admin only)
+ * Get all volunteer opportunities (admin only)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -41,58 +41,56 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Try to use admin client if available, otherwise use regular client
+    // Try to use admin client if available
     let client = supabase
     try {
       const adminClient = createAdminClient()
       client = adminClient
     } catch (error) {
-      // Fall back to regular client
       console.warn('Admin client not available, using regular client')
     }
 
-    // Get all users
-    const { data: users, error: usersError } = await client
-      .from('users')
-      .select('id, email, name, role, created_at')
+    // Get all volunteer opportunities
+    const { data: volunteers, error: volunteersError } = await client
+      .from('volunteer_opportunities')
+      .select('*')
       .order('created_at', { ascending: false })
 
-    if (usersError) {
-      console.error('Error fetching users:', usersError)
+    if (volunteersError) {
       // Return empty array if table doesn't exist
-      if (usersError.code === 'PGRST204' || usersError.message?.includes('relation') || usersError.message?.includes('schema cache')) {
+      if (volunteersError.code === 'PGRST204' || volunteersError.message?.includes('relation') || volunteersError.message?.includes('schema cache')) {
         return NextResponse.json(
           { success: true, data: [] },
           { status: 200 }
         )
       }
       return NextResponse.json(
-        { success: false, error: 'Failed to fetch users' },
+        { success: false, error: 'Failed to fetch volunteer opportunities' },
         { status: 500 }
       )
     }
 
     const response: ApiResponse<any> = {
       success: true,
-      data: users || [],
+      data: volunteers || [],
     }
 
     return NextResponse.json(response)
   } catch (error: any) {
-    console.error('Error fetching users:', error)
+    console.error('Error fetching volunteer opportunities:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to fetch users' },
+      { success: false, error: 'Failed to fetch volunteer opportunities' },
       { status: 500 }
     )
   }
 }
 
 /**
- * POST /api/admin/users
+ * DELETE /api/admin/volunteers
  * 
- * Update user role (make admin or remove admin)
+ * Delete a volunteer opportunity (admin only)
  */
-export async function POST(request: NextRequest) {
+export async function DELETE(request: NextRequest) {
   try {
     const supabase = createServerClient(request)
     
@@ -119,70 +117,46 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const body = await request.json()
-    const { userId, role } = body
+    const { searchParams } = new URL(request.url)
+    const volunteerId = searchParams.get('id')
 
-    if (!userId || !role) {
+    if (!volunteerId) {
       return NextResponse.json(
-        { success: false, error: 'User ID and role are required' },
+        { success: false, error: 'Volunteer opportunity ID is required' },
         { status: 400 }
       )
     }
 
-    // Validate role
-    const validRoles = ['resident', 'volunteer', 'organizer', 'admin', 'moderator']
-    if (!validRoles.includes(role)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid role' },
-        { status: 400 }
-      )
-    }
-
-    // Prevent removing your own admin status
-    if (userId === session.user.id && role !== 'admin') {
-      return NextResponse.json(
-        { success: false, error: 'You cannot remove your own admin status' },
-        { status: 400 }
-      )
-    }
-
-    // Try to use admin client if available, otherwise use regular client
+    // Try to use admin client if available
     let client = supabase
     try {
       const adminClient = createAdminClient()
       client = adminClient
     } catch (error) {
-      // Fall back to regular client
       console.warn('Admin client not available, using regular client')
     }
 
-    // Update user role
-    const { data: updatedUser, error: updateError } = await client
-      .from('users')
-      .update({ role })
-      .eq('id', userId)
-      .select()
-      .maybeSingle()
+    // Delete volunteer opportunity
+    const { error: deleteError } = await client
+      .from('volunteer_opportunities')
+      .delete()
+      .eq('id', volunteerId)
 
-    if (updateError) {
-      console.error('Error updating user role:', updateError)
+    if (deleteError) {
       return NextResponse.json(
-        { success: false, error: 'Failed to update user role' },
+        { success: false, error: 'Failed to delete volunteer opportunity' },
         { status: 500 }
       )
     }
 
-    const response: ApiResponse<any> = {
+    return NextResponse.json({
       success: true,
-      message: `User role updated to ${role}`,
-      data: updatedUser,
-    }
-
-    return NextResponse.json(response)
+      message: 'Volunteer opportunity deleted successfully',
+    })
   } catch (error: any) {
-    console.error('Error updating user role:', error)
+    console.error('Error deleting volunteer opportunity:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to update user role' },
+      { success: false, error: 'Failed to delete volunteer opportunity' },
       { status: 500 }
     )
   }

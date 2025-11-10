@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { ApiResponse, Resource } from '@/lib/types'
 
@@ -16,12 +17,43 @@ import { ApiResponse, Resource } from '@/lib/types'
  */
 export async function GET(request: NextRequest) {
   try {
-    // Use admin client (service role) to bypass RLS
-    // Client-side already verified user is admin before making this request
-    const adminClient = createAdminClient()
+    const supabase = createServerClient(request)
     
-    // Query resources directly using admin client (bypasses RLS)
-    const { data: resourcesData, error: resourcesError } = await adminClient
+    // Check authentication
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Check if user is admin
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', session.user.id)
+      .maybeSingle()
+
+    if (userError || !user || user.role !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'Admin access required' },
+        { status: 403 }
+      )
+    }
+
+    // Try to use admin client if available, otherwise use regular client
+    let client = supabase
+    try {
+      const adminClient = createAdminClient()
+      client = adminClient
+    } catch (error) {
+      // Fall back to regular client - RLS policies should allow admin to see all
+      console.warn('Admin client not available, using regular client')
+    }
+    
+    // Query resources
+    const { data: resourcesData, error: resourcesError } = await client
       .from('resources')
       .select('*')
       .eq('verified', false)
@@ -29,6 +61,13 @@ export async function GET(request: NextRequest) {
     
     if (resourcesError) {
       console.error('Error fetching pending resources from Supabase:', resourcesError)
+      // Return empty array instead of error if table doesn't exist
+      if (resourcesError.code === 'PGRST204' || resourcesError.message?.includes('relation') || resourcesError.message?.includes('schema cache')) {
+        return NextResponse.json(
+          { success: true, data: [] },
+          { status: 200 }
+        )
+      }
       return NextResponse.json(
         { success: false, error: 'Failed to fetch pending resources' },
         { status: 500 }
