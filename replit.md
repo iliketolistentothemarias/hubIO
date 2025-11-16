@@ -1,9 +1,20 @@
-# Communify - Community Hub Platform
+# Communify - Community Hub Platform (UI Showcase)
 
 ## Project Overview
-Communify is a comprehensive community engagement platform built with Next.js that connects residents with resources, events, volunteer opportunities, and social features.
+Communify is a beautifully designed community engagement platform UI built with Next.js. This is a **static UI showcase** with no backend functionality - perfect for demonstrations, portfolios, and design presentations.
 
 ## Recent Changes (November 16, 2025)
+
+### UI-Only Mode ✅ (Latest)
+Transformed into a pure UI showcase:
+- ❌ Removed all authentication (Sign In/Sign Up)
+- ❌ Removed ProfileMenu and Messaging components
+- ❌ Removed all backend API calls
+- ✅ Static dashboard with sample data
+- ✅ Fixed Service Worker errors
+- ✅ Improved dark mode colors with brand palette
+- ✅ Enhanced centering and layout alignment
+- ✅ Beautiful glass morphism effects throughout
 
 ### Latest Updates ✅
 1. **Authentication Fixed**: Login and signup now properly use PostgreSQL instead of Replit Database key-value store

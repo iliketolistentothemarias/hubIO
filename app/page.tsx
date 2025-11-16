@@ -42,7 +42,7 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
-                className="text-5xl md:text-7xl font-display font-bold text-[#333333] dark:text-[#f5f5f5] mb-6"
+                className="text-5xl md:text-7xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-6"
               >
                 Communify
               </motion.h1>
@@ -50,7 +50,7 @@ export default function Home() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-4 font-light"
+                className="text-xl md:text-2xl text-[#6B5D47] dark:text-[#B8A584] mb-4 font-light"
               >
                 /kəˈmjuː.nə.faɪ/
               </motion.p>
@@ -58,11 +58,11 @@ export default function Home() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="text-lg md:text-xl text-gray-700 dark:text-gray-300 mb-8"
+                    className="text-lg md:text-xl text-[#6B5D47] dark:text-[#B8A584] mb-8"
                   >
-                    Your gateway to community resources in <span className="font-semibold text-primary-700 dark:text-primary-400">South Fayette & Pittsburgh</span>.
+                    Your gateway to community resources in <span className="font-semibold text-[#8B6F47] dark:text-[#D4A574]">South Fayette & Pittsburgh</span>.
                     <br />
-                    <span className="font-medium text-primary-700 dark:text-primary-400">Connect. Discover. Thrive Together.</span>
+                    <span className="font-medium text-[#8B6F47] dark:text-[#D4A574]">Connect. Discover. Thrive Together.</span>
                   </motion.p>
             </motion.div>
 
@@ -80,22 +80,22 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center"
+              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
             >
               <Link href="/directory">
-                <button className="btn-primary text-lg px-8 py-4 flex items-center gap-2">
+                <button className="btn-primary text-lg px-8 py-4 flex items-center gap-2 justify-center w-full sm:w-auto">
                   Explore Resources
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </Link>
               <Link href="/highlights">
-                <button className="btn-secondary text-lg px-8 py-4">
+                <button className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto">
                   Featured Resources
                 </button>
               </Link>
               <Link href="/signup">
                 <button className="btn-secondary text-lg px-8 py-4 bg-[#8B6F47] dark:bg-[#D4A574] 
-                                 text-white dark:text-[#1C1B18] hover:bg-[#7A5F3A] dark:hover:bg-[#C49564]">
+                                 text-white dark:text-[#1C1B18] hover:bg-[#7A5F3A] dark:hover:bg-[#C49564] w-full sm:w-auto">
                   Get Started
                 </button>
               </Link>
@@ -106,7 +106,7 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-4xl mx-auto"
+              className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-5xl mx-auto px-4"
             >
               {stats.map((stat, index) => {
                 const Icon = stat.icon
@@ -118,17 +118,17 @@ export default function Home() {
                     transition={{ delay: 0.7 + index * 0.1 }}
                     whileHover={{ scale: 1.05, y: -5 }}
                     whileTap={{ scale: 0.95 }}
-                    className="text-center p-6 bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl 
-                               rounded-3xl shadow-xl border border-white/30 dark:border-gray-700/30
+                    className="text-center p-6 bg-white/80 dark:bg-[#2A2824]/80 backdrop-blur-xl 
+                               rounded-3xl shadow-xl border border-[#E8E0D6]/50 dark:border-[#4A4844]/50
                                hover:shadow-2xl transition-all duration-300"
                     style={{
                       backdropFilter: 'saturate(180%) blur(20px)',
                       WebkitBackdropFilter: 'saturate(180%) blur(20px)',
                     }}
                   >
-                    <Icon className={`w-8 h-8 text-[#666666] dark:text-[#999999] mx-auto mb-2`} />
-                    <div className="text-3xl font-bold text-[#333333] dark:text-[#f5f5f5]">{stat.value}</div>
-                    <div className="text-sm text-[#666666] dark:text-[#999999]">{stat.label}</div>
+                    <Icon className={`w-8 h-8 text-[#8B6F47] dark:text-[#D4A574] mx-auto mb-2`} />
+                    <div className="text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">{stat.value}</div>
+                    <div className="text-sm text-[#6B5D47] dark:text-[#B8A584]">{stat.label}</div>
                   </motion.div>
                 )
               })}
