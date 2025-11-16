@@ -76,22 +76,24 @@ export default function Navigation() {
       }`}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center h-16 md:h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <motion.div
-              whileHover={{ rotate: 360, scale: 1.1 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Heart className="w-8 h-8 text-[#8B6F47] dark:text-[#D4A574]" />
-            </motion.div>
-            <span className="text-2xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0]">
-              Communify
-            </span>
-          </Link>
+          <div className="flex-1">
+            <Link href="/" className="flex items-center gap-2 group w-fit">
+              <motion.div
+                whileHover={{ rotate: 360, scale: 1.1 }}
+                transition={{ duration: 0.6 }}
+              >
+                <Heart className="w-8 h-8 text-[#8B6F47] dark:text-[#D4A574]" />
+              </motion.div>
+              <span className="text-2xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0]">
+                Communify
+              </span>
+            </Link>
+          </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Desktop Navigation - Centered */}
+          <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href}
@@ -177,7 +179,10 @@ export default function Navigation() {
                     </AnimatePresence>
               </motion.div>
             ))}
-                
+          </div>
+
+          {/* Right Side - Utilities */}
+          <div className="hidden md:flex items-center gap-4 flex-1 justify-end">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
