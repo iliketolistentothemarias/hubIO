@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, X, Heart, Moon, Sun, Star, ChevronDown } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Menu, X, Heart, Moon, Sun, Star, ChevronDown, User, LogOut } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
@@ -12,7 +12,10 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+  const [user, setUser] = useState<any>(null)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
   const { theme, toggleTheme } = useTheme()
   const { favorites } = useFavorites()
 
@@ -23,6 +26,34 @@ export default function Navigation() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    checkAuth()
+  }, [pathname])
+
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/auth/me')
+      const data = await res.json()
+      if (data.success) {
+        setUser(data.data.user)
+      } else {
+        setUser(null)
+      }
+    } catch (error) {
+      setUser(null)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      setUser(null)
+      router.push('/')
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
 
   const navItems: Array<{
     href: string
@@ -221,6 +252,85 @@ export default function Navigation() {
                 )}
               </motion.div>
             </motion.button>
+
+            {/* Auth Buttons */}
+            {user ? (
+              <div className="relative">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white 
+                           hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="font-medium">{user.name}</span>
+                </motion.button>
+
+                <AnimatePresence>
+                  {userMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#2A2824] rounded-lg shadow-lg border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
+                    >
+                      <div className="p-3 border-b border-[#E8E0D6] dark:border-[#4A4844]">
+                        <p className="text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0]">{user.name}</p>
+                        <p className="text-xs text-[#6B5D47] dark:text-[#B8A584]">{user.email}</p>
+                      </div>
+                      {(user.role === 'admin' || user.role === 'moderator') && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <Link
+                        href="/submit-resource"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
+                      >
+                        Submit Resource
+                      </Link>
+                      <button
+                        onClick={() => {
+                          setUserMenuOpen(false)
+                          handleLogout()
+                        }}
+                        className="w-full text-left px-4 py-3 text-sm text-red-600 dark:text-red-400 hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors flex items-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <>
+                <Link href="/login">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 rounded-lg text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-all duration-200 font-medium"
+                  >
+                    Login
+                  </motion.button>
+                </Link>
+                <Link href="/signup">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium"
+                  >
+                    Sign Up
+                  </motion.button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -303,6 +413,57 @@ export default function Navigation() {
                   </span>
                 )}
               </Link>
+
+              {/* Mobile Auth Buttons */}
+              {user ? (
+                <>
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">{user.email}</p>
+                    </div>
+                    {(user.role === 'admin' || user.role === 'moderator') && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="block py-2 font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
+                    <Link
+                      href="/submit-resource"
+                      onClick={() => setIsOpen(false)}
+                      className="block py-2 font-medium text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                    >
+                      Submit Resource
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setIsOpen(false)
+                        handleLogout()
+                      }}
+                      className="flex items-center gap-2 py-2 font-medium text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-500 transition-colors"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      Logout
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+                  <Link href="/login" className="flex-1" onClick={() => setIsOpen(false)}>
+                    <button className="w-full py-2 px-4 rounded-lg border border-[#8B6F47] dark:border-[#D4A574] text-[#8B6F47] dark:text-[#D4A574] font-medium hover:bg-[#8B6F47] hover:text-white dark:hover:bg-[#D4A574] dark:hover:text-white transition-colors">
+                      Login
+                    </button>
+                  </Link>
+                  <Link href="/signup" className="flex-1" onClick={() => setIsOpen(false)}>
+                    <button className="w-full py-2 px-4 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white font-medium hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors">
+                      Sign Up
+                    </button>
+                  </Link>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
