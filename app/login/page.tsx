@@ -26,10 +26,14 @@ function LoginContent() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    e.stopPropagation()
+    
     setError('')
     setIsLoading(true)
 
     try {
+      console.log('Attempting login...')
+      
       // Call login API
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -40,7 +44,9 @@ function LoginContent() {
         credentials: 'include', // Important for cookies
       })
 
+      console.log('Login response status:', response.status)
       const data = await response.json()
+      console.log('Login response data:', data)
 
       if (!data.success) {
         setError(data.error || 'Failed to sign in')
@@ -54,6 +60,9 @@ function LoginContent() {
         localStorage.setItem('user', JSON.stringify(data.data.user))
       }
 
+      // Small delay to ensure storage is complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+
       // Check if there's a redirect URL in query params or session storage
       const urlParams = new URLSearchParams(window.location.search)
       const redirectParam = urlParams.get('redirect')
@@ -62,14 +71,14 @@ function LoginContent() {
       if (redirectUrl) {
         sessionStorage.removeItem('redirectAfterLogin')
         sessionStorage.removeItem('pendingAction')
-        router.push(redirectUrl)
+        window.location.href = redirectUrl
       } else {
         // Check if user is admin and redirect to admin panel
         if (data.data?.user?.role === 'admin' || data.data?.user?.role === 'moderator') {
-          router.push('/admin')
+          window.location.href = '/admin'
         } else {
           // Redirect to dashboard
-          router.push('/dashboard')
+          window.location.href = '/dashboard'
         }
       }
     } catch (err: any) {
