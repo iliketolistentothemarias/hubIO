@@ -15,9 +15,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      userId: string
-      role: string
+    let decoded
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+        userId: string
+        role: string
+      }
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or expired token' },
+        { status: 401 }
+      )
     }
 
     if (decoded.role !== 'admin' && decoded.role !== 'moderator') {
