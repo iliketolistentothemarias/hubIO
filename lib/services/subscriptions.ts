@@ -123,8 +123,9 @@ export class SubscriptionService {
     }
 
     // Store subscription (would be in database)
-    this.db['subscriptions'] = this.db['subscriptions'] || new Map()
-    this.db['subscriptions'].set(subscription.id, subscription)
+    const subscriptions = this.db.getCollection('subscriptions')
+    subscriptions.set(subscription.id, subscription)
+    this.db.save()
 
     return subscription
   }
@@ -133,11 +134,12 @@ export class SubscriptionService {
    * Get User Subscription
    */
   getUserSubscription(userId: string): Subscription | null {
-    if (!this.db['subscriptions']) return null
+    const subscriptions = this.db.getCollection('subscriptions')
 
-    for (const sub of this.db['subscriptions'].values()) {
-      if (sub.userId === userId && sub.status === 'active') {
-        return sub
+    for (const sub of subscriptions.values()) {
+      const subscription = sub as any
+      if (subscription.userId === userId && subscription.status === 'active') {
+        return subscription
       }
     }
     return null
@@ -170,6 +172,7 @@ export class SubscriptionService {
     if (!plan) return false
 
     const limit = plan.limits[resourceType]
+    if (limit === undefined) return false
     if (limit === -1) return true // Unlimited
 
     // Check current usage
@@ -207,7 +210,9 @@ export class SubscriptionService {
     }
 
     subscription.updatedAt = new Date()
-    this.db['subscriptions'].set(subscription.id, subscription)
+    const subscriptions = this.db.getCollection('subscriptions')
+    subscriptions.set(subscription.id, subscription)
+    this.db.save()
 
     return true
   }

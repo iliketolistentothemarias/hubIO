@@ -29,7 +29,7 @@ export class WebSocketService {
       path: '/api/realtime/socket.io',
     })
 
-    this.io.on('connection', (socket) => {
+    this.io.on('connection', (socket: any) => {
       console.log('Client connected:', socket.id)
 
       // Handle user authentication

@@ -56,7 +56,7 @@ export default function SocialFeed() {
   const [userId, setUserId] = useState<string | undefined>()
   useEffect(() => {
     const auth = require('@/lib/auth').getAuthService()
-    auth.getCurrentUser().then(user => {
+    auth.getCurrentUser().then((user: any) => {
       if (user) setUserId(user.id)
     })
   }, [])

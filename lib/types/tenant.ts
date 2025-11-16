@@ -2,6 +2,13 @@
  * Multi-Tenant Types
  */
 
+export interface ApiResponse<T = any> {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
 export interface Tenant {
   id: string
   name: string

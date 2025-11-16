@@ -20,7 +20,7 @@ export class EncryptionService {
     const salt = crypto.randomBytes(this.saltLength)
     const keyDerived = crypto.pbkdf2Sync(key, salt, 100000, this.keyLength, 'sha512')
     const iv = crypto.randomBytes(this.ivLength)
-    const cipher = crypto.createCipheriv(this.algorithm, keyDerived, iv)
+    const cipher = crypto.createCipheriv(this.algorithm, keyDerived, iv) as crypto.CipherGCM
 
     let encrypted = cipher.update(text, 'utf8', 'hex')
     encrypted += cipher.final('hex')
@@ -44,7 +44,7 @@ export class EncryptionService {
     const tag = Buffer.from(tagHex, 'hex')
     const keyDerived = crypto.pbkdf2Sync(key, salt, 100000, this.keyLength, 'sha512')
 
-    const decipher = crypto.createDecipheriv(this.algorithm, keyDerived, iv)
+    const decipher = crypto.createDecipheriv(this.algorithm, keyDerived, iv) as crypto.DecipherGCM
     decipher.setAuthTag(tag)
 
     let decrypted = decipher.update(encrypted, 'hex', 'utf8')

@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       const dbInternal = (db as any).db
       actions = dbInternal?.moderationActions 
         ? Array.from(dbInternal.moderationActions.values())
-            .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+            .sort((a: any, b: any) => b.createdAt.getTime() - a.createdAt.getTime())
         : []
     }
 

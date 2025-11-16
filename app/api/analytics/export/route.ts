@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const range = searchParams.get('range') || '30d'
 
     // Get data
-    const users = Array.from(db['users'].values() || [])
+    const users = db.getAllUsers()
     const resources = db.getAllResources()
     const events = db.getUpcomingEvents()
 

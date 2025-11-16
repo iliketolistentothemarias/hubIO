@@ -57,6 +57,8 @@ export interface Database {
   tenantUsers: Map<string, any>
   subscriptions: Map<string, any>
   usage: Map<string, any>
+  apiKeys: Map<string, any>
+  apiUsage: Map<string, any>
 }
 
 /**
@@ -104,6 +106,8 @@ export function initializeDatabase(): Database {
     tenantUsers: new Map(),
     subscriptions: new Map(),
     usage: new Map(),
+    apiKeys: new Map(),
+    apiUsage: new Map(),
   }
 }
 
@@ -211,6 +215,10 @@ export class DatabaseService {
     this.db.users.set(id, updated)
     this.saveToStorage()
     return updated
+  }
+
+  getAllUsers(): User[] {
+    return Array.from(this.db.users.values())
   }
 
   // ========================================================================
@@ -407,6 +415,10 @@ export class DatabaseService {
 
   getDonation(id: string): Donation | undefined {
     return this.db.donations.get(id)
+  }
+
+  getAllDonations(): Donation[] {
+    return Array.from(this.db.donations.values())
   }
 
   // ========================================================================
@@ -780,6 +792,10 @@ export class DatabaseService {
     return orders.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
   }
 
+  getAllOrders(): Order[] {
+    return Array.from(this.db.orders.values())
+  }
+
   createCommission(commission: Commission): Commission {
     this.db.commissions.set(commission.id, commission)
     this.saveToStorage()
@@ -794,6 +810,20 @@ export class DatabaseService {
       }
     }
     return commissions.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  }
+
+  /**
+   * Get direct access to database collections (for advanced use cases)
+   */
+  getCollection<K extends keyof Database>(collectionName: K): Database[K] {
+    return this.db[collectionName]
+  }
+
+  /**
+   * Save changes to storage
+   */
+  save(): void {
+    this.saveToStorage()
   }
 }
 

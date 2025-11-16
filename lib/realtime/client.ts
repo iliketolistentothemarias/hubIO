@@ -73,7 +73,7 @@ export function useSocket(options: UseSocketOptions = {}) {
       onDisconnect?.()
     })
 
-    newSocket.on('connect_error', (error) => {
+    newSocket.on('connect_error', (error: any) => {
       console.error('Socket connection error:', error)
       reconnectAttempts.current++
       if (reconnectAttempts.current >= maxReconnectAttempts) {
@@ -81,7 +81,7 @@ export function useSocket(options: UseSocketOptions = {}) {
       }
     })
 
-    newSocket.on('authenticated', (data) => {
+    newSocket.on('authenticated', (data: any) => {
       console.log('Socket authenticated:', data)
     })
 

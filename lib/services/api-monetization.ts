@@ -92,8 +92,9 @@ export class APIMonetizationService {
       createdAt: new Date(),
     }
 
-    this.db['apiKeys'] = this.db['apiKeys'] || new Map()
-    this.db['apiKeys'].set(apiKey.id, apiKey)
+    const apiKeys = this.db.getCollection('apiKeys')
+    apiKeys.set(apiKey.id, apiKey)
+    this.db.save()
 
     return apiKey
   }
@@ -102,10 +103,10 @@ export class APIMonetizationService {
    * Get API Key
    */
   getAPIKey(key: string): APIKey | undefined {
-    if (!this.db['apiKeys']) return undefined
-    for (const apiKey of this.db['apiKeys'].values()) {
-      if (apiKey.key === key && apiKey.active) {
-        return apiKey
+    const apiKeys = this.db.getCollection('apiKeys')
+    for (const apiKey of apiKeys.values()) {
+      if ((apiKey as any).key === key && (apiKey as any).active) {
+        return apiKey as any
       }
     }
     return undefined
@@ -115,9 +116,9 @@ export class APIMonetizationService {
    * Get User API Keys
    */
   getUserAPIKeys(userId: string): APIKey[] {
-    if (!this.db['apiKeys']) return []
+    const apiKeys = this.db.getCollection('apiKeys')
     const keys: APIKey[] = []
-    for (const key of this.db['apiKeys'].values()) {
+    for (const key of apiKeys.values()) {
       if (key.userId === userId) {
         keys.push(key)
       }
@@ -165,16 +166,18 @@ export class APIMonetizationService {
       timestamp: new Date(),
     }
 
-    this.db['apiUsage'] = this.db['apiUsage'] || new Map()
-    this.db['apiUsage'].set(usage.id, usage)
+    const apiUsage = this.db.getCollection('apiUsage')
+    apiUsage.set(usage.id, usage)
 
     // Update API key usage
-    const apiKey = this.db['apiKeys']?.get(apiKeyId)
+    const apiKeys = this.db.getCollection('apiKeys')
+    const apiKey = apiKeys.get(apiKeyId) as any
     if (apiKey) {
       apiKey.usage.requests++
       apiKey.lastUsedAt = new Date()
-      this.db['apiKeys'].set(apiKeyId, apiKey)
+      apiKeys.set(apiKeyId, apiKey)
     }
+    this.db.save()
   }
 
   /**
@@ -187,22 +190,25 @@ export class APIMonetizationService {
     averageResponseTime: number
     endpoints: Record<string, number>
   } {
-    if (!this.db['apiUsage']) {
+    const apiUsageCollection = this.db.getCollection('apiUsage')
+    
+    const currentPeriod = period || new Date().toISOString().slice(0, 7)
+    const usages: APIUsage[] = []
+
+    for (const usage of apiUsageCollection.values()) {
+      const apiUsage = usage as any
+      if (apiUsage.apiKeyId === apiKeyId && apiUsage.timestamp.toISOString().slice(0, 7) === currentPeriod) {
+        usages.push(apiUsage)
+      }
+    }
+    
+    if (usages.length === 0) {
       return {
         totalRequests: 0,
         successfulRequests: 0,
         failedRequests: 0,
         averageResponseTime: 0,
         endpoints: {},
-      }
-    }
-
-    const currentPeriod = period || new Date().toISOString().slice(0, 7)
-    const usages: APIUsage[] = []
-
-    for (const usage of this.db['apiUsage'].values()) {
-      if (usage.apiKeyId === apiKeyId && usage.timestamp.toISOString().slice(0, 7) === currentPeriod) {
-        usages.push(usage)
       }
     }
 

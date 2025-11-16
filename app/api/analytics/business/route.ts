@@ -51,25 +51,25 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate metrics
-    const users = Array.from(db['users'].values() || [])
+    const users = db.getAllUsers()
     const resources = db.getAllResources()
     const events = db.getUpcomingEvents()
-    const donations = Array.from(db['donations'].values() || [])
-    const orders = Array.from(db['orders'].values() || [])
+    const donations = db.getAllDonations()
+    const orders = db.getAllOrders()
 
     const revenue = donations
-      .filter(d => d.createdAt >= startDate)
-      .reduce((sum, d) => sum + d.amount, 0) +
+      .filter((d: any) => d.createdAt >= startDate)
+      .reduce((sum: number, d: any) => sum + d.amount, 0) +
       orders
-        .filter(o => o.createdAt >= startDate)
-        .reduce((sum, o) => sum + o.total, 0)
+        .filter((o: any) => o.createdAt >= startDate)
+        .reduce((sum: number, o: any) => sum + o.total, 0)
 
     const metrics = {
       users: users.length,
-      activeUsers: users.filter(u => u.lastActiveAt >= startDate).length,
+      activeUsers: users.filter((u: any) => u.lastActiveAt && u.lastActiveAt >= startDate).length,
       resources: resources.length,
       events: events.length,
-      donations: donations.filter(d => d.createdAt >= startDate).length,
+      donations: donations.filter((d: any) => d.createdAt >= startDate).length,
       revenue,
       growth: 12.5, // Calculated growth percentage
       trends: {

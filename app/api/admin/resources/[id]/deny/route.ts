@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { ApiResponse } from '@/lib/types'
+import { ModerationAction } from '@/lib/types/moderation'
 
 /**
  * POST /api/admin/resources/[id]/deny
@@ -107,7 +108,6 @@ export async function POST(
     try {
       const { getDatabase } = await import('@/lib/db/schema')
       const db = getDatabase()
-      const { ModerationAction } = await import('@/lib/types/moderation')
       
       const action: ModerationAction = {
         id: `mod_${Date.now()}`,
@@ -115,7 +115,7 @@ export async function POST(
         itemId: resourceId,
         action: 'reject',
         adminId: session.user.id,
-        adminName: user?.name || 'Admin',
+        adminName: (user as any)?.name || 'Admin',
         reason,
         automated: false,
         createdAt: new Date(),

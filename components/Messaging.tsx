@@ -40,7 +40,7 @@ export default function Messaging({ minimized = false, onMinimize }: MessagingPr
   useEffect(() => {
     // Get current user ID
     const auth = require('@/lib/auth').getAuthService()
-    auth.getCurrentUser().then(user => {
+    auth.getCurrentUser().then((user: any) => {
       if (user) setUserId(user.id)
     })
   }, [])

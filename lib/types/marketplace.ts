@@ -2,6 +2,13 @@
  * Marketplace Types
  */
 
+export interface ApiResponse<T = any> {
+  success: boolean
+  data?: T
+  error?: string
+  message?: string
+}
+
 export interface Vendor {
   id: string
   name: string
@@ -30,6 +37,8 @@ export interface Product {
   tags: string[]
   featured: boolean
   status: 'active' | 'inactive' | 'sold-out'
+  rating?: number
+  reviewCount?: number
   createdAt: Date
   updatedAt: Date
 }

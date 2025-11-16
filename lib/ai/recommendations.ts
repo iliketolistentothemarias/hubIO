@@ -256,11 +256,11 @@ export class RecommendationEngine {
     const similarities: UserSimilarity[] = []
 
     // Get all users
-    const allUsers = Array.from(this.db['users'].values() || [])
-      .filter(u => u.id !== userId)
+    const allUsers = this.db.getAllUsers()
+      .filter((u: any) => u.id !== userId)
 
     for (const user of allUsers) {
-      const userInteractions = this.getUserInteractions(user.id)
+      const userInteractions = this.getUserInteractions((user as any).id)
       const similarity = this.calculateCosineSimilarity(
         targetInteractions,
         userInteractions
@@ -268,7 +268,7 @@ export class RecommendationEngine {
 
       if (similarity > 0) {
         similarities.push({
-          userId: user.id,
+          userId: (user as any).id,
           similarity,
         })
       }
@@ -417,8 +417,9 @@ export class RecommendationEngine {
   ): void {
     // In production, would log to analytics service
     // For now, store in recommendations table
+    const recommendationsCollection = this.db.getCollection('recommendations')
     for (const rec of recommendations) {
-      this.db['recommendations'].set(rec.id, {
+      recommendationsCollection.set(rec.id, {
         ...rec,
         metadata: {
           algorithm,
@@ -426,6 +427,7 @@ export class RecommendationEngine {
         },
       })
     }
+    this.db.save()
   }
 
   /**

@@ -514,7 +514,7 @@ export const seedActivities: Omit<Activity, 'createdAt'>[] = [
     action: 'joined',
     targetId: 'group-1',
     targetName: 'South Fayette Volunteers',
-    targetType: 'group',
+    targetType: 'volunteer',
   },
   {
     id: 'activity-11',

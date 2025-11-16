@@ -14,8 +14,9 @@ export class TenantService {
    * Create Tenant
    */
   createTenant(tenant: Tenant): Tenant {
-    this.db['tenants'] = this.db['tenants'] || new Map()
-    this.db['tenants'].set(tenant.id, tenant)
+    const tenants = this.db.getCollection('tenants')
+    tenants.set(tenant.id, tenant)
+    this.db.save()
     return tenant
   }
 
@@ -23,18 +24,19 @@ export class TenantService {
    * Get Tenant
    */
   getTenant(id: string): Tenant | undefined {
-    if (!this.db['tenants']) return undefined
-    return this.db['tenants'].get(id)
+    const tenants = this.db.getCollection('tenants')
+    return tenants.get(id) as any
   }
 
   /**
    * Get Tenant by Slug
    */
   getTenantBySlug(slug: string): Tenant | undefined {
-    if (!this.db['tenants']) return undefined
-    for (const tenant of this.db['tenants'].values()) {
-      if (tenant.slug === slug) {
-        return tenant
+    const tenants = this.db.getCollection('tenants')
+    for (const tenant of tenants.values()) {
+      const t = tenant as any
+      if (t.slug === slug) {
+        return t
       }
     }
     return undefined
@@ -44,10 +46,11 @@ export class TenantService {
    * Get Tenant by Domain
    */
   getTenantByDomain(domain: string): Tenant | undefined {
-    if (!this.db['tenants']) return undefined
-    for (const tenant of this.db['tenants'].values()) {
-      if (tenant.domain === domain) {
-        return tenant
+    const tenants = this.db.getCollection('tenants')
+    for (const tenant of tenants.values()) {
+      const t = tenant as any
+      if (t.domain === domain) {
+        return t
       }
     }
     return undefined
@@ -57,12 +60,13 @@ export class TenantService {
    * Update Tenant
    */
   updateTenant(id: string, updates: Partial<Tenant>): Tenant | undefined {
-    if (!this.db['tenants']) return undefined
-    const tenant = this.db['tenants'].get(id)
+    const tenants = this.db.getCollection('tenants')
+    const tenant = tenants.get(id) as any
     if (!tenant) return undefined
 
     const updated = { ...tenant, ...updates, updatedAt: new Date() }
-    this.db['tenants'].set(id, updated)
+    tenants.set(id, updated)
+    this.db.save()
     return updated
   }
 
@@ -70,8 +74,9 @@ export class TenantService {
    * Add User to Tenant
    */
   addTenantUser(tenantUser: TenantUser): TenantUser {
-    this.db['tenantUsers'] = this.db['tenantUsers'] || new Map()
-    this.db['tenantUsers'].set(tenantUser.id, tenantUser)
+    const tenantUsers = this.db.getCollection('tenantUsers')
+    tenantUsers.set(tenantUser.id, tenantUser)
+    this.db.save()
     return tenantUser
   }
 
@@ -79,11 +84,12 @@ export class TenantService {
    * Get Tenant Users
    */
   getTenantUsers(tenantId: string): TenantUser[] {
-    if (!this.db['tenantUsers']) return []
+    const tenantUsers = this.db.getCollection('tenantUsers')
     const users: TenantUser[] = []
-    for (const user of this.db['tenantUsers'].values()) {
-      if (user.tenantId === tenantId) {
-        users.push(user)
+    for (const user of tenantUsers.values()) {
+      const tu = user as any
+      if (tu.tenantId === tenantId) {
+        users.push(tu)
       }
     }
     return users
@@ -93,21 +99,23 @@ export class TenantService {
    * Get User Tenants
    */
   getUserTenants(userId: string): Tenant[] {
-    if (!this.db['tenantUsers'] || !this.db['tenants']) return []
+    const tenantUsers = this.db.getCollection('tenantUsers')
+    const tenants = this.db.getCollection('tenants')
     
     const tenantIds = new Set<string>()
-    for (const tenantUser of this.db['tenantUsers'].values()) {
-      if (tenantUser.userId === userId) {
-        tenantIds.add(tenantUser.tenantId)
+    for (const tenantUser of tenantUsers.values()) {
+      const tu = tenantUser as any
+      if (tu.userId === userId) {
+        tenantIds.add(tu.tenantId)
       }
     }
 
-    const tenants: Tenant[] = []
+    const result: Tenant[] = []
     for (const tenantId of tenantIds) {
-      const tenant = this.db['tenants'].get(tenantId)
-      if (tenant) tenants.push(tenant)
+      const tenant = tenants.get(tenantId) as any
+      if (tenant) result.push(tenant)
     }
-    return tenants
+    return result
   }
 
   /**

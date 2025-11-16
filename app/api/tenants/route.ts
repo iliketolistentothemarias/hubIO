@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTenantService } from '@/lib/services/tenant'
 import { requireAuth } from '@/lib/auth'
-import { ApiResponse, Tenant } from '@/lib/types/tenant'
+import { ApiResponse, Tenant, TenantUser } from '@/lib/types/tenant'
 
 const tenantService = getTenantService()
 
@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
     tenantService.createTenant(tenant)
 
     // Add creator as admin
-    const { TenantUser } = await import('@/lib/types/tenant')
     const tenantUser: TenantUser = {
       id: `tu_${Date.now()}_${user.id}`,
       tenantId: tenant.id,

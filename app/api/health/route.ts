@@ -17,7 +17,7 @@ const db = getDatabase()
 export async function GET(request: NextRequest) {
   try {
     // Check database connectivity
-    const users = Array.from(db['users'].values() || [])
+    const users = db.getAllUsers()
     
     const health = {
       status: 'healthy',
