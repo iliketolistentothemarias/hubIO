@@ -12,7 +12,6 @@ import Gallery from '@/components/Gallery'
 import Fundraising from '@/components/Fundraising'
 import CommunityBoard from '@/components/CommunityBoard'
 import VolunteerOpportunities from '@/components/VolunteerOpportunities'
-import AIAssistant from '@/components/AIAssistant'
 import { allResources as resources } from '@/data/resources'
 
 export default function Home() {
@@ -383,9 +382,6 @@ export default function Home() {
 
       {/* Gallery Section */}
       <Gallery />
-
-      {/* AI Assistant - Floating */}
-      <AIAssistant />
     </div>
   )
 }

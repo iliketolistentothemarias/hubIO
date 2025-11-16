@@ -27,10 +27,10 @@ HubIO is built as a **production-ready, full-stack web application** using moder
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                      BUSINESS LOGIC LAYER                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Database    │  │  AI Engine   │  │  Analytics  │      │
-│  │  Service     │  │  (Recs/Bot)  │  │  Service    │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│  ┌──────────────┐  ┌──────────────┐                        │
+│  │  Database    │  │  Analytics  │                         │
+│  │  Service     │  │  Service    │                         │
+│  └──────────────┘  └──────────────┘                        │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼

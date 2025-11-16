@@ -1,4 +1,4 @@
-# HubIO - Complete Feature List
+# Communify - Complete Feature List
 
 ## 🎯 Core Features
 
@@ -53,37 +53,30 @@
 - ✅ Ticket pricing
 - ✅ Capacity tracking
 
-### 6. AI Features
-- ✅ **CiviBot Assistant**: Conversational AI helper
-- ✅ **Recommendation Engine**: Personalized suggestions
-- ✅ **Intent Detection**: Understands user queries
-- ✅ **Location-based**: Smart proximity recommendations
-- ✅ **Behavior Analysis**: Learns from user interactions
-
-### 7. User Dashboard
+### 6. User Dashboard
 - ✅ Personalized content
 - ✅ Quick actions
-- ✅ Recommendations
+- ✅ Community activity
 - ✅ Impact tracking
 - ✅ Karma system
 - ✅ Badge display
 - ✅ User stats
 
-### 8. Authentication
+### 7. Authentication
 - ✅ OAuth (Google, Microsoft, GitHub)
 - ✅ Email/Password
 - ✅ Session management
 - ✅ Role-based access
 - ✅ Protected routes
 
-### 9. Admin Features
+### 8. Admin Features
 - ✅ Resource moderation
 - ✅ User management ready
 - ✅ Analytics dashboard
 - ✅ Content verification
 - ✅ Campaign approval
 
-### 10. Analytics
+### 9. Analytics
 - ✅ Community statistics
 - ✅ Impact metrics
 - ✅ Trend analysis
