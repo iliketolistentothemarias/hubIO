@@ -57,6 +57,8 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
     };
 
+    console.log('Login successful for user:', user.email, 'with role:', user.role);
+
     const nextResponse = NextResponse.json(response, { status: 200 });
     
     // Set token in HTTP-only cookie for security
@@ -67,6 +69,8 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',
     });
+
+    console.log('Auth cookie set, returning response');
 
     return nextResponse;
   } catch (error: any) {

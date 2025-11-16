@@ -54,33 +54,34 @@ function LoginContent() {
         return
       }
 
+      console.log('Login successful, data:', data)
+
       // Store token in localStorage for client-side access
       if (data.data?.token) {
         localStorage.setItem('auth_token', data.data.token)
         localStorage.setItem('user', JSON.stringify(data.data.user))
+        console.log('Stored auth token and user in localStorage')
       }
 
-      // Small delay to ensure storage is complete
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Check if there's a redirect URL in query params or session storage
+      // Determine redirect URL
       const urlParams = new URLSearchParams(window.location.search)
       const redirectParam = urlParams.get('redirect')
       const redirectUrl = redirectParam || sessionStorage.getItem('redirectAfterLogin')
       
+      let finalRedirect = '/dashboard'
+      
       if (redirectUrl) {
         sessionStorage.removeItem('redirectAfterLogin')
         sessionStorage.removeItem('pendingAction')
-        window.location.href = redirectUrl
-      } else {
-        // Check if user is admin and redirect to admin panel
-        if (data.data?.user?.role === 'admin' || data.data?.user?.role === 'moderator') {
-          window.location.href = '/admin'
-        } else {
-          // Redirect to dashboard
-          window.location.href = '/dashboard'
-        }
+        finalRedirect = redirectUrl
+      } else if (data.data?.user?.role === 'admin' || data.data?.user?.role === 'moderator') {
+        finalRedirect = '/admin'
       }
+
+      console.log('Redirecting to:', finalRedirect)
+      
+      // Use router.push for client-side navigation
+      router.push(finalRedirect)
     } catch (err: any) {
       console.error('Login error:', err)
       setError(err.message || 'An unexpected error occurred')
