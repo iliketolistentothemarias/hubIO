@@ -37,6 +37,7 @@ function LoginContent() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include', // Important for cookies
       })
 
       const data = await response.json()
@@ -47,26 +48,16 @@ function LoginContent() {
         return
       }
 
-      // Store session in Supabase client
-      if (data.data?.session) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.data.session.access_token,
-          refresh_token: data.data.session.refresh_token,
-        })
-
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          setError('Failed to establish session')
-          setIsLoading(false)
-          return
-        }
+      // Store token in localStorage for client-side access
+      if (data.data?.token) {
+        localStorage.setItem('auth_token', data.data.token)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
       }
 
       // Check if there's a redirect URL in query params or session storage
       const urlParams = new URLSearchParams(window.location.search)
       const redirectParam = urlParams.get('redirect')
       const redirectUrl = redirectParam || sessionStorage.getItem('redirectAfterLogin')
-      const pendingAction = sessionStorage.getItem('pendingAction')
       
       if (redirectUrl) {
         sessionStorage.removeItem('redirectAfterLogin')

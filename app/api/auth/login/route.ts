@@ -57,7 +57,18 @@ export async function POST(request: NextRequest) {
       message: 'Login successful',
     };
 
-    return NextResponse.json(response, { status: 200 });
+    const nextResponse = NextResponse.json(response, { status: 200 });
+    
+    // Set token in HTTP-only cookie for security
+    nextResponse.cookies.set('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/',
+    });
+
+    return nextResponse;
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
