@@ -1,147 +1,64 @@
-/**
- * Login API Route
- * 
- * Handles user authentication with email and password.
- * Returns session token and user data.
- */
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db/helpers';
+import { ApiResponse } from '@/lib/types';
+import { sign } from 'jsonwebtoken';
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
-import { ApiResponse } from '@/lib/types'
+if (!process.env.JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET environment variable is not set');
+}
+
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomUUID();
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { email, password } = body
+    const body = await request.json();
+    const { email, password } = body;
 
-    // Validate input
     if (!email || !password) {
       return NextResponse.json(
         { success: false, error: 'Email and password are required' },
         { status: 400 }
-      )
+      );
     }
 
-    // Create server client
-    const supabase = createServerClient(request)
+    const user = await db.users.verifyPassword(email, password);
 
-    // Sign in with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
-    if (authError) {
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: authError.message || 'Invalid email or password' },
+        { success: false, error: 'Invalid email or password' },
         { status: 401 }
-      )
+      );
     }
 
-    if (!authData.user || !authData.session) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to create session' },
-        { status: 500 }
-      )
-    }
+    await db.users.updateLastActive(user.id);
 
-    // Get user profile from database
-    const { data: userProfile, error: profileError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authData.user.id)
-      .maybeSingle()
+    const token = sign(
+      { userId: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
 
-    if (profileError || !userProfile) {
-      console.error('Failed to fetch user profile:', profileError)
-      // If profile doesn't exist, create it
-      const { error: createError, data: createData } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: authData.user.email!,
-          name: authData.user.user_metadata?.name || authData.user.email!.split('@')[0],
-          role: 'resident',
-          karma: 0,
-          created_at: new Date().toISOString(),
-          last_active_at: new Date().toISOString(),
-        })
-        .select()
-        .single()
-
-      if (createError) {
-        // Try to fetch again in case trigger created it
-        const { data: retryProfile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authData.user.id)
-          .maybeSingle()
-        
-        if (!retryProfile) {
-          return NextResponse.json(
-            { success: false, error: 'Failed to load user profile' },
-            { status: 500 }
-          )
-        }
-        
-        // Use the retry profile
-        const response: ApiResponse<{ user: any; session: any }> = {
-          success: true,
-          data: {
-            user: retryProfile,
-            session: authData.session,
-          },
-        }
-        return NextResponse.json(response)
-      }
-
-      // Use the newly created profile
-      const newProfile = createData
-
-      // Update last_active_at
-      await supabase
-        .from('users')
-        .update({ last_active_at: new Date().toISOString() })
-        .eq('id', authData.user.id)
-
-      const response: ApiResponse<{ user: any; session: any }> = {
-        success: true,
-        data: {
-          user: newProfile || {
-            id: authData.user.id,
-            email: authData.user.email,
-            name: authData.user.user_metadata?.name || authData.user.email!.split('@')[0],
-            role: 'resident',
-            karma: 0,
-          },
-          session: authData.session,
-        },
-      }
-
-      return NextResponse.json(response)
-    }
-
-    // Update last_active_at
-    await supabase
-      .from('users')
-      .update({ last_active_at: new Date().toISOString() })
-      .eq('id', authData.user.id)
-
-    const response: ApiResponse<{ user: any; session: any }> = {
+    const response: ApiResponse<{ user: any; token: string }> = {
       success: true,
       data: {
-        user: userProfile,
-        session: authData.session,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatar: user.avatar,
+          karma: user.karma,
+        },
+        token,
       },
-    }
+    };
 
-    return NextResponse.json(response)
+    return NextResponse.json(response);
   } catch (error: any) {
-    console.error('Login error:', error)
+    console.error('Login error:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'An unexpected error occurred' },
       { status: 500 }
-    )
+    );
   }
 }
-
