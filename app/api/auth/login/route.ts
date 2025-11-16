@@ -1,13 +1,13 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db/helpers';
 import { ApiResponse } from '@/lib/types';
-import { sign } from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import Database from '@replit/database';
 
-if (!process.env.JWT_SECRET) {
-  console.error('CRITICAL: JWT_SECRET environment variable is not set');
-}
+const db = new Database();
 
-const JWT_SECRET = process.env.JWT_SECRET || crypto.randomUUID();
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await db.users.verifyPassword(email, password);
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Get user from Replit DB
+    const user = await db.get(`user:${normalizedEmail}`);
 
     if (!user) {
       return NextResponse.json(
@@ -30,9 +33,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    await db.users.updateLastActive(user.id);
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
 
-    const token = sign(
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
+
+    // Update last active
+    user.lastActiveAt = new Date().toISOString();
+    await db.set(`user:${normalizedEmail}`, user);
+    await db.set(`user:id:${user.id}`, user);
+
+    // Generate JWT token
+    const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -46,18 +63,17 @@ export async function POST(request: NextRequest) {
           email: user.email,
           name: user.name,
           role: user.role,
-          avatar: user.avatar,
-          karma: user.karma,
         },
         token,
       },
+      message: 'Login successful',
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, { status: 200 });
   } catch (error: any) {
     console.error('Login error:', error);
     return NextResponse.json(
-      { success: false, error: error.message || 'An unexpected error occurred' },
+      { success: false, error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }

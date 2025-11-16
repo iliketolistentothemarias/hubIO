@@ -1,190 +1,144 @@
-/**
- * Admin Users API
- * 
- * Manage admin users (add/remove admins)
- */
+import { NextRequest, NextResponse } from 'next/server';
+import { ApiResponse } from '@/lib/types';
+import jwt from 'jsonwebtoken';
+import Database from '@replit/database';
 
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/server'
-import { ApiResponse } from '@/lib/types'
+const db = new Database();
 
-/**
- * GET /api/admin/users
- * 
- * Get all users (admin only)
- */
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient(request)
-    
-    // Check authentication
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
-      )
+      );
     }
 
-    // Check if user is admin
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.user.id)
-      .maybeSingle()
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const currentUser = await db.get(`user:id:${decoded.userId}`);
 
-    if (userError || !user || user.role !== 'admin') {
+    if (!currentUser || currentUser.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }
-      )
+      );
     }
 
-    // Try to use admin client if available, otherwise use regular client
-    let client = supabase
-    try {
-      const adminClient = createAdminClient()
-      client = adminClient
-    } catch (error) {
-      // Fall back to regular client
-      console.warn('Admin client not available, using regular client')
-    }
+    // Get all users from Replit DB
+    const allKeys = await db.list('user:');
+    const users = [];
 
-    // Get all users
-    const { data: users, error: usersError } = await client
-      .from('users')
-      .select('id, email, name, role, created_at')
-      .order('created_at', { ascending: false })
-
-    if (usersError) {
-      console.error('Error fetching users:', usersError)
-      // Return empty array if table doesn't exist
-      if (usersError.code === 'PGRST204' || usersError.message?.includes('relation') || usersError.message?.includes('schema cache')) {
-        return NextResponse.json(
-          { success: true, data: [] },
-          { status: 200 }
-        )
+    for (const key of allKeys) {
+      if (key.startsWith('user:') && !key.startsWith('user:id:')) {
+        const user = await db.get(key);
+        if (user) {
+          users.push({
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            created_at: user.createdAt,
+          });
+        }
       }
-      return NextResponse.json(
-        { success: false, error: 'Failed to fetch users' },
-        { status: 500 }
-      )
     }
 
     const response: ApiResponse<any> = {
       success: true,
-      data: users || [],
-    }
+      data: users,
+    };
 
-    return NextResponse.json(response)
+    return NextResponse.json(response);
   } catch (error: any) {
-    console.error('Error fetching users:', error)
+    console.error('Error fetching users:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch users' },
       { status: 500 }
-    )
+    );
   }
 }
 
-/**
- * POST /api/admin/users
- * 
- * Update user role (make admin or remove admin)
- */
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient(request)
-    
-    // Check authentication
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
         { status: 401 }
-      )
+      );
     }
 
-    // Check if user is admin
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('role')
-      .eq('id', session.user.id)
-      .maybeSingle()
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const currentUser = await db.get(`user:id:${decoded.userId}`);
 
-    if (userError || !user || user.role !== 'admin') {
+    if (!currentUser || currentUser.role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Admin access required' },
         { status: 403 }
-      )
+      );
     }
 
-    const body = await request.json()
-    const { userId, role } = body
+    const body = await request.json();
+    const { userId, role } = body;
 
     if (!userId || !role) {
       return NextResponse.json(
         { success: false, error: 'User ID and role are required' },
         { status: 400 }
-      )
+      );
     }
 
-    // Validate role
-    const validRoles = ['resident', 'volunteer', 'organizer', 'admin', 'moderator']
+    const validRoles = ['resident', 'volunteer', 'organizer', 'admin', 'moderator'];
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { success: false, error: 'Invalid role' },
         { status: 400 }
-      )
+      );
     }
 
-    // Prevent removing your own admin status
-    if (userId === session.user.id && role !== 'admin') {
+    if (userId === decoded.userId && role !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'You cannot remove your own admin status' },
         { status: 400 }
-      )
+      );
     }
 
-    // Try to use admin client if available, otherwise use regular client
-    let client = supabase
-    try {
-      const adminClient = createAdminClient()
-      client = adminClient
-    } catch (error) {
-      // Fall back to regular client
-      console.warn('Admin client not available, using regular client')
-    }
-
-    // Update user role
-    const { data: updatedUser, error: updateError } = await client
-      .from('users')
-      .update({ role })
-      .eq('id', userId)
-      .select()
-      .maybeSingle()
-
-    if (updateError) {
-      console.error('Error updating user role:', updateError)
+    const user = await db.get(`user:id:${userId}`);
+    if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Failed to update user role' },
-        { status: 500 }
-      )
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
     }
+
+    user.role = role;
+    await db.set(`user:${user.email}`, user);
+    await db.set(`user:id:${user.id}`, user);
 
     const response: ApiResponse<any> = {
       success: true,
       message: `User role updated to ${role}`,
-      data: updatedUser,
-    }
+      data: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    };
 
-    return NextResponse.json(response)
+    return NextResponse.json(response);
   } catch (error: any) {
-    console.error('Error updating user role:', error)
+    console.error('Error updating user role:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update user role' },
       { status: 500 }
-    )
+    );
   }
 }
-

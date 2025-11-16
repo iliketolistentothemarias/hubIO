@@ -1,6 +1,10 @@
+
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db/helpers';
 import { ApiResponse } from '@/lib/types';
+import bcrypt from 'bcryptjs';
+import Database from '@replit/database';
+
+const db = new Database();
 
 const signupCooldown = new Map<string, number>();
 const COOLDOWN_SECONDS = 10;
@@ -54,7 +58,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const existingUser = await db.users.findByEmail(normalizedEmail);
+    // Check if user already exists
+    const existingUser = await db.get(`user:${normalizedEmail}`);
     if (existingUser) {
       return NextResponse.json(
         { success: false, error: 'Email already registered' },
@@ -62,7 +67,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await db.users.create(normalizedEmail, name, password);
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = {
+      id: `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      email: normalizedEmail,
+      name,
+      passwordHash,
+      role: 'resident',
+      karma: 0,
+      createdAt: new Date().toISOString(),
+      lastActiveAt: new Date().toISOString(),
+    };
+
+    // Store user in Replit DB
+    await db.set(`user:${normalizedEmail}`, user);
+    await db.set(`user:id:${user.id}`, user);
 
     signupCooldown.set(normalizedEmail, Date.now());
 
