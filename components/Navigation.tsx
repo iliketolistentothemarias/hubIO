@@ -207,38 +207,6 @@ export default function Navigation() {
               )}
             </Link>
 
-            {/* Auth Buttons */}
-            {!isAuthenticated ? (
-              <div className="flex items-center gap-2">
-                <Link href="/login">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 
-                             hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
-                  >
-                    <LogIn className="w-4 h-4" />
-                    Sign In
-                  </motion.button>
-                </Link>
-                <Link href="/signup">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white 
-                             bg-[#8B6F47] dark:bg-[#D4A574] rounded-lg hover:bg-[#7A5F3A] dark:hover:bg-[#C49564] 
-                             transition-all shadow-sm hover:shadow-md"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    Sign Up
-                  </motion.button>
-                </Link>
-              </div>
-            ) : null}
-
-            {/* Notifications */}
-            {isAuthenticated && <Notifications />}
-
             {/* Dark Mode Toggle */}
             <motion.button
               whileHover={{ scale: 1.05 }}
