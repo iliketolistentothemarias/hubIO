@@ -1,83 +1,22 @@
 'use client'
 
 /**
- * Personalized Dashboard Component
+ * Dashboard Component - UI Showcase
  * 
- * Displays personalized content based on user type and preferences.
- * Shows quick actions and community stats.
+ * Static UI demonstration of dashboard layout with no functionality.
  */
 
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Search, Heart, Calendar, DollarSign, HandHeart, 
-  Star, Users, ArrowRight 
+  Search, Calendar, DollarSign, HandHeart, 
+  Users, ArrowRight 
 } from 'lucide-react'
-import { getAuthService } from '@/lib/auth'
-import { User } from '@/lib/types'
 import LiquidGlass from './LiquidGlass'
 import Link from 'next/link'
 
 export default function Dashboard() {
-  const [user, setUser] = useState<User | null>(null)
-  const [stats, setStats] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const auth = getAuthService()
-        const currentUser = await auth.getCurrentUser()
-        setUser(currentUser)
-
-        if (currentUser) {
-          loadStats()
-        }
-      } catch (error) {
-        console.error('Error loading user:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    
-    loadUser()
-  }, [])
-
-  const loadStats = async () => {
-    try {
-      const response = await fetch('/api/analytics/stats')
-      const data = await response.json()
-      if (data.success) {
-        setStats(data.data)
-      }
-    } catch (error) {
-      console.error('Error loading stats:', error)
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] dark:bg-[#1C1B18]">
-        <div className="text-center">
-          <div className="animate-spin h-12 w-12 border-4 border-primary-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] dark:bg-[#1C1B18]">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to view your dashboard</p>
-          <Link href="/login" className="btn-primary">
-            Sign In
-          </Link>
-        </div>
-      </div>
-    )
-  }
+  // Static data for UI showcase
+  const user = { name: 'Sarah Johnson' }
 
   const quickActions = [
     { icon: Search, label: 'Find Resources', href: '/directory', color: 'bg-[#8B6F47] dark:bg-[#D4A574]' },
@@ -131,14 +70,13 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            {[
-              { label: 'Resources', value: stats.totalResources || 250, icon: Heart, color: 'text-primary-600' },
-              { label: 'Volunteers', value: stats.totalVolunteers || 150, icon: Users, color: 'text-green-600' },
-              { label: 'Funds Raised', value: `$${((stats.impactMetrics?.fundsRaised || 50000) / 1000).toFixed(1)}K`, icon: DollarSign, color: 'text-yellow-600' },
-              { label: 'Events', value: stats.totalEvents || 30, icon: Calendar, color: 'text-purple-600' },
-            ].map((stat, index) => {
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+          {[
+            { label: 'Resources', value: 250, icon: Users, color: 'text-primary-600' },
+            { label: 'Volunteers', value: 150, icon: Users, color: 'text-green-600' },
+            { label: 'Funds Raised', value: '$50K', icon: DollarSign, color: 'text-yellow-600' },
+            { label: 'Events', value: 30, icon: Calendar, color: 'text-purple-600' },
+          ].map((stat, index) => {
               const Icon = stat.icon
               return (
                 <motion.div
@@ -158,8 +96,7 @@ export default function Dashboard() {
                 </motion.div>
               )
             })}
-          </div>
-        )}
+        </div>
 
         {/* Recent Activity */}
         <motion.div
@@ -174,7 +111,7 @@ export default function Dashboard() {
           <LiquidGlass intensity="light">
             <div className="p-6">
               <div className="text-center text-gray-600 dark:text-gray-400 py-8">
-                <Heart className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
                 <p>No recent activity yet. Start exploring resources and events!</p>
                 <Link href="/directory" className="inline-block mt-4 text-primary-600 dark:text-primary-400 hover:underline">
                   Browse Resources

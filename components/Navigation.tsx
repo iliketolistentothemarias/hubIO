@@ -3,30 +3,18 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Heart, Moon, Sun, Star, Search, ChevronDown, LogIn, UserPlus } from 'lucide-react'
+import { Menu, X, Heart, Moon, Sun, Star, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
-import { getAuthService } from '@/lib/auth'
-import Notifications from '@/components/Notifications'
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   const pathname = usePathname()
   const { theme, toggleTheme } = useTheme()
   const { favorites } = useFavorites()
-
-  useEffect(() => {
-    const checkAuth = async () => {
-      const auth = getAuthService()
-      const authenticated = await auth.isAuthenticated()
-      setIsAuthenticated(authenticated)
-    }
-    checkAuth()
-  }, [pathname]) // Re-check when route changes
 
   useEffect(() => {
     const handleScroll = () => {
