@@ -36,11 +36,57 @@ function getInitials(name: string): string {
   return parts.slice(0, 2).map(n => n[0]).join('').toUpperCase()
 }
 
+// Sample static posts for UI showcase
+const samplePosts: (Post & { isLiked?: boolean; timeAgo?: string; commentCount?: number })[] = [
+  {
+    id: '1',
+    title: 'Community Garden Cleanup This Saturday',
+    content: 'Join us for a community garden cleanup! Bring your gloves and gardening tools. We\'ll provide refreshments.',
+    category: 'Events',
+    authorName: 'Sarah Johnson',
+    createdAt: new Date('2026-02-10'),
+    timeAgo: '2 days ago',
+    likes: 24,
+    commentCount: 8,
+    comments: [],
+    isLiked: false,
+    tags: ['Garden', 'Volunteer', 'Community'],
+  },
+  {
+    id: '2',
+    title: 'Looking for Volunteers - Food Bank',
+    content: 'Our local food bank needs volunteers this weekend. Great way to give back to the community!',
+    category: 'Volunteer',
+    authorName: 'Michael Chen',
+    createdAt: new Date('2026-02-09'),
+    timeAgo: '3 days ago',
+    likes: 42,
+    commentCount: 15,
+    comments: [],
+    isLiked: true,
+    tags: ['Volunteer', 'Food Bank', 'Help'],
+  },
+  {
+    id: '3',
+    title: 'New Coffee Shop Opening Downtown',
+    content: 'Excited to announce the opening of our new coffee shop! Come visit us for grand opening specials.',
+    category: 'Business',
+    authorName: 'Emily Rodriguez',
+    createdAt: new Date('2026-02-08'),
+    timeAgo: '4 days ago',
+    likes: 18,
+    commentCount: 6,
+    comments: [],
+    isLiked: false,
+    tags: ['Business', 'Coffee', 'New'],
+  },
+]
+
 export default function CommunityBoard() {
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<PostCategory | 'All'>('All')
-  const [posts, setPosts] = useState<(Post & { isLiked?: boolean; timeAgo?: string })[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [posts, setPosts] = useState<(Post & { isLiked?: boolean; timeAgo?: string })[]>(samplePosts)
+  const [isLoading, setIsLoading] = useState(false)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [expandedPostId, setExpandedPostId] = useState<string | null>(null)
   const [comments, setComments] = useState<Record<string, Comment[]>>({})
@@ -61,24 +107,12 @@ export default function CommunityBoard() {
   }, [selectedCategory])
 
   const loadPosts = async () => {
-    try {
-      setIsLoading(true)
-      const categoryParam = selectedCategory === 'All' ? '' : `?category=${selectedCategory}`
-      const response = await fetch(`/api/posts${categoryParam}`)
-      const result = await response.json()
-      
-      if (result.success) {
-        const postsWithTimeAgo = result.data.map((post: Post & { isLiked?: boolean }) => ({
-          ...post,
-          timeAgo: formatTimeAgo(new Date(post.createdAt)),
-        }))
-        setPosts(postsWithTimeAgo)
-      }
-    } catch (error) {
-      console.error('Error loading posts:', error)
-    } finally {
-      setIsLoading(false)
+    // Filter static posts by category
+    let filtered = samplePosts
+    if (selectedCategory !== 'All') {
+      filtered = samplePosts.filter(p => p.category === selectedCategory)
     }
+    setPosts(filtered)
   }
 
   const loadComments = async (postId: string) => {
