@@ -298,32 +298,6 @@ export default function Navigation() {
                   </span>
                 )}
               </Link>
-              
-              {/* Mobile Auth Buttons */}
-              {!isAuthenticated && (
-                <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
-                  <Link
-                    href="/login"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 py-2 px-4 font-medium text-gray-700 dark:text-gray-300 
-                             hover:text-primary-600 dark:hover:text-primary-400 transition-colors rounded-lg
-                             hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    <LogIn className="w-5 h-5" />
-                    Sign In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-2 py-2 px-4 font-medium text-white 
-                             bg-[#8B6F47] dark:bg-[#D4A574] rounded-lg hover:bg-[#7A5F3A] dark:hover:bg-[#C49564] 
-                             transition-all shadow-sm hover:shadow-md"
-                  >
-                    <UserPlus className="w-5 h-5" />
-                    Sign Up
-                  </Link>
-                </div>
-              )}
             </div>
           </motion.div>
         )}
