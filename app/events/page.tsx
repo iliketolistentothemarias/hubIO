@@ -14,7 +14,7 @@ import { Calendar, MapPin, Clock, Users, Filter, Grid, List, Calendar as Calenda
 import TabNavigation from '@/components/TabNavigation'
 import LiquidGlass from '@/components/LiquidGlass'
 import { Event } from '@/lib/types'
-import { getAuthService } from '@/lib/auth'
+import { events as staticEvents } from '@/data/events'
 
 const categories = ['All', 'Community', 'Business', 'Youth', 'Education', 'Health', 'Arts', 'Sports', 'Health & Wellness', 'Volunteering', 'Employment', 'Environment']
 
@@ -32,105 +32,42 @@ export default function EventsPage() {
   }, [activeTab, selectedCategory])
 
   const loadEvents = async () => {
-    try {
-      setLoading(true)
-      
-      // If "My Events" tab, fetch from my-events endpoint
-      if (activeTab === 'my-events') {
-        const response = await fetch('/api/events/my-events')
-        const result = await response.json()
-        
-        if (result.success && result.data) {
-          setEvents(result.data.items || result.data || [])
-        } else {
-          setEvents([])
-        }
-        return
-      }
-      
-      // Otherwise, fetch from regular events endpoint
-      const status = activeTab === 'upcoming' ? 'upcoming' : activeTab === 'past' ? 'past' : 'upcoming'
-      const categoryParam = selectedCategory !== 'All' ? `&category=${selectedCategory}` : ''
-      const response = await fetch(`/api/events?status=${status}${categoryParam}`)
-      const result = await response.json()
-      
-      if (result.success && result.data) {
-        setEvents(result.data.items || result.data || [])
-      } else {
-        setEvents([])
-      }
-    } catch (error) {
-      console.error('Error loading events:', error)
-      setEvents([])
-    } finally {
-      setLoading(false)
+    setLoading(true)
+    
+    // Filter static events based on selected tab and category
+    let filteredEvents = [...staticEvents]
+    
+    // Filter by status (upcoming/past)
+    if (activeTab === 'upcoming') {
+      filteredEvents = filteredEvents.filter(e => e.status === 'upcoming' || e.status === 'ongoing')
+    } else if (activeTab === 'past') {
+      filteredEvents = filteredEvents.filter(e => e.status === 'completed' || e.status === 'cancelled')
     }
+    
+    // Filter by category
+    if (selectedCategory !== 'All') {
+      filteredEvents = filteredEvents.filter(e => e.category === selectedCategory)
+    }
+    
+    setEvents(filteredEvents)
+    setLoading(false)
   }
 
   const [rsvping, setRsvping] = useState<string | null>(null)
 
   const handleRSVP = async (event: Event) => {
-    const auth = getAuthService()
-    const authenticated = await auth.isAuthenticated()
+    // UI showcase - just show a success message
+    setRsvping(event.id)
     
-    if (!authenticated) {
-      sessionStorage.setItem('pendingAction', `rsvp_event_${event.id}`)
-      sessionStorage.setItem('redirectAfterLogin', `/events`)
-      router.push('/signup?message=Please create an account to RSVP for events')
-      return
-    }
-    
-    try {
-      setRsvping(event.id)
-      
-      // Determine if event requires RSVP or just registration
-      const endpoint = event.rsvpRequired 
-        ? `/api/events/${event.id}/rsvp`
-        : `/api/events/${event.id}/register`
-      
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        // Show success toast
-        if (typeof window !== 'undefined') {
-          const { showToast } = await import('@/components/Toast')
-          showToast(`Successfully ${event.rsvpRequired ? 'RSVPed' : 'registered'} for ${event.name}!`, 'success')
-        }
-        
-        // Reload events to update registration count
-        loadEvents()
-      } else {
-        // Show error toast
-        if (typeof window !== 'undefined') {
-          const { showToast } = await import('@/components/Toast')
-          showToast(result.error || 'Failed to RSVP', 'error')
-        }
-      }
-    } catch (error) {
-      console.error('Error RSVPing to event:', error)
-      if (typeof window !== 'undefined') {
-        const { showToast } = await import('@/components/Toast')
-        showToast('An error occurred. Please try again.', 'error')
-      }
-    } finally {
+    setTimeout(() => {
+      alert(`Successfully registered for: ${event.name}!\n\nThis is a UI showcase, so no actual registration was performed.`)
       setRsvping(null)
-    }
+    }, 1000)
   }
 
   const filteredEvents = useMemo(() => {
-    let filtered = events
-
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(e => e.category === selectedCategory)
-    }
-
-    return filtered.sort((a, b) => a.date.getTime() - b.date.getTime())
-  }, [events, selectedCategory])
+    return events.sort((a, b) => a.date.getTime() - b.date.getTime())
+  }, [events])
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear()
@@ -375,7 +312,9 @@ function GridView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event
               <div className="space-y-2 mb-4">
                 <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <Calendar className="w-4 h-4 text-primary-600 dark:text-primary-400" />
-                  {event.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  <span suppressHydrationWarning>
+                    {event.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                   <Clock className="w-4 h-4 text-primary-600 dark:text-primary-400" />
@@ -444,7 +383,7 @@ function ListView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-primary-600" />
-                    <span>{event.date.toLocaleDateString()}</span>
+                    <span suppressHydrationWarning>{event.date.toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-primary-600" />

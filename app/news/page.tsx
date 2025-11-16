@@ -238,7 +238,7 @@ export default function NewsPage() {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Clock className="w-4 h-4" />
-                                    <span>{article.publishedAt.toLocaleDateString()}</span>
+                                    <span suppressHydrationWarning>{article.publishedAt.toLocaleDateString()}</span>
                                   </div>
                                   <span className="px-2 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">
                                     {article.category}

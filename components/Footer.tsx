@@ -117,7 +117,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800/50 pt-8 text-center text-sm text-gray-400">
-          <p>© {currentYear} Communify. All rights reserved. Built with ❤️ for our community.</p>
+          <p suppressHydrationWarning>© {currentYear} Communify. All rights reserved. Built with ❤️ for our community.</p>
         </div>
       </div>
     </footer>

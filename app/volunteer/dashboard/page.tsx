@@ -330,7 +330,9 @@ function HistoryTab() {
                 <div className="flex items-center gap-4 mt-3 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    {item.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    <span suppressHydrationWarning>
+                      {item.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
