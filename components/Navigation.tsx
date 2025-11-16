@@ -98,7 +98,7 @@ export default function Navigation() {
               <Heart className="w-8 h-8 text-[#8B6F47] dark:text-[#D4A574]" />
             </motion.div>
             <span className="text-2xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0]">
-              Hub<span className="text-[#8B6F47] dark:text-[#D4A574]">IO</span>
+              Communify
             </span>
           </Link>
 
