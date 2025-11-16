@@ -68,14 +68,12 @@ function LoginContent() {
       const redirectParam = urlParams.get('redirect')
       const redirectUrl = redirectParam || sessionStorage.getItem('redirectAfterLogin')
       
-      let finalRedirect = '/dashboard'
+      let finalRedirect = '/'
       
       if (redirectUrl) {
         sessionStorage.removeItem('redirectAfterLogin')
         sessionStorage.removeItem('pendingAction')
         finalRedirect = redirectUrl
-      } else if (data.data?.user?.role === 'admin' || data.data?.user?.role === 'moderator') {
-        finalRedirect = '/admin'
       }
 
       console.log('Redirecting to:', finalRedirect)
