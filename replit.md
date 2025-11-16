@@ -5,6 +5,11 @@ Communify is a comprehensive community engagement platform built with Next.js th
 
 ## Recent Changes (November 16, 2025)
 
+### Latest Updates ✅
+1. **Authentication Fixed**: Login and signup now properly use PostgreSQL instead of Replit Database key-value store
+2. **App Renamed**: Changed from "Hubio" to "Communify" throughout the entire application
+3. **JWT Security**: JWT_SECRET environment variable configured for secure token signing
+
 ### Vercel to Replit Migration Complete ✅
 The project has been successfully migrated from Vercel to Replit with the following updates:
 
@@ -27,15 +32,15 @@ The project has been successfully migrated from Vercel to Replit with the follow
 
 4. **Security Improvements**
    - Password hashing with bcryptjs
-   - JWT token-based authentication
+   - JWT token-based authentication with secure secret
    - Proper database connection pooling
 
 ## Environment Variables Required
 
-### Critical (Must Set)
-- `JWT_SECRET` - **REQUIRED for production** - A secure random string for JWT token signing. Without this, tokens will be invalidated on server restart.
+### Critical (Configured ✅)
+- `JWT_SECRET` - ✅ **SET** - Secure random string for JWT token signing
 
-### Database (Already Configured)
+### Database (Already Configured ✅)
 - `DATABASE_URL` - PostgreSQL connection string (auto-configured by Replit)
 - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` - Auto-configured by Replit
 
@@ -104,12 +109,20 @@ To view database content or run SQL queries, use the Replit Database pane or the
 - Real-time messaging
 - Admin moderation tools
 
+## Testing
+
+Authentication has been tested and verified:
+- ✅ User signup with PostgreSQL
+- ✅ User login with JWT token generation
+- ✅ Password hashing and verification
+- ✅ Secure token signing with JWT_SECRET
+
 ## Next Steps
 
-1. Set `JWT_SECRET` environment variable for secure authentication
-2. Add payment provider keys if using payment features
-3. Configure optional integrations as needed
-4. Test core functionality (signup, login, posts, resources)
+1. ✅ ~~Set `JWT_SECRET` environment variable~~ - DONE
+2. Test core functionality (signup, login, posts, resources)
+3. Add payment provider keys if using payment features
+4. Configure optional integrations as needed
 5. Deploy to production when ready
 
 ## Support
