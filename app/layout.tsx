@@ -25,7 +25,7 @@ const merriweather = Merriweather({
 })
 
 export const metadata: Metadata = {
-  title: 'HubIO - Community Resource Hub',
+  title: 'Communify - Community Resource Hub',
   description: 'Your gateway to community resources, support services, and local programs. Connect, discover, and thrive together.',
   keywords: 'community resources, local services, non-profits, support services, community events',
 }

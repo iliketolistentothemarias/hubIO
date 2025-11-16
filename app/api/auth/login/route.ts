@@ -1,13 +1,13 @@
-
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db/helpers';
 import { ApiResponse } from '@/lib/types';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import Database from '@replit/database';
+import { sign } from 'jsonwebtoken';
 
-const db = new Database();
+if (!process.env.JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET environment variable is not set');
+}
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || crypto.randomUUID();
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,8 +23,8 @@ export async function POST(request: NextRequest) {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    // Get user from Replit DB
-    const user = await db.get(`user:${normalizedEmail}`);
+    // Verify password using PostgreSQL
+    const user = await db.users.verifyPassword(normalizedEmail, password);
 
     if (!user) {
       return NextResponse.json(
@@ -33,23 +33,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isValidPassword) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid email or password' },
-        { status: 401 }
-      );
-    }
-
     // Update last active
-    user.lastActiveAt = new Date().toISOString();
-    await db.set(`user:${normalizedEmail}`, user);
-    await db.set(`user:id:${user.id}`, user);
+    await db.users.updateLastActive(user.id);
 
     // Generate JWT token
-    const token = jwt.sign(
+    const token = sign(
       { userId: user.id, email: user.email, role: user.role },
       JWT_SECRET,
       { expiresIn: '7d' }

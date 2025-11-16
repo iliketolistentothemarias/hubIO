@@ -45,7 +45,7 @@ export default function Home() {
                 transition={{ duration: 0.6 }}
                 className="text-5xl md:text-7xl font-display font-bold text-[#333333] dark:text-[#f5f5f5] mb-6"
               >
-                HubIO
+                Communify
               </motion.h1>
               <motion.p
                 initial={{ opacity: 0 }}
@@ -53,7 +53,7 @@ export default function Home() {
                 transition={{ delay: 0.3 }}
                 className="text-xl md:text-2xl text-gray-600 dark:text-gray-400 mb-4 font-light"
               >
-                /ˈhəb aɪ oʊ/
+                /kəˈmjuː.nə.faɪ/
               </motion.p>
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -205,7 +205,7 @@ export default function Home() {
               Powerful Features
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 leading-relaxed">
-              HubIO is your comprehensive community resource platform with advanced features designed to connect residents
+              Communify is your comprehensive community resource platform with advanced features designed to connect residents
               with essential services, support organizations, and local programs.
             </p>
           </motion.div>

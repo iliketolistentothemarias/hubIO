@@ -1,7 +1,7 @@
-# Hubio - Community Hub Platform
+# Communify - Community Hub Platform
 
 ## Project Overview
-Hubio is a comprehensive community engagement platform built with Next.js that connects residents with resources, events, volunteer opportunities, and social features.
+Communify is a comprehensive community engagement platform built with Next.js that connects residents with resources, events, volunteer opportunities, and social features.
 
 ## Recent Changes (November 16, 2025)
 

@@ -13,7 +13,7 @@ export default function Footer() {
             <div className="flex items-center gap-2 mb-4">
               <Heart className="w-6 h-6 text-primary-400" />
               <span className="text-xl font-display font-bold text-white">
-                Hub<span className="text-primary-400">IO</span>
+                Commu<span className="text-primary-400">nify</span>
               </span>
             </div>
             <p className="text-sm text-gray-400 mb-4">
@@ -95,8 +95,8 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
                 <Mail className="w-4 h-4 text-primary-400 mt-1 flex-shrink-0" />
-                <a href="mailto:info@hubio.org" className="text-gray-400 hover:text-primary-400 transition-colors text-sm">
-                  info@hubio.org
+                <a href="mailto:info@communify.org" className="text-gray-400 hover:text-primary-400 transition-colors text-sm">
+                  info@communify.org
                 </a>
               </li>
               <li className="flex items-start gap-2">
@@ -117,7 +117,7 @@ export default function Footer() {
         </div>
 
         <div className="border-t border-gray-800/50 pt-8 text-center text-sm text-gray-400">
-          <p>© {currentYear} HubIO. All rights reserved. Built with ❤️ for our community.</p>
+          <p>© {currentYear} Communify. All rights reserved. Built with ❤️ for our community.</p>
         </div>
       </div>
     </footer>
