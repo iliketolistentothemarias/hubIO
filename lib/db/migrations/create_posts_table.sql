@@ -72,7 +72,7 @@ CREATE POLICY "Users can update their own posts"
   ON public.posts FOR UPDATE
   TO authenticated
   USING (author_id = auth.uid() OR EXISTS (
-    SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'
   ));
 
 CREATE POLICY "Users can delete their own posts or admins can delete any"
@@ -96,7 +96,7 @@ CREATE POLICY "Users can update their own comments"
   ON public.comments FOR UPDATE
   TO authenticated
   USING (author_id = auth.uid() OR EXISTS (
-    SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'moderator')
+    SELECT 1 FROM public.users WHERE id = auth.uid() AND role = 'admin'
   ));
 
 CREATE POLICY "Users can delete their own comments or admins can delete any"

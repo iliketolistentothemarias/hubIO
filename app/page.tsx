@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Search, Heart, Users, Calendar, ArrowRight, Sparkles, Map, BarChart3, Star, Zap } from 'lucide-react'
 import Link from 'next/link'
@@ -12,17 +12,21 @@ import Gallery from '@/components/Gallery'
 import Fundraising from '@/components/Fundraising'
 import CommunityBoard from '@/components/CommunityBoard'
 import VolunteerOpportunities from '@/components/VolunteerOpportunities'
-import { allResources as resources } from '@/data/resources'
+import { useData } from '@/contexts/DataContext'
 
 export default function Home() {
   const { scrollY } = useScroll()
   const y = useTransform(scrollY, [0, 500], [0, 150])
   const opacity = useTransform(scrollY, [0, 300], [1, 0])
+  
+  // Use pre-loaded data from context - INSTANT
+  const { resources, events, campaigns, volunteers } = useData()
 
+  // Calculate stats from pre-loaded data - INSTANT
   const stats = [
-    { value: '250+', label: 'Resources', icon: Heart, color: 'text-primary-600' },
-    { value: '50+', label: 'Non-Profits', icon: Users, color: 'text-secondary-600' },
-    { value: '30+', label: 'Events Monthly', icon: Calendar, color: 'text-green-600' },
+    { value: `${resources.length}+`, label: 'Resources', icon: Heart, color: 'text-primary-600' },
+    { value: `${events.length}+`, label: 'Events', icon: Calendar, color: 'text-green-600' },
+    { value: `${campaigns.length}+`, label: 'Campaigns', icon: Users, color: 'text-secondary-600' },
     { value: '4.8', label: 'Avg Rating', icon: Star, color: 'text-yellow-600' },
   ]
 
@@ -31,7 +35,7 @@ export default function Home() {
       {/* Hero Section - Minimal Design */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden 
                           bg-[#FAF9F6] dark:bg-[#1C1B18]">
-        <motion.div style={{ opacity }} className="container-custom section-padding relative z-10">
+        <motion.div style={{ opacity: opacity || 1 }} className="container-custom section-padding relative z-10">
           <div className="text-center max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}

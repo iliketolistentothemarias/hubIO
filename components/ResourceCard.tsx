@@ -178,13 +178,13 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
           {resource.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
-              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded"
+              className="px-2 py-1 bg-[#f5ede1] dark:bg-[#2c2c3e] text-[#6B5D47] dark:text-[#B8A584] text-xs rounded"
             >
               {tag}
             </span>
           ))}
           {resource.tags.length > 3 && (
-            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs rounded">
+            <span className="px-2 py-1 bg-[#f5ede1] dark:bg-[#2c2c3e] text-[#6B5D47] dark:text-[#B8A584] text-xs rounded">
               +{resource.tags.length - 3} more
             </span>
           )}
@@ -198,14 +198,16 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
           >
             View Details
           </Link>
-          <Link
-            href={resource.website}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium px-3"
-          >
-            <Globe className="w-4 h-4" />
-          </Link>
+          {resource.website && (
+            <a
+              href={resource.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium px-3"
+            >
+              <Globe className="w-4 h-4" />
+            </a>
+          )}
           {onCompare && (
             <button
               onClick={(e) => {
@@ -214,8 +216,8 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
               }}
               className={`ml-auto text-sm px-3 py-1 rounded-lg font-medium transition-colors ${
                 comparing
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F]'
+                  : 'bg-[#f5ede1] dark:bg-[#2c2c3e] text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#E8E0D6] dark:hover:bg-[#3a3a4a]'
               }`}
             >
               {comparing ? 'Comparing' : 'Compare'}

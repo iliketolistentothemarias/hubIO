@@ -18,7 +18,7 @@ export default function LiquidGlass({ children, className = '', intensity = 'med
   return (
     <div className={`relative ${className}`}>
       {/* Minimal background - clean and simple */}
-      <div className="absolute inset-0 overflow-hidden rounded-xl bg-white dark:bg-[#2a2a2a] border border-[#e0e0e0] dark:border-[#404040]">
+      <div className="absolute inset-0 overflow-hidden rounded-xl bg-white dark:bg-[#1F1B28] border border-[#E8E0D6] dark:border-[#2c2c3e]">
       </div>
 
       {/* Content */}

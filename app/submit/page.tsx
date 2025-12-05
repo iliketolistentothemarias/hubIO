@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Send, CheckCircle, AlertCircle, Heart, FileText, Mail, Phone, Globe, MapPin, Tag } from 'lucide-react'
 import { categories } from '@/data/resources'
+import AuthRequired from '@/components/auth/AuthRequired'
+import { useTheme } from '@/contexts/ThemeContext'
+import { supabase } from '@/lib/supabase/client'
 
-export default function SubmitResourcePage() {
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+function SubmitPageContent() {
   const [formData, setFormData] = useState({
     name: '',
     category: '',
@@ -19,15 +21,17 @@ export default function SubmitResourcePage() {
     tags: '',
     contactName: '',
     contactEmail: '',
+    hours: '',
   })
   const [submitted, setSubmitted] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-
-  // No authentication required - allow anonymous submissions
-  useEffect(() => {
-    setIsCheckingAuth(false)
-  }, [])
+  const inputBaseClass = `w-full px-4 py-3 rounded-2xl border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all bg-white/90 dark:bg-[#0B0A17] dark:text-white backdrop-blur-xl placeholder:text-gray-500 dark:placeholder:text-gray-400`
+  const getInputClass = (hasError?: boolean) =>
+    `${inputBaseClass} ${hasError ? 'border-red-500' : 'border-gray-200/50 dark:border-[#2c2c3e]'}`
+  const { theme } = useTheme()
+  const isDark = theme === 'dark'
+  const labelClass = `block text-sm font-medium ${isDark ? 'text-white' : 'text-gray-700'} mb-2`
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -97,7 +101,7 @@ export default function SubmitResourcePage() {
 
     try {
       // Use customCategory if "Other" is selected
-      const submissionData = {
+        const submissionData = {
         name: formData.name,
         category: formData.category === 'Other' ? formData.customCategory : formData.category,
         description: formData.description,
@@ -106,13 +110,23 @@ export default function SubmitResourcePage() {
         email: formData.email,
         website: formData.website || '',
         tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(t => t) : [],
+          hours: formData.hours || '',
       }
 
-      // Submit to API
+      // Get the current session token
+      const { data: sessionData } = await supabase.auth.getSession()
+      const token = sessionData?.session?.access_token
+
+      if (!token) {
+        throw new Error('You must be logged in to submit a resource')
+      }
+
+      // Submit to API with auth token
       const response = await fetch('/api/resources', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify(submissionData),
       })
@@ -146,6 +160,7 @@ export default function SubmitResourcePage() {
           tags: '',
           contactName: '',
           contactEmail: '',
+          hours: '',
         })
       }, 5000)
     } catch (error: any) {
@@ -154,18 +169,6 @@ export default function SubmitResourcePage() {
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  // Show loading state while checking auth
-  if (isCheckingAuth) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-900 dark:to-primary-900/10 pt-20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 dark:border-primary-400 mx-auto mb-4"></div>
-          <div className="text-gray-600 dark:text-gray-400">Loading...</div>
-        </div>
-      </div>
-    )
   }
 
   if (submitted) {
@@ -197,17 +200,25 @@ export default function SubmitResourcePage() {
     )
   }
 
+  const backgroundClass = isDark ? 'bg-[#0B0A0F]' : 'bg-[#FAF9F6]'
+  const heroTextClass = isDark ? 'text-white' : 'text-[#2C2416]'
+  const heroSubTextClass = isDark ? 'text-white/75' : 'text-gray-600'
+  const formCardClass = isDark
+    ? 'bg-[#1f1b28] bg-opacity-95 border border-[#2c2c3e]'
+    : 'bg-white/90 border border-white/30'
+  const sectionTitleClass = isDark ? 'text-white' : 'text-[#2C2416]'
+  const borderColorClass = isDark ? 'border-[#2c2c3e]' : 'border-gray-200'
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-900 dark:to-primary-900/10 pt-20">
+    <div className={`min-h-screen ${backgroundClass} pt-20 ${isDark ? 'text-white' : 'text-[#2C2416]'}`}>
       {/* Hero Section */}
-      <section className="section-padding bg-gradient-to-br from-primary-50 via-white to-secondary-50 
-                          dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/20">
+      <section className={`section-padding ${backgroundClass}`}>
         <div className="container-custom">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-center max-w-3xl mx-auto mb-12"
+            className={`text-center max-w-3xl mx-auto mb-12 ${heroSubTextClass}`}
           >
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
@@ -216,10 +227,10 @@ export default function SubmitResourcePage() {
             >
               <Heart className="w-12 h-12 text-primary-600 dark:text-primary-400" />
             </motion.div>
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className={`text-4xl md:text-5xl font-display font-bold ${heroTextClass} mb-4`}>
               Submit a Resource
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p className={`text-lg ${heroSubTextClass}`}>
               Help us grow our community resource hub! Submit a new resource, organization, or service
               to make it accessible to everyone in our community.
             </p>
@@ -230,12 +241,11 @@ export default function SubmitResourcePage() {
       {/* Form Section */}
       <section className="section-padding">
         <div className="container-custom max-w-3xl">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-12 
-                        border border-white/30 dark:border-gray-700/30"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className={`${formCardClass} backdrop-blur-xl rounded-3xl shadow-2xl p-8 md:p-12`}
             style={{
               backdropFilter: 'saturate(180%) blur(20px)',
               WebkitBackdropFilter: 'saturate(180%) blur(20px)',
@@ -244,13 +254,13 @@ export default function SubmitResourcePage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Organization Information */}
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                  <FileText className="w-6 h-6 text-primary-600" />
+                <h2 className={`text-2xl font-semibold ${sectionTitleClass} mb-6 flex items-center gap-2`}>
+                  <FileText className="w-6 h-6 text-[#D4A574]" />
                   Organization Information
                 </h2>
                 <div className="space-y-4">
                   <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="name" className={labelClass}>
                       Organization Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -259,10 +269,7 @@ export default function SubmitResourcePage() {
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-2xl border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 
-                                 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl transition-all ${
-                        errors.name ? 'border-red-500' : 'border-gray-200/50 dark:border-gray-700/50'
-                      }`}
+                      className={getInputClass(errors.name)}
                       placeholder="Enter organization name"
                     />
                     {errors.name && (
@@ -274,7 +281,7 @@ export default function SubmitResourcePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="category" className={labelClass}>
                       Category <span className="text-red-500">*</span>
                     </label>
                     <select
@@ -282,10 +289,7 @@ export default function SubmitResourcePage() {
                       name="category"
                       value={formData.category}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-2xl border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 
-                                 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl transition-all ${
-                        errors.category ? 'border-red-500' : 'border-gray-200/50 dark:border-gray-700/50'
-                      }`}
+                      className={getInputClass(errors.category)}
                     >
                       <option value="">Select a category</option>
                       {categories.filter((c) => c !== 'All Categories').map((category) => (
@@ -303,7 +307,7 @@ export default function SubmitResourcePage() {
                     )}
                     {formData.category === 'Other' && (
                       <div className="mt-4">
-                        <label htmlFor="customCategory" className="block text-sm font-medium text-gray-700 mb-2">
+                        <label htmlFor="customCategory" className={labelClass}>
                           Specify Category <span className="text-red-500">*</span>
                         </label>
                         <input
@@ -312,10 +316,7 @@ export default function SubmitResourcePage() {
                           name="customCategory"
                           value={formData.customCategory}
                           onChange={handleChange}
-                          className={`w-full px-4 py-3 rounded-2xl border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 
-                                     bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl transition-all ${
-                            errors.customCategory ? 'border-red-500' : 'border-gray-200/50 dark:border-gray-700/50'
-                          }`}
+                          className={getInputClass(errors.customCategory)}
                           placeholder="Enter your custom category"
                         />
                         {errors.customCategory && (
@@ -329,7 +330,7 @@ export default function SubmitResourcePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="description" className={labelClass}>
                       Description <span className="text-red-500">*</span>
                       <span className="text-xs text-gray-500 ml-2">(Minimum 50 characters)</span>
                     </label>
@@ -339,10 +340,7 @@ export default function SubmitResourcePage() {
                       value={formData.description}
                       onChange={handleChange}
                       rows={4}
-                      className={`w-full px-4 py-3 rounded-2xl border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 
-                                 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl transition-all ${
-                        errors.description ? 'border-red-500' : 'border-gray-200/50 dark:border-gray-700/50'
-                      }`}
+                      className={getInputClass(errors.description)}
                       placeholder="Describe the services, programs, and support offered by this organization"
                     />
                     <div className="mt-1 flex items-center justify-between">
@@ -367,14 +365,14 @@ export default function SubmitResourcePage() {
               </div>
 
               {/* Contact Information */}
-              <div className="pt-6 border-t border-gray-200">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                  <Mail className="w-6 h-6 text-primary-600" />
+              <div className={`pt-6 border-t ${borderColorClass}`}>
+                  <h2 className={`text-2xl font-semibold ${sectionTitleClass} mb-6 flex items-center gap-2`}>
+                    <Mail className="w-6 h-6 text-[#D4A574]" />
                   Contact Information
                 </h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="address" className={labelClass}>
                       <MapPin className="w-4 h-4 inline mr-1" />
                       Address <span className="text-red-500">*</span>
                     </label>
@@ -384,9 +382,7 @@ export default function SubmitResourcePage() {
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                        errors.address ? 'border-red-500' : 'border-gray-200'
-                      }`}
+                      className={getInputClass(errors.address)}
                       placeholder="Street address, City, State ZIP"
                     />
                     {errors.address && (
@@ -398,7 +394,7 @@ export default function SubmitResourcePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="phone" className={labelClass}>
                       <Phone className="w-4 h-4 inline mr-1" />
                       Phone <span className="text-red-500">*</span>
                     </label>
@@ -408,9 +404,7 @@ export default function SubmitResourcePage() {
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                        errors.phone ? 'border-red-500' : 'border-gray-200'
-                      }`}
+                      className={getInputClass(errors.phone)}
                       placeholder="(555) 123-4567"
                     />
                     {errors.phone && (
@@ -422,7 +416,7 @@ export default function SubmitResourcePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className={labelClass}>
                       <Mail className="w-4 h-4 inline mr-1" />
                       Organization Email <span className="text-red-500">*</span>
                     </label>
@@ -432,9 +426,7 @@ export default function SubmitResourcePage() {
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                        errors.email ? 'border-red-500' : 'border-gray-200'
-                      }`}
+                      className={getInputClass(errors.email)}
                       placeholder="info@organization.org"
                     />
                     {errors.email && (
@@ -446,7 +438,7 @@ export default function SubmitResourcePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="website" className={labelClass}>
                       <Globe className="w-4 h-4 inline mr-1" />
                       Website (optional)
                     </label>
@@ -456,9 +448,7 @@ export default function SubmitResourcePage() {
                       name="website"
                       value={formData.website}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200/50 dark:border-gray-700/50 
-                                 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl focus:outline-none 
-                                 focus:ring-2 focus:ring-primary-500 transition-all"
+                      className={getInputClass()}
                       placeholder="https://organization.org"
                     />
                   </div>
@@ -466,14 +456,14 @@ export default function SubmitResourcePage() {
               </div>
 
               {/* Additional Information */}
-              <div className="pt-6 border-t border-gray-200">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                  <Tag className="w-6 h-6 text-primary-600" />
+              <div className={`pt-6 border-t ${borderColorClass}`}>
+                <h2 className={`text-2xl font-semibold ${sectionTitleClass} mb-6 flex items-center gap-2`}>
+                  <Tag className="w-6 h-6 text-[#D4A574]" />
                   Additional Information
                 </h2>
-                <div className="space-y-4">
+          <div className="space-y-4">
                   <div>
-                    <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="tags" className={labelClass}>
                       Tags (optional)
                     </label>
                     <input
@@ -482,24 +472,39 @@ export default function SubmitResourcePage() {
                       name="tags"
                       value={formData.tags}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200/50 dark:border-gray-700/50 
-                                 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl focus:outline-none 
-                                 focus:ring-2 focus:ring-primary-500 transition-all"
+                      className={getInputClass()}
                       placeholder="Separate tags with commas (e.g., Food, Nutrition, Emergency Assistance)"
                     />
                     <p className="mt-1 text-sm text-gray-500">
                       Help users find this resource by adding relevant tags
                     </p>
                   </div>
+            <div>
+              <label htmlFor="hours" className={labelClass}>
+                Hours / Availability (optional)
+              </label>
+              <input
+                type="text"
+                id="hours"
+                name="hours"
+                value={formData.hours}
+                onChange={handleChange}
+                className={getInputClass()}
+                placeholder="e.g., Mon-Fri 9am-5pm or First Saturdays, 1-4pm"
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                List the regular operating hours or special access dates for this resource.
+              </p>
+            </div>
                 </div>
               </div>
 
               {/* Submitter Information */}
-              <div className="pt-6 border-t border-gray-200">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6">Your Information</h2>
+              <div className={`pt-6 border-t ${borderColorClass}`}>
+                <h2 className={`text-2xl font-semibold ${sectionTitleClass} mb-6`}>Your Information</h2>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="contactName" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="contactName" className={labelClass}>
                       Your Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -508,9 +513,7 @@ export default function SubmitResourcePage() {
                       name="contactName"
                       value={formData.contactName}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                        errors.contactName ? 'border-red-500' : 'border-gray-200'
-                      }`}
+                      className={getInputClass(errors.contactName)}
                       placeholder="John Doe"
                     />
                     {errors.contactName && (
@@ -522,7 +525,7 @@ export default function SubmitResourcePage() {
                   </div>
 
                   <div>
-                    <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="contactEmail" className={labelClass}>
                       Your Email <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -531,9 +534,7 @@ export default function SubmitResourcePage() {
                       name="contactEmail"
                       value={formData.contactEmail}
                       onChange={handleChange}
-                      className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 focus:ring-primary-500 ${
-                        errors.contactEmail ? 'border-red-500' : 'border-gray-200'
-                      }`}
+                      className={getInputClass(errors.contactEmail)}
                       placeholder="you@example.com"
                     />
                     {errors.contactEmail && (
@@ -588,3 +589,13 @@ export default function SubmitResourcePage() {
   )
 }
 
+export default function SubmitResourcePage() {
+  return (
+    <AuthRequired
+      featureName="resource submissions"
+      description="Submitting new resources requires an account so we can verify and keep the directory safe."
+    >
+      <SubmitPageContent />
+    </AuthRequired>
+  )
+}

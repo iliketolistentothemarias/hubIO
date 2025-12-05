@@ -2,13 +2,22 @@
 
 import { motion } from 'framer-motion'
 import { Heart, MapPin, Phone, Mail, Globe, ArrowRight, Users, Calendar, Star, Clock, Languages, Award } from 'lucide-react'
-import { resources } from '@/data/resources'
 import Link from 'next/link'
 import { useFavorites } from '@/contexts/FavoritesContext'
+import { useData } from '@/contexts/DataContext'
 
 export default function HighlightsPage() {
+  const { resources, isLoading } = useData()
   const featuredResources = resources.filter((r) => r.featured)
   const { isFavorite, toggleFavorite } = useFavorites()
+
+  if (isLoading && featuredResources.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] dark:bg-[#1C1B18] pt-20">
+        <p className="text-lg text-[#6B5D47] dark:text-[#B8A584]">Loading featured resources...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 dark:from-[#1C1B18] dark:via-gray-900 dark:to-primary-900/10 pt-20">
@@ -240,17 +249,19 @@ function FeaturedResourceCard({ resource, index, isFavorite, onToggleFavorite }:
                 <span className="text-gray-700 dark:text-gray-300">{resource.languages.join(', ')}</span>
               </div>
             )}
-            <div className="flex items-center gap-3">
-              <Globe className="w-5 h-5 text-primary-600 dark:text-primary-400 flex-shrink-0" />
-              <a
-                href={resource.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
-              >
-                Visit Website
-              </a>
-            </div>
+            {resource.website && (
+              <div className="flex items-center gap-3">
+                <Globe className="w-5 h-5 text-primary-600 dark:text-primary-400 flex-shrink-0" />
+                <a
+                  href={resource.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400"
+                >
+                  Visit Website
+                </a>
+              </div>
+            )}
           </div>
 
           {resource.services && resource.services.length > 0 && (

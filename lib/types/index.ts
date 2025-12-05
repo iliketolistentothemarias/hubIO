@@ -23,7 +23,7 @@ export interface User {
   lastActiveAt: Date
 }
 
-export type UserRole = 'resident' | 'volunteer' | 'organizer' | 'admin' | 'moderator'
+export type UserRole = 'volunteer' | 'organizer' | 'admin'
 
 export interface UserPreferences {
   theme: 'light' | 'dark' | 'auto'

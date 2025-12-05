@@ -125,14 +125,14 @@ export class EmailService {
             
             <p style="margin-top: 30px;">
               Best regards,<br>
-              <strong>The HubIO Team</strong>
+              <strong>The Communify Team</strong>
             </p>
 
             <hr style="border: none; border-top: 1px solid #ddd; margin: 30px 0;">
             
             <p style="font-size: 12px; color: #666; text-align: center;">
               This is an automated receipt. Please keep this email for your records.<br>
-              If you have any questions, please contact us at support@hubio.org
+              If you have any questions, please contact us at support@Communify.org
             </p>
           </div>
         </body>
@@ -170,11 +170,11 @@ $${campaign.raised.toLocaleString()} raised of $${campaign.goal.toLocaleString()
 Your contribution makes a real difference in our community. We appreciate your support!
 
 Best regards,
-The HubIO Team
+The Communify Team
 
 ---
 This is an automated receipt. Please keep this email for your records.
-If you have any questions, please contact us at support@hubio.org
+If you have any questions, please contact us at support@Communify.org
     `.trim()
   }
 }

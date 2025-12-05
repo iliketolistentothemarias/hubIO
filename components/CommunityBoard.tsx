@@ -7,6 +7,7 @@ import { MessageSquare, Heart, Share2, Clock, User, X, Send, Plus } from 'lucide
 import LiquidGlass from './LiquidGlass'
 import { getAuthService } from '@/lib/auth'
 import { Post, Comment, PostCategory } from '@/lib/types'
+import { supabase } from '@/lib/supabase/client'
 import {
   Dialog,
   DialogContent,
@@ -107,12 +108,94 @@ export default function CommunityBoard() {
   }, [selectedCategory])
 
   const loadPosts = async () => {
-    // Filter static posts by category
+    setIsLoading(true)
+    try {
+      let query = supabase
+        .from('posts')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+      if (selectedCategory !== 'All') {
+        query = query.eq('category', selectedCategory)
+      }
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching posts:', error)
+        // Fallback to sample posts
+        let filtered = samplePosts
+        if (selectedCategory !== 'All') {
+          filtered = samplePosts.filter(p => p.category === selectedCategory)
+        }
+        setPosts(filtered.map(p => ({ ...p, timeAgo: formatTimeAgo(p.createdAt) })))
+        setIsLoading(false)
+        return
+      }
+
+      if (data && data.length > 0) {
+        const mappedPosts = data.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          content: p.content,
+          category: p.category as PostCategory,
+          authorName: p.author,
+          createdAt: new Date(p.created_at),
+          timeAgo: formatTimeAgo(new Date(p.created_at)),
+          likes: p.likes || 0,
+          commentCount: 0, // Will be loaded separately
+          comments: [],
+          isLiked: false,
+          tags: p.tags || [],
+        }))
+        setPosts(mappedPosts)
+
+        // Load comments for each post
+        const postIds = mappedPosts.map(p => p.id)
+        const { data: commentsData } = await supabase
+          .from('comments')
+          .select('*')
+          .in('post_id', postIds)
+          .order('created_at', { ascending: true })
+
+        if (commentsData) {
+          const commentsMap: Record<string, Comment[]> = {}
+          commentsData.forEach((c: any) => {
+            if (!commentsMap[c.post_id]) {
+              commentsMap[c.post_id] = []
+            }
+            commentsMap[c.post_id].push({
+              id: c.id,
+              postId: c.post_id,
+              authorName: c.author,
+              content: c.content,
+              likes: c.likes || 0,
+              createdAt: new Date(c.created_at),
+            })
+          })
+          setComments(commentsMap)
+        }
+      } else {
+        // Fallback to sample posts
+        let filtered = samplePosts
+        if (selectedCategory !== 'All') {
+          filtered = samplePosts.filter(p => p.category === selectedCategory)
+        }
+        setPosts(filtered.map(p => ({ ...p, timeAgo: formatTimeAgo(p.createdAt) })))
+      }
+    } catch (error) {
+      console.error('Error loading posts:', error)
+      // Fallback to sample posts
     let filtered = samplePosts
     if (selectedCategory !== 'All') {
       filtered = samplePosts.filter(p => p.category === selectedCategory)
     }
-    setPosts(filtered)
+      setPosts(filtered.map(p => ({ ...p, timeAgo: formatTimeAgo(p.createdAt) })))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const loadComments = async (postId: string) => {
@@ -331,7 +414,7 @@ export default function CommunityBoard() {
           </div>
         ) : (
           <div className="space-y-6 max-w-4xl mx-auto">
-            <AnimatePresence mode="wait">
+            <AnimatePresence>
               {filteredPosts.map((post, index) => (
                 <motion.div
                   key={post.id}

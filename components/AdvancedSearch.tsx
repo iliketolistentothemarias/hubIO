@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { Search, X, TrendingUp, Clock, Star } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { allResources } from '@/data/resources'
 import { getDatabase } from '@/lib/db/schema'
 import Link from 'next/link'
 import VoiceSearch from './VoiceSearch'
+import { Resource } from '@/lib/types'
+import { useData } from '@/contexts/DataContext'
 
 interface SearchResult {
   id: string
@@ -15,13 +17,37 @@ interface SearchResult {
   matchType: 'name' | 'tag' | 'category' | 'description'
 }
 
-export default function AdvancedSearch() {
-  const [query, setQuery] = useState('')
+interface AdvancedSearchProps {
+  initialQuery?: string
+  onQueryChange?: (value: string) => void
+  resources?: Resource[]
+}
+
+export default function AdvancedSearch({ initialQuery = '', onQueryChange, resources: providedResources }: AdvancedSearchProps) {
+  const [query, setQuery] = useState(initialQuery)
   const [results, setResults] = useState<SearchResult[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [popularSearches] = useState(['Food Assistance', 'Housing', 'Health Services', 'Education'])
   const searchRef = useRef<HTMLDivElement>(null)
+  const { resources: contextResources } = useData()
+
+  const searchPool = useMemo<Resource[]>(() => {
+    if (providedResources && providedResources.length > 0) {
+      return providedResources
+    }
+    if (contextResources && contextResources.length > 0) {
+      return contextResources
+    }
+
+    const db = getDatabase()
+    const dbResources = db.getAllResources()
+    if (dbResources.length > 0) {
+      return [...dbResources] as Resource[]
+    }
+
+    return allResources
+  }, [providedResources, contextResources])
 
   useEffect(() => {
     const saved = localStorage.getItem('recentSearches')
@@ -50,15 +76,7 @@ export default function AdvancedSearch() {
     const lowerQuery = searchQuery.toLowerCase()
     const matched: SearchResult[] = []
 
-    // Get resources from database
-    const db = getDatabase()
-    const resources = db.getAllResources()
-    if (resources.length === 0) {
-      // Fallback to static data if database is empty
-      resources.push(...allResources)
-    }
-
-    resources.forEach((resource) => {
+    searchPool.forEach((resource) => {
       if (resource.name.toLowerCase().includes(lowerQuery)) {
         matched.push({ id: resource.id, name: resource.name, category: resource.category, matchType: 'name' })
       } else if (resource.category.toLowerCase().includes(lowerQuery)) {
@@ -79,16 +97,30 @@ export default function AdvancedSearch() {
     setResults(matched.slice(0, 8))
   }
 
+  useEffect(() => {
+    if (initialQuery !== undefined) {
+      setQuery(initialQuery)
+      if (initialQuery) {
+        handleSearch(initialQuery)
+      } else {
+        setResults([])
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
     setQuery(value)
     handleSearch(value)
+    onQueryChange?.(value)
     setIsOpen(true)
   }
 
   const handleSelectResult = (result: SearchResult) => {
     setQuery(result.name)
     setIsOpen(false)
+    onQueryChange?.(result.name)
     // Add to recent searches
     const updated = [result.name, ...recentSearches.filter((s) => s !== result.name)].slice(0, 5)
     setRecentSearches(updated)
@@ -99,6 +131,7 @@ export default function AdvancedSearch() {
     setQuery('')
     setResults([])
     setIsOpen(false)
+    onQueryChange?.('')
   }
 
   return (
@@ -122,11 +155,14 @@ export default function AdvancedSearch() {
           }}
         />
         <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2">
-          <VoiceSearch onResult={(result) => {
-            setQuery(result)
-            handleSearch(result)
-            setIsOpen(true)
-          }} />
+          <VoiceSearch
+            onResult={(result) => {
+              setQuery(result)
+              handleSearch(result)
+              onQueryChange?.(result)
+              setIsOpen(true)
+            }}
+          />
           {query && (
             <button
               onClick={clearSearch}
@@ -197,6 +233,7 @@ export default function AdvancedSearch() {
                         onClick={() => {
                           setQuery(search)
                           handleSearch(search)
+                          onQueryChange?.(search)
                         }}
                         className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm text-gray-700 dark:text-gray-300"
                       >
@@ -217,6 +254,7 @@ export default function AdvancedSearch() {
                       onClick={() => {
                         setQuery(search)
                         handleSearch(search)
+                        onQueryChange?.(search)
                       }}
                       className="w-full text-left px-4 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors text-sm text-gray-700 dark:text-gray-300"
                     >

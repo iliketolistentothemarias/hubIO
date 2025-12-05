@@ -141,10 +141,10 @@ export default function AdvancedAnalytics() {
         >
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-4xl md:text-5xl font-display font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2">
                 Your Analytics
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-lg text-[#6B5D47] dark:text-[#B8A584]">
                 Track your community engagement and impact
               </p>
             </div>
@@ -155,8 +155,8 @@ export default function AdvancedAnalytics() {
                   onClick={() => setTimeRange(range)}
                   className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                     timeRange === range
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                      ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F]'
+                      : 'bg-[#f5ede1] dark:bg-[#1F1B28] text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#E8E0D6] dark:hover:bg-[#2c2c3e]'
                   }`}
                 >
                   {range.charAt(0).toUpperCase() + range.slice(1)}
@@ -188,17 +188,17 @@ export default function AdvancedAnalytics() {
                 <LiquidGlass intensity="light">
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-2">
-                      <Icon className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                      <Icon className="w-5 h-5 text-[#8B6F47] dark:text-[#D4A574]" />
                       {metric.positive ? (
                         <ArrowUpRight className="w-4 h-4 text-green-500" />
                       ) : (
                         <ArrowDownRight className="w-4 h-4 text-red-500" />
                       )}
                     </div>
-                    <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                    <div className="text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1">
                       {metric.value}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <div className="text-sm text-[#6B5D47] dark:text-[#B8A584] mb-1">
                       {metric.label}
                     </div>
                     <div className={`text-xs font-medium ${
@@ -219,8 +219,8 @@ export default function AdvancedAnalytics() {
           <LiquidGlass intensity="medium">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-primary-600" />
+                <h3 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#8B6F47] dark:text-[#D4A574]" />
                   Activity Trend
                 </h3>
               </div>
@@ -233,8 +233,8 @@ export default function AdvancedAnalytics() {
                       initial={{ height: 0 }}
                       animate={{ height: `${height}%` }}
                       transition={{ delay: index * 0.05, duration: 0.5 }}
-                      className="flex-1 bg-gradient-to-t from-primary-600 to-primary-400 rounded-t-lg 
-                               hover:from-primary-700 hover:to-primary-500 transition-colors relative group"
+                      className="flex-1 bg-gradient-to-t from-[#8B6F47] to-[#D4A574] rounded-t-lg 
+                               hover:from-[#6B5D47] hover:to-[#B8A584] transition-colors relative group"
                     >
                       <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 
                                     group-hover:opacity-100 transition-opacity bg-gray-900 text-white 
@@ -245,7 +245,7 @@ export default function AdvancedAnalytics() {
                   )
                 })}
               </div>
-              <div className="flex justify-between mt-4 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex justify-between mt-4 text-xs text-[#6B5D47]/70 dark:text-[#B8A584]/70">
                 {currentTrend.filter((_, i) => i % Math.ceil(currentTrend.length / 5) === 0).map((point, i) => (
                   <span key={i}>{point.date}</span>
                 ))}
@@ -257,8 +257,8 @@ export default function AdvancedAnalytics() {
           <LiquidGlass intensity="medium">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <PieChart className="w-5 h-5 text-primary-600" />
+                <h3 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] flex items-center gap-2">
+                  <PieChart className="w-5 h-5 text-[#8B6F47] dark:text-[#D4A574]" />
                   Category Distribution
                 </h3>
               </div>
@@ -271,14 +271,14 @@ export default function AdvancedAnalytics() {
                     transition={{ delay: index * 0.1 }}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                      <span className="text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0]">
                         {category.name}
                       </span>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="text-sm text-[#6B5D47] dark:text-[#B8A584]">
                         {category.count} ({category.percentage}%)
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                    <div className="w-full bg-[#f5ede1] dark:bg-[#2c2c3e] rounded-full h-2 overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${category.percentage}%` }}
@@ -299,8 +299,8 @@ export default function AdvancedAnalytics() {
           {/* Achievements Progress */}
           <LiquidGlass intensity="medium">
             <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <Award className="w-5 h-5 text-primary-600" />
+              <h3 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-6 flex items-center gap-2">
+                <Award className="w-5 h-5 text-[#8B6F47] dark:text-[#D4A574]" />
                 Achievement Progress
               </h3>
               <div className="space-y-4">
@@ -317,19 +317,19 @@ export default function AdvancedAnalytics() {
                         <span className="text-2xl">{achievement.icon}</span>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            <span className="text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0]">
                               {achievement.name}
                             </span>
-                            <span className="text-xs text-gray-600 dark:text-gray-400">
+                            <span className="text-xs text-[#6B5D47] dark:text-[#B8A584]">
                               {achievement.progress}/{achievement.target}
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                          <div className="w-full bg-[#f5ede1] dark:bg-[#2c2c3e] rounded-full h-2 overflow-hidden">
                             <motion.div
                               initial={{ width: 0 }}
                               animate={{ width: `${progress}%` }}
                               transition={{ delay: index * 0.1 + 0.3, duration: 0.5 }}
-                              className="h-full bg-gradient-to-r from-primary-600 to-primary-400 rounded-full"
+                              className="h-full bg-gradient-to-r from-[#8B6F47] to-[#D4A574] rounded-full"
                             />
                           </div>
                         </div>
@@ -344,8 +344,8 @@ export default function AdvancedAnalytics() {
           {/* Insights */}
           <LiquidGlass intensity="medium">
             <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary-600" />
+              <h3 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-6 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-[#8B6F47] dark:text-[#D4A574]" />
                 Insights & Recommendations
               </h3>
               <div className="space-y-4">
@@ -364,7 +364,7 @@ export default function AdvancedAnalytics() {
                     }`}
                   >
                     <div className="flex items-start justify-between">
-                      <p className="text-sm text-gray-900 dark:text-white flex-1">
+                      <p className="text-sm text-[#2C2416] dark:text-[#F5F3F0] flex-1">
                         {insight.message}
                       </p>
                       <span className={`text-sm font-bold ml-2 ${

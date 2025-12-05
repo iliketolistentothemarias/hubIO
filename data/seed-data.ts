@@ -51,7 +51,7 @@ export const seedUsers: Omit<User, 'createdAt' | 'lastActiveAt'>[] = [
     id: 'user-2',
     email: 'mike.chen@example.com',
     name: 'Mike Chen',
-    role: 'resident',
+    role: 'volunteer',
     karma: 180,
     badges: [
       { id: 'badge-3', name: 'Resource Explorer', description: 'Saved 10 resources', icon: '🔍', category: 'contributor', rarity: 'common', earnedAt: new Date('2025-01-20') },
@@ -160,7 +160,7 @@ export const seedUsers: Omit<User, 'createdAt' | 'lastActiveAt'>[] = [
     id: 'user-5',
     email: 'lisa.anderson@example.com',
     name: 'Lisa Anderson',
-    role: 'resident',
+    role: 'volunteer',
     karma: 95,
     badges: [],
     preferences: {
@@ -192,7 +192,7 @@ export const seedUsers: Omit<User, 'createdAt' | 'lastActiveAt'>[] = [
   },
   {
     id: 'user-6',
-    email: 'admin@hubio.org',
+    email: 'admin@Communify.org',
     name: 'Admin User',
     role: 'admin',
     karma: 1000,
@@ -220,7 +220,7 @@ export const seedUsers: Omit<User, 'createdAt' | 'lastActiveAt'>[] = [
     location: {
       lat: 40.4406,
       lng: -79.9961,
-      address: '100 HubIO Center',
+      address: '100 Communify Center',
       city: 'Pittsburgh',
       state: 'PA',
       zipCode: '15219',
@@ -300,7 +300,7 @@ export const seedPosts: Omit<Post, 'createdAt' | 'updatedAt'>[] = [
     author: 'Sarah Johnson',
     authorId: 'user-1',
     title: 'Volunteer Hours Tracking',
-    content: 'Quick question - how do I track my volunteer hours on HubIO? Want to make sure I\'m logging everything correctly for my records.',
+    content: 'Quick question - how do I track my volunteer hours on Communify? Want to make sure I\'m logging everything correctly for my records.',
     category: 'Help',
     likes: 8,
     comments: [],
@@ -351,7 +351,7 @@ export const seedComments: Omit<Comment, 'createdAt' | 'updatedAt'>[] = [
     postId: 'post-1',
     author: 'Emma Williams',
     authorId: 'user-3',
-    content: 'I volunteer there regularly! Great organization. You can sign up through HubIO or contact them directly.',
+    content: 'I volunteer there regularly! Great organization. You can sign up through Communify or contact them directly.',
     likes: 8,
   },
   {

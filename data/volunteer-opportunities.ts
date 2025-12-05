@@ -689,7 +689,7 @@ export const volunteerOpportunities: VolunteerOpportunity[] = [
   {
     id: 'vol-26',
     title: 'Community Resource Navigator',
-    organization: 'HubIO',
+    organization: 'Communify',
     organizationId: 'org-24',
     description: 'Help community members navigate resources and find the services they need. Training provided.',
     category: 'Support Services',
@@ -790,7 +790,7 @@ export const volunteerOpportunities: VolunteerOpportunity[] = [
   {
     id: 'vol-30',
     title: 'Community Newsletter Writer',
-    organization: 'HubIO',
+    organization: 'Communify',
     organizationId: 'org-24',
     description: 'Write articles for community newsletter covering resources, events, and community news.',
     category: 'Media & Communications',
@@ -837,7 +837,7 @@ export const volunteerOpportunities: VolunteerOpportunity[] = [
   {
     id: 'vol-32',
     title: 'Community Resource Expo Volunteer',
-    organization: 'HubIO',
+    organization: 'Communify',
     organizationId: 'org-24',
     description: 'Help with community resource expo including setup, registration, and directing attendees to booths.',
     category: 'Community',

@@ -7,9 +7,10 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
+import { resolveSupabaseUrl, DEFAULT_SUPABASE_ANON_KEY } from './url'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qyiqvodabfsovjjgjdxs.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5aXF2b2RhYmZzb3ZqamdqZHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2MzUxMzksImV4cCI6MjA3ODIxMTEzOX0.YQ7tT-q1dk_krROobItrn7sxVmIxut7VGNR7WaonFEg'
+const supabaseUrl = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
 
 /**
  * Create a server-side Supabase client
@@ -43,6 +44,21 @@ export function createServerClient(request?: { headers: { get: (name: string) =>
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: false,
+      flowType: 'pkce',
+    },
+    global: {
+      headers: request?.headers 
+        ? Object.fromEntries(
+            Array.from(['cookie', 'authorization']).map(key => [key, request.headers.get(key) || ''])
+          )
+        : {},
+    },
+    cookies: {
+      get(name: string) {
+        return getCookie(name)
+      },
+      set() {},
+      remove() {},
     },
   })
 }

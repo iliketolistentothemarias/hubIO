@@ -14,7 +14,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   User, Settings, LogOut, Heart, Calendar, Award, 
-  Bell, HelpCircle, Shield, ChevronUp, Sparkles 
+  HelpCircle, Sparkles, Shield
 } from 'lucide-react'
 import { getAuthService } from '@/lib/auth'
 import { useRouter } from 'next/navigation'
@@ -145,21 +145,21 @@ export default function ProfileMenu() {
     },
   ]
 
-  if (user.role === 'admin' || user.role === 'moderator') {
-    menuItems.push({
-      icon: Shield,
-      label: 'Admin Dashboard',
-      href: '/admin',
-      color: 'text-purple-600',
-    })
-  }
-
   if (user.role === 'volunteer') {
     menuItems.push({
       icon: Sparkles,
       label: 'Volunteer Dashboard',
       href: '/volunteer/dashboard',
       color: 'text-emerald-600',
+    })
+  }
+
+  if (user.role === 'admin') {
+    menuItems.push({
+      icon: Shield,
+      label: 'Admin Dashboard',
+      href: '/admin',
+      color: 'text-purple-600',
     })
   }
 

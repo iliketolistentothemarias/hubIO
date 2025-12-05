@@ -192,21 +192,23 @@ export default function ResourceDetailPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-4">
-                    <Globe className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0" />
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-white mb-1">Website</div>
-                      <a 
-                        href={resource.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1"
-                      >
-                        Visit Website
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
+                  {resource.website && (
+                    <div className="flex items-start gap-4">
+                      <Globe className="w-5 h-5 text-primary-600 dark:text-primary-400 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="font-semibold text-gray-900 dark:text-white mb-1">Website</div>
+                        <a 
+                          href={resource.website} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 flex items-center gap-1"
+                        >
+                          Visit Website
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {resource.hours && (
                     <div className="flex items-start gap-4">

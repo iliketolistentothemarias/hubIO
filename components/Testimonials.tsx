@@ -17,21 +17,21 @@ const testimonials: Testimonial[] = [
     id: '1',
     name: 'Sarah Johnson',
     role: 'Community Member',
-    content: 'HubIO has been a lifesaver for finding local resources. The search is so easy to use and I found exactly what I needed for my family.',
+    content: 'Communify has been a lifesaver for finding local resources. The search is so easy to use and I found exactly what I needed for my family.',
     rating: 5,
   },
   {
     id: '2',
     name: 'Michael Chen',
     role: 'Social Worker',
-    content: 'As a professional, I recommend HubIO to all my clients. It\'s comprehensive, up-to-date, and makes connecting people with resources so much easier.',
+    content: 'As a professional, I recommend Communify to all my clients. It\'s comprehensive, up-to-date, and makes connecting people with resources so much easier.',
     rating: 5,
   },
   {
     id: '3',
     name: 'Maria Rodriguez',
     role: 'Non-Profit Director',
-    content: 'Having our organization listed on HubIO has increased our visibility significantly. We\'ve seen a 40% increase in inquiries since joining.',
+    content: 'Having our organization listed on Communify has increased our visibility significantly. We\'ve seen a 40% increase in inquiries since joining.',
     rating: 5,
   },
   {
@@ -45,7 +45,7 @@ const testimonials: Testimonial[] = [
     id: '5',
     name: 'Emily Watson',
     role: 'Student',
-    content: 'I used HubIO to find tutoring services and after-school programs. The detailed information and ratings helped me make the best choice.',
+    content: 'I used Communify to find tutoring services and after-school programs. The detailed information and ratings helped me make the best choice.',
     rating: 5,
   },
   {
@@ -71,8 +71,11 @@ export default function Testimonials() {
           <h2 className="text-4xl md:text-5xl font-display font-bold text-gray-900 dark:text-white mb-4">
             What People Say
           </h2>
+          <p className="text-sm italic text-gray-500 dark:text-gray-400 mb-2">
+              Note: These are fake testimonials for the demo.
+          </p>
           <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            Don&apos;t just take our word for it. Hear from community members, professionals, and organizations who use HubIO.
+            Don&apos;t just take our word for it. Hear from community members, professionals, and organizations who use Communify.
           </p>
         </motion.div>
 

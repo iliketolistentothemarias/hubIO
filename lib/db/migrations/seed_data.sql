@@ -1,4 +1,4 @@
--- Seed Data for HubIO
+-- Seed Data for Communify
 -- Run this after creating all tables
 -- Note: User IDs should be replaced with actual auth.users IDs when users are created
 
@@ -104,12 +104,12 @@ SELECT
   (SELECT id FROM public.posts WHERE title = 'Great experience at the Community Food Bank!' LIMIT 1),
   'Emma Williams',
   COALESCE((SELECT id FROM public.users WHERE email = 'emma.williams@example.com' LIMIT 1), '00000000-0000-0000-0000-000000000003'::uuid),
-  'I volunteer there regularly! Great organization. You can sign up through HubIO or contact them directly.',
+  'I volunteer there regularly! Great organization. You can sign up through Communify or contact them directly.',
   8,
   NOW() - INTERVAL '20 hours',
   NOW() - INTERVAL '20 hours'
 WHERE EXISTS (SELECT 1 FROM public.posts WHERE title = 'Great experience at the Community Food Bank!')
-  AND NOT EXISTS (SELECT 1 FROM public.comments WHERE content = 'I volunteer there regularly! Great organization. You can sign up through HubIO or contact them directly.');
+  AND NOT EXISTS (SELECT 1 FROM public.comments WHERE content = 'I volunteer there regularly! Great organization. You can sign up through Communify or contact them directly.');
 
 INSERT INTO public.comments (id, post_id, author, author_id, content, likes, created_at, updated_at)
 SELECT 

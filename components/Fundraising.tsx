@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { DollarSign, TrendingUp, Users, Target, Heart, ArrowRight, Sparkles } from 'lucide-react'
 import LiquidGlass from './LiquidGlass'
 import DonationDialog from './DonationDialog'
 import { getAuthService } from '@/lib/auth'
+import { supabase } from '@/lib/supabase/client'
 
 interface FundraisingCampaign {
   id: string
@@ -20,7 +21,7 @@ interface FundraisingCampaign {
   image?: string
 }
 
-const campaigns: FundraisingCampaign[] = [
+const fallbackCampaigns: FundraisingCampaign[] = [
   {
     id: '1',
     title: 'Community Food Bank Expansion',
@@ -68,6 +69,37 @@ export default function Fundraising() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
   const [donationDialogOpen, setDonationDialogOpen] = useState(false)
   const [selectedCampaign, setSelectedCampaign] = useState<FundraisingCampaign | null>(null)
+  const [campaigns, setCampaigns] = useState<FundraisingCampaign[]>(fallbackCampaigns)
+
+  // Import pre-loaded data
+  useEffect(() => {
+    import('@/contexts/DataContext').then(({ useData }) => {
+      try {
+        const { campaigns: preloadedCampaigns } = useData()
+        if (preloadedCampaigns && preloadedCampaigns.length > 0) {
+          const mappedCampaigns: FundraisingCampaign[] = preloadedCampaigns.slice(0, 12).map((c: any) => {
+            const deadline = c.deadline ? new Date(c.deadline) : new Date()
+            const now = new Date()
+            const daysLeft = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+            
+            return {
+              id: c.id,
+              title: c.title,
+              description: c.description,
+              goal: Number(c.goal) || 0,
+              raised: Number(c.raised) || 0,
+              donors: c.donors || 0,
+              daysLeft,
+              category: c.category || 'Community',
+            }
+          })
+          setCampaigns(mappedCampaigns)
+        }
+      } catch (e) {
+        // Keep fallback if context not available
+      }
+    })
+  }, [])
 
   const categories = ['All', 'Small Business', 'Food Security', 'Youth Services', 'Community']
 

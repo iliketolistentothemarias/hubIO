@@ -1,45 +1,41 @@
-import { Pool, QueryResult, QueryResultRow } from 'pg';
+/**
+ * @deprecated This file is deprecated. Use @/lib/supabase/client and @/lib/supabase/database instead.
+ * This file is kept for backward compatibility during migration.
+ */
 
-let pool: Pool | null = null;
+import { supabase } from '@/lib/supabase/client';
+import { QueryResult, QueryResultRow } from 'pg';
 
-export function getPool(): Pool {
-  if (!pool) {
-    if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL environment variable is not set');
-    }
-    
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
-
-    pool.on('error', (err) => {
-      console.error('Unexpected error on idle PostgreSQL client', err);
-    });
-  }
-  
-  return pool;
+/**
+ * @deprecated Use Supabase client directly instead
+ * This function is kept for backward compatibility
+ */
+export function getPool(): any {
+  console.warn('getPool() is deprecated. Use Supabase client directly.');
+  return null;
 }
 
+/**
+ * @deprecated Use Supabase queries directly instead
+ * This function attempts to convert SQL queries to Supabase format but is not fully compatible.
+ * Please migrate to using SupabaseDatabase from @/lib/supabase/database
+ */
 export async function query<T extends QueryResultRow = any>(
   text: string,
   params?: any[]
 ): Promise<QueryResult<T>> {
-  const pool = getPool();
-  try {
-    const result = await pool.query<T>(text, params);
-    return result;
-  } catch (error) {
-    console.error('Database query error:', error);
-    throw error;
-  }
+  console.warn('query() is deprecated. Use SupabaseDatabase from @/lib/supabase/database instead.');
+  
+  // This is a basic fallback - for full migration, use SupabaseDatabase
+  throw new Error(
+    'Direct SQL queries are no longer supported. ' +
+    'Please use SupabaseDatabase from @/lib/supabase/database or supabase client from @/lib/supabase/client'
+  );
 }
 
+/**
+ * @deprecated No longer needed with Supabase
+ */
 export async function closePool(): Promise<void> {
-  if (pool) {
-    await pool.end();
-    pool = null;
-  }
+  // No-op for Supabase
 }

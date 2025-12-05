@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
         `INSERT INTO users (email, name, password_hash, role) 
          VALUES ($1, $2, $3, $4) 
          RETURNING id, email, name, role, created_at`,
-        [email.toLowerCase(), name, hashedPassword, 'resident']
+        [email.toLowerCase(), name, hashedPassword, 'volunteer']
       )
 
       const user = result.rows[0]

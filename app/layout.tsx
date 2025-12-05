@@ -7,7 +7,10 @@ import ProfileMenu from '@/components/ProfileMenu'
 import Messaging from '@/components/Messaging'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { FavoritesProvider } from '@/contexts/FavoritesContext'
+import { DataProvider } from '@/contexts/DataContext'
 import ToastContainer from '@/components/Toast'
+import PagePreloader from '@/components/PagePreloader'
+import InitialDataLoader from '@/components/InitialDataLoader'
 import '@/lib/auth/init-admin'
 
 const poppins = Poppins({ 
@@ -44,25 +47,56 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300">
         <ThemeProvider>
-          <FavoritesProvider>
-            <Navigation />
-            <main className="min-h-screen relative" role="main" aria-label="Main content">
-              {children}
-            </main>
-            <Footer />
-            <ToastContainer />
-          </FavoritesProvider>
+          <DataProvider>
+            <FavoritesProvider>
+              <InitialDataLoader />
+              <PagePreloader />
+              <Navigation />
+              <main className="min-h-screen relative" role="main" aria-label="Main content">
+                {children}
+              </main>
+              <Footer />
+              <ToastContainer />
+            </FavoritesProvider>
+          </DataProvider>
         </ThemeProvider>
+        {/* Service Worker - immediately unregister and clear everything */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(reg => console.log('SW registered', reg))
-                    .catch(err => console.log('SW registration failed', err));
-                });
-              }
+              (function() {
+                // Unregister all service workers
+                if ('serviceWorker' in navigator) {
+                  navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(registration => {
+                      registration.unregister();
+                    });
+                  });
+                }
+                
+                const rememberSession = (() => {
+                  try {
+                    return localStorage.getItem('remember_me') === 'true';
+                  } catch (e) {
+                    return false;
+                  }
+                })();
+                
+                // Clear all caches
+                if ('caches' in window) {
+                  caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name));
+                  });
+                }
+                
+                // Clear localStorage and sessionStorage unless user wants to stay signed in
+                try {
+                  if (!rememberSession) {
+                    localStorage.clear();
+                  }
+                  sessionStorage.clear();
+                } catch(e) {}
+              })();
             `,
           }}
         />

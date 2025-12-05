@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 export const db = {
   users: {
-    async create(email: string, name: string, password: string, role: string = 'resident') {
+    async create(email: string, name: string, password: string, role: string = 'volunteer') {
       const passwordHash = await bcrypt.hash(password, 10);
       const result = await query<User>(
         `INSERT INTO users (email, name, password_hash, role) 

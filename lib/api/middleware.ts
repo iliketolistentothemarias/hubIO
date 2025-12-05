@@ -73,7 +73,7 @@ export async function requireRole(
  * @throws AuthorizationError if user is not admin
  */
 export async function requireAdmin() {
-  return requireRole(['admin', 'moderator'])
+  return requireRole(['admin'])
 }
 
 /**

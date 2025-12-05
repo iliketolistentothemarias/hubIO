@@ -15,6 +15,8 @@ import {
 import { Conversation, Message } from '@/lib/types/messaging'
 import { useSocket } from '@/lib/realtime/client'
 import LiquidGlass from './LiquidGlass'
+import { notificationService } from '@/lib/messaging/NotificationService'
+import { supabase } from '@/lib/supabase/client'
 
 interface MessagingProps {
   minimized?: boolean
@@ -33,6 +35,10 @@ export default function Messaging({ minimized = false, onMinimize }: MessagingPr
 
   useEffect(() => {
     loadConversations()
+  }, [])
+
+  useEffect(() => {
+    notificationService.initialize()
   }, [])
 
   // Get user ID for WebSocket
@@ -54,34 +60,87 @@ export default function Messaging({ minimized = false, onMinimize }: MessagingPr
     if (activeConversation) {
       loadMessages(activeConversation.id)
       
-      // Join conversation room for real-time updates
+      // Subscribe to Supabase realtime for messages
+      const channel = supabase
+        .channel(`messages-${activeConversation.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'messages',
+            filter: `conversation_id=eq.${activeConversation.id}`,
+          },
+          (payload) => {
+            console.log('New message received:', payload)
+            const newMessage = payload.new as any
+            
+            // Format the message
+            const formattedMessage: Message = {
+              id: newMessage.id,
+              conversationId: newMessage.conversation_id,
+              senderId: newMessage.sender_id,
+              senderName: 'User',
+              content: newMessage.content,
+              type: newMessage.type || 'text',
+              createdAt: newMessage.created_at,
+              read: newMessage.read || false,
+            }
+            
+            // Only add if it's not from current user or if we want to show sent messages
+            if (!messages.find(m => m.id === formattedMessage.id)) {
+              setMessages(prev => [...prev, formattedMessage])
+            }
+            
+            // Send notification if from other user
+            if (userId && newMessage.sender_id !== userId) {
+              notificationService.createInAppNotification(
+                userId,
+                newMessage.sender_id,
+                'User',
+                newMessage.conversation_id,
+                newMessage.content
+              )
+            }
+          }
+        )
+        .subscribe()
+      
+      // Also try WebSocket for typing indicators
       if (isConnected) {
         joinRoom(activeConversation.id)
         
-        // Listen for new messages
         const handleNewMessage = (data: { message: Message }) => {
-          if (data.message.conversationId === activeConversation.id) {
-            setMessages(prev => [...prev, data.message])
+          const { message } = data
+          if (message.senderId && !userId) return
+
+          const isFromOtherUser = message.senderId && message.senderId !== userId
+          if (isFromOtherUser) {
+            if (activeConversation?.id !== message.conversationId) {
+              notificationService.showMessageNotification(
+                message.senderName,
+                message.content,
+                message.conversationId,
+                message.senderAvatar
+              )
+            }
           }
         }
         
         on('new-message', handleNewMessage)
         on('message-updated', handleNewMessage)
-        
-        return () => {
+      }
+      
+      return () => {
+        supabase.removeChannel(channel)
+        if (isConnected && activeConversation) {
           leaveRoom(activeConversation.id)
-          off('new-message', handleNewMessage)
-          off('message-updated', handleNewMessage)
+          off('new-message', () => {})
+          off('message-updated', () => {})
         }
-      } else {
-        // Fallback to polling if WebSocket not available
-        const interval = setInterval(() => {
-          loadMessages(activeConversation.id)
-        }, 3000)
-        return () => clearInterval(interval)
       }
     }
-  }, [activeConversation, isConnected, joinRoom, leaveRoom, on, off])
+  }, [activeConversation?.id, userId])
 
   useEffect(() => {
     scrollToBottom()
@@ -89,7 +148,7 @@ export default function Messaging({ minimized = false, onMinimize }: MessagingPr
 
   const loadConversations = async () => {
     try {
-      const response = await fetch('/api/messaging/conversations')
+      const response = await fetch('/api/messages/conversations')
       const data = await response.json()
       if (data.success) {
         setConversations(data.data)
@@ -101,7 +160,7 @@ export default function Messaging({ minimized = false, onMinimize }: MessagingPr
 
   const loadMessages = async (conversationId: string) => {
     try {
-      const response = await fetch(`/api/messaging/messages?conversationId=${conversationId}`)
+      const response = await fetch(`/api/messages/${conversationId}`)
       const data = await response.json()
       if (data.success) {
         setMessages(data.data)
@@ -123,11 +182,10 @@ export default function Messaging({ minimized = false, onMinimize }: MessagingPr
         })
       }
 
-      const response = await fetch('/api/messaging/messages', {
+      const response = await fetch(`/api/messages/${activeConversation.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversationId: activeConversation.id,
           content: newMessage,
           type: 'text',
         }),

@@ -99,7 +99,7 @@ function AuthCallbackContent() {
             name: user.user_metadata?.full_name || 
                   user.user_metadata?.name || 
                   user.email!.split('@')[0],
-            role: 'resident',
+            role: 'volunteer',
             karma: 0,
             created_at: new Date().toISOString(),
             last_active_at: new Date().toISOString(),

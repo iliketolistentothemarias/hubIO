@@ -1,9 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
+import { resolveSupabaseUrl, DEFAULT_SUPABASE_ANON_KEY } from './url'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://qyiqvodabfsovjjgjdxs.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF5aXF2b2RhYmZzb3ZqamdqZHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI2MzUxMzksImV4cCI6MjA3ODIxMTEzOX0.YQ7tT-q1dk_krROobItrn7sxVmIxut7VGNR7WaonFEg'
+const supabaseUrl = resolveSupabaseUrl(process.env.NEXT_PUBLIC_SUPABASE_URL)
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  },
+})
 
 // Database table types
 export interface Database {
@@ -35,6 +44,34 @@ export interface Database {
         }
         Insert: Omit<Database['public']['Tables']['resources']['Row'], 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Database['public']['Tables']['resources']['Row']>
+      }
+      resource_submissions: {
+        Row: {
+          id: string
+          name: string
+          category: string
+          description: string
+          address: string
+          phone: string
+          email: string
+          website: string | null
+          tags: string[]
+          hours: string | null
+          services: string[]
+          languages: string[]
+          accessibility: string[]
+          submitted_by: string | null
+          status: string
+          rejection_reason: string | null
+          admin_notes: string | null
+          processed_by: string | null
+          processed_at: string | null
+          resource_id: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: Omit<Database['public']['Tables']['resource_submissions']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Database['public']['Tables']['resource_submissions']['Row']>
       }
       events: {
         Row: {

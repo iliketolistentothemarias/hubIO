@@ -53,13 +53,21 @@ CREATE POLICY "Anyone can insert resources"
   WITH CHECK (true);
 
 -- Only admins and moderators can update resources
-CREATE POLICY "Admins can update resources"
+CREATE POLICY "Admins or owners can update resources"
   ON resources FOR UPDATE
   USING (
     EXISTS (
       SELECT 1 FROM users
       WHERE users.id = auth.uid()
-      AND users.role IN ('admin', 'moderator')
+      AND users.role = 'admin'
+    )
+    OR submitted_by = auth.uid()
+    OR EXISTS (
+      SELECT 1 FROM resource_members rm
+      WHERE rm.resource_id = resources.id
+        AND rm.user_id = auth.uid()
+        AND rm.invitation_status = 'accepted'
+        AND rm.role IN ('owner','manager','moderator')
     )
   );
 
@@ -70,7 +78,7 @@ CREATE POLICY "Admins can delete resources"
     EXISTS (
       SELECT 1 FROM users
       WHERE users.id = auth.uid()
-      AND users.role IN ('admin', 'moderator')
+      AND users.role = 'admin'
     )
   );
 

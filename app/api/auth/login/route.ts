@@ -7,7 +7,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL })
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, rememberMe } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -65,12 +65,14 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      response.cookies.set('auth_token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7,
-      })
+      if (rememberMe) {
+        response.cookies.set('auth_token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 30,
+        })
+      }
 
       return response
     } finally {

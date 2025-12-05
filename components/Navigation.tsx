@@ -7,6 +7,29 @@ import { Menu, X, Heart, Moon, Sun, Star, ChevronDown, User, LogOut } from 'luci
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
+import { supabase } from '@/lib/supabase/client'
+import Notifications from '@/components/Notifications'
+
+// All routes to prefetch for instant navigation
+const ALL_ROUTES = [
+  '/',
+  '/directory',
+  '/highlights',
+  '/business',
+  '/grants',
+  '/events',
+  '/projects',
+  '/volunteer/dashboard',
+  '/news',
+  '/social',
+  '/lists',
+  '/dashboard',
+  '/analytics',
+  '/submit',
+  '/about',
+  '/login',
+  '/signup',
+]
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
@@ -18,6 +41,19 @@ export default function Navigation() {
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
   const { favorites } = useFavorites()
+  const displayName = user?.name ? user.name.replace(/\s+/g, ' ').trim().replace(/\s+/g, ' ') : ''
+
+  // Prefetch all routes on mount for instant navigation
+  useEffect(() => {
+    // Delay prefetching slightly to not block initial render
+    const timer = setTimeout(() => {
+      ALL_ROUTES.forEach(route => {
+        router.prefetch(route)
+      })
+    }, 1000)
+    
+    return () => clearTimeout(timer)
+  }, [router])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,26 +64,46 @@ export default function Navigation() {
   }, [])
 
   useEffect(() => {
-    checkAuth()
-  }, [pathname])
-
-  const checkAuth = async () => {
-    try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-      if (data.success) {
-        setUser(data.data.user)
-      } else {
+    const loadUser = async () => {
+      const { data, error } = await supabase.auth.getUser()
+      if (error || !data.user) {
         setUser(null)
+        return
       }
-    } catch (error) {
-      setUser(null)
+
+      const { data: profileData } = await supabase
+        .from('users')
+        .select('name, role, avatar')
+        .eq('id', data.user.id)
+        .single()
+
+      setUser({
+        id: data.user.id,
+        email: data.user.email || '',
+        name: profileData?.name || (data.user.user_metadata?.name as string) || data.user.email?.split('@')[0] || 'Member',
+        role: profileData?.role || data.user.user_metadata?.role || 'volunteer',
+        avatar: profileData?.avatar || data.user.user_metadata?.avatar_url,
+      })
     }
-  }
+
+    loadUser()
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        setUser(null)
+      } else {
+        loadUser()
+      }
+    })
+
+    return () => listener?.subscription.unsubscribe()
+  }, [pathname])
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' })
+      await supabase.auth.signOut()
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('remember_me')
+      }
       setUser(null)
       router.push('/')
     } catch (error) {
@@ -56,13 +112,12 @@ export default function Navigation() {
   }
 
   const navItems: Array<{
-    href: string
+    href?: string
     label: string
     submenu?: Array<{ href: string; label: string }>
   }> = [
     { href: '/', label: 'Home' },
     { 
-      href: '/directory', 
       label: 'Resources',
       submenu: [
         { href: '/directory', label: 'All Resources' },
@@ -72,7 +127,6 @@ export default function Navigation() {
       ]
     },
     { 
-      href: '/events', 
       label: 'Community',
       submenu: [
         { href: '/events', label: 'Events' },
@@ -82,13 +136,13 @@ export default function Navigation() {
       ]
     },
     { 
-      href: '/social', 
       label: 'Forum',
       submenu: [
         { href: '/social', label: 'All Posts' },
         { href: '/lists', label: 'Lists' },
       ]
     },
+    { href: '/messages', label: 'Messages' },
     { href: '/dashboard', label: 'Dashboard' },
     { 
       href: '/analytics', 
@@ -107,9 +161,9 @@ export default function Navigation() {
       }`}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16 md:h-20">
+        <div className="flex items-center justify-center gap-6 h-16 md:h-20 mx-auto w-full">
           {/* Logo */}
-          <div className="flex-1">
+          <div className="pr-8 flex items-center">
             <Link href="/" className="flex items-center gap-2 group w-fit">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -124,49 +178,65 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex items-center gap-6 flex-1 justify-center">
+          <div className="hidden md:flex items-center gap-6 justify-center">
             {navItems.map((item, index) => (
               <motion.div
-                key={item.href}
-                initial={{ opacity: 0, y: -20 }}
+                key={item.href || item.label}
+                initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
+                transition={{ duration: 0.15, delay: index * 0.02 }}
                 className="relative"
-                onMouseEnter={() => item.submenu && setOpenDropdown(item.href)}
+                onMouseEnter={() => item.submenu && setOpenDropdown(item.label)}
                 onMouseLeave={() => setOpenDropdown(null)}
               >
-                    <Link
-                      href={item.href}
-                      className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${
-                        pathname === item.href
-                          ? 'text-[#2C2416] dark:text-[#F5F3F0]'
-                          : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
-                      }`}
+                {item.submenu ? (
+                  <button
+                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${
+                      item.submenu.some(sub => pathname === sub.href)
+                        ? 'text-[#2C2416] dark:text-[#F5F3F0]'
+                        : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
+                    }`}
+                  >
+                    <motion.span
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
                     >
-                      <motion.span
-                        whileHover={{ scale: 1.1 }}
-                        transition={{ type: 'spring', stiffness: 400 }}
-                      >
-                        {item.label}
-                      </motion.span>
-                      {item.submenu && (
-                        <motion.div
-                          animate={{ rotate: openDropdown === item.href ? 180 : 0 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <ChevronDown className="w-4 h-4" />
-                        </motion.div>
-                      )}
-                      {pathname === item.href && !item.submenu && (
-                        <motion.div
-                          layoutId="navbar-indicator"
-                          className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#8B6F47] dark:bg-[#D4A574]"
-                          initial={false}
-                        />
-                      )}
-                    </Link>
+                      {item.label}
+                    </motion.span>
+                    <motion.div
+                      animate={{ rotate: openDropdown === item.label ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="w-4 h-4" />
+                    </motion.div>
+                  </button>
+                ) : item.href ? (
+                  <Link
+                    href={item.href}
+                    prefetch={true}
+                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${
+                      pathname === item.href
+                        ? 'text-[#2C2416] dark:text-[#F5F3F0]'
+                        : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
+                    }`}
+                  >
+                    <motion.span
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ type: 'spring', stiffness: 400 }}
+                    >
+                      {item.label}
+                    </motion.span>
+                    {pathname === item.href && (
+                      <motion.div
+                        layoutId="navbar-indicator"
+                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#8B6F47] dark:bg-[#D4A574]"
+                        initial={false}
+                      />
+                    )}
+                  </Link>
+                ) : null}
                     <AnimatePresence>
-                      {item.submenu && openDropdown === item.href && (
+                      {item.submenu && openDropdown === item.label && (
                         <motion.div
                           initial={{ opacity: 0, y: -10, scale: 0.95 }}
                           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -213,7 +283,7 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Utilities */}
-          <div className="hidden md:flex items-center gap-4 flex-1 justify-end">
+          <div className="hidden md:flex items-center gap-4 justify-end pl-8">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
@@ -253,6 +323,8 @@ export default function Navigation() {
               </motion.div>
             </motion.button>
 
+            <Notifications />
+
             {/* Auth Buttons */}
             {user ? (
               <div className="relative">
@@ -264,7 +336,7 @@ export default function Navigation() {
                            hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   <User className="w-4 h-4" />
-                  <span className="font-medium">{user.name}</span>
+                      <span className="font-medium truncate">{displayName || user.email}</span>
                 </motion.button>
 
                 <AnimatePresence>
@@ -276,20 +348,23 @@ export default function Navigation() {
                       className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#2A2824] rounded-lg shadow-lg border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
                     >
                       <div className="p-3 border-b border-[#E8E0D6] dark:border-[#4A4844]">
-                        <p className="text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0]">{user.name}</p>
+                        <p className="text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0]">{displayName || user.email}</p>
                         <p className="text-xs text-[#6B5D47] dark:text-[#B8A584]">{user.email}</p>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#f5ede1] text-[#6B5D47] dark:bg-[#3b352c] dark:text-[#D4A574]">
+                          Role: {user.role}
+                        </span>
                       </div>
-                      {(user.role === 'admin' || user.role === 'moderator') && (
-                        <Link
-                          href="/admin"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
-                        >
-                          Admin Dashboard
-                        </Link>
-                      )}
+                    {user.role === 'admin' && (
                       <Link
-                        href="/submit-resource"
+                        href="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
+                      >
+                        Admin Dashboard
+                      </Link>
+                    )}
+                      <Link
+                        href="/submit"
                         onClick={() => setUserMenuOpen(false)}
                         className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
                       >
@@ -324,9 +399,9 @@ export default function Navigation() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium"
+                      className="px-5 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium whitespace-nowrap flex items-center justify-center min-w-[190px]"
                   >
-                    Sign Up
+                          <span className="whitespace-nowrap">Sign Up</span>
                   </motion.button>
                 </Link>
               </>
@@ -335,6 +410,7 @@ export default function Navigation() {
 
           {/* Mobile Menu Button */}
           <div className="flex items-center gap-2 md:hidden">
+            <Notifications />
             <button
               onClick={toggleTheme}
               className="p-2 text-gray-700 dark:text-gray-300"
@@ -368,18 +444,28 @@ export default function Navigation() {
           >
             <div className="container-custom px-4 py-4 space-y-4">
               {navItems.map((item) => (
-                <div key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setIsOpen(false)}
-                    className={`block py-2 font-medium transition-colors ${
-                      pathname === item.href
+                <div key={item.href || item.label}>
+                  {item.submenu ? (
+                    <div className={`block py-2 font-medium ${
+                      item.submenu.some(sub => pathname === sub.href)
                         ? 'text-primary-600 dark:text-primary-400'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}>
+                      {item.label}
+                    </div>
+                  ) : item.href ? (
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsOpen(false)}
+                      className={`block py-2 font-medium transition-colors ${
+                        pathname === item.href
+                          ? 'text-primary-600 dark:text-primary-400'
+                          : 'text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400'
+                      }`}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : null}
                   {item.submenu && (
                     <div className="pl-4 space-y-2 mt-2">
                       {item.submenu.map((subItem) => (
@@ -419,10 +505,10 @@ export default function Navigation() {
                 <>
                   <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{user.name}</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{displayName || user.email}</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400">{user.email}</p>
                     </div>
-                    {(user.role === 'admin' || user.role === 'moderator') && (
+                    {user.role === 'admin' && (
                       <Link
                         href="/admin"
                         onClick={() => setIsOpen(false)}

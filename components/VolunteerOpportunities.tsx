@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import { HandHeart, Calendar, MapPin, Users, Clock, ArrowRight, Filter } from 'lucide-react'
 import LiquidGlass from './LiquidGlass'
 import VolunteerApplicationDialog from './VolunteerApplicationDialog'
 import { getAuthService } from '@/lib/auth'
+import { supabase } from '@/lib/supabase/client'
 
 interface Opportunity {
   id: string
@@ -22,7 +23,7 @@ interface Opportunity {
   skills?: string[]
 }
 
-const opportunities: Opportunity[] = [
+const fallbackOpportunities: Opportunity[] = [
   {
     id: '1',
     title: 'Community Garden Cleanup',
@@ -84,6 +85,38 @@ export default function VolunteerOpportunities() {
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [applicationDialogOpen, setApplicationDialogOpen] = useState(false)
   const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null)
+  const [opportunities, setOpportunities] = useState<Opportunity[]>(fallbackOpportunities)
+
+  useEffect(() => {
+    import('@/contexts/DataContext').then(({ useData }) => {
+      try {
+        const { volunteers: preloadedVolunteers } = useData()
+        if (preloadedVolunteers && preloadedVolunteers.length > 0) {
+          const mappedOpportunities: Opportunity[] = preloadedVolunteers.slice(0, 12).map((o: any) => {
+            const location = o.location ? (typeof o.location === 'string' ? JSON.parse(o.location) : o.location) : {}
+            const locationStr = location.address ? `${location.address}, ${location.city || ''} ${location.state || ''}`.trim() : 'Location TBD'
+            
+            return {
+              id: o.id,
+              title: o.title,
+              organization: o.organization,
+              description: o.description,
+              date: new Date().toISOString().split('T')[0],
+              time: o.time_commitment || 'TBD',
+              location: locationStr,
+              volunteersNeeded: 20,
+              volunteersSignedUp: 0,
+              category: o.category || 'Community',
+              skills: o.skills_required || [],
+            }
+          })
+          setOpportunities(mappedOpportunities)
+        }
+      } catch (e) {
+        // Keep fallback
+      }
+    })
+  }, [])
 
   const filteredOpportunities = selectedCategory === 'All'
     ? opportunities

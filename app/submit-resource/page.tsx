@@ -1,14 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Send, Building, MapPin, Phone, Mail, Globe, Tag } from 'lucide-react'
+import { Send, Building, MapPin, Phone, Mail, Globe, Tag, Clock } from 'lucide-react'
+import AuthRequired from '@/components/auth/AuthRequired'
 
-export default function SubmitResourcePage() {
+function SubmitResourceForm() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
@@ -19,30 +18,8 @@ export default function SubmitResourcePage() {
     email: '',
     website: '',
     tags: '',
+    hours: '',
   })
-
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
-    try {
-      const res = await fetch('/api/auth/me')
-      const data = await res.json()
-
-      if (!data.success) {
-        router.push('/login?redirect=/submit-resource')
-        return
-      }
-
-      setUser(data.data.user)
-    } catch (error) {
-      console.error('Auth check failed:', error)
-      router.push('/login?redirect=/submit-resource')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -81,14 +58,6 @@ export default function SubmitResourcePage() {
     } finally {
       setSubmitting(false)
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    )
   }
 
   return (
@@ -179,6 +148,21 @@ export default function SubmitResourcePage() {
               required
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="123 Main St, Pittsburgh, PA 15241"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              <Clock className="inline mr-2" size={16} />
+              Hours / Availability (optional)
+            </label>
+            <input
+              type="text"
+              name="hours"
+              value={formData.hours}
+              onChange={handleChange}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              placeholder="e.g., Mon-Fri 9am-5pm, Sat 10am-2pm or Opens quarterly on the 1st"
             />
           </div>
 
@@ -276,5 +260,16 @@ export default function SubmitResourcePage() {
         </motion.form>
       </div>
     </div>
+  )
+}
+
+export default function SubmitResourcePage() {
+  return (
+    <AuthRequired
+      featureName="resource submissions"
+      description="Submitting official resources is limited to verified members. Create an account to share organizations with the community."
+    >
+      <SubmitResourceForm />
+    </AuthRequired>
   )
 }

@@ -1,26 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
-import { Pool } from 'pg'
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL })
+import { createAdminClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const token = request.cookies.get('auth_token')?.value
+    const adminClient = createAdminClient()
 
-    if (!token) {
+    // Get user from Authorization header (Bearer token)
+    const authHeader = request.headers.get('authorization') || ''
+    let userId: string | null = null
+    let userRole: string | null = null
+
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      const token = authHeader.slice(7).trim()
+      const { data, error } = await adminClient.auth.getUser(token)
+
+      if (error || !data.user) {
+        return NextResponse.json(
+          { success: false, error: 'Authentication required' },
+          { status: 401 }
+        )
+      }
+
+      userId = data.user.id
+
+      // Get user's current role
+      const { data: userData } = await adminClient
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single()
+
+      userRole = userData?.role || 'volunteer'
+    } else {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-
-    let decoded
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid or expired token' },
         { status: 401 }
       )
     }
@@ -47,43 +60,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const client = await pool.connect()
-
-    try {
-      const result = await client.query(
-        `INSERT INTO resources (
-          name, category, description, address, phone, email, website,
-          tags, hours, services, languages, accessibility,
-          submitted_by, status, verified
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-        RETURNING id, name, category, status, created_at`,
-        [
-          name,
-          category,
-          description,
-          address,
-          phone,
-          email,
-          website || null,
-          tags || [],
-          hours || null,
-          services || [],
-          languages || [],
-          accessibility || [],
-          decoded.userId,
-          'pending',
-          false,
-        ]
-      )
-
-      return NextResponse.json({
-        success: true,
-        data: { resource: result.rows[0] },
-        message: 'Resource submitted successfully! It will be reviewed by our admins.',
+    const { data, error } = await adminClient
+      .from('resource_submissions')
+      .insert({
+        name,
+        category,
+        description,
+        address,
+        phone,
+        email,
+        website: website || null,
+        tags: tags || [],
+        hours: hours || null,
+        services: services || [],
+        languages: languages || [],
+        accessibility: accessibility || [],
+        submitted_by: userId,
+        status: 'pending',
       })
-    } finally {
-      client.release()
+      .select('id, created_at')
+      .single()
+
+    if (error || !data) {
+      console.error('Resource submission error:', error)
+      return NextResponse.json(
+        { success: false, error: 'Failed to submit resource' },
+        { status: 500 }
+      )
     }
+
+    // Upgrade volunteer to organizer (but keep admin as admin)
+    if (userId && userRole === 'volunteer') {
+      await adminClient
+        .from('users')
+        .update({ role: 'organizer' })
+        .eq('id', userId)
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: { submission: data },
+      message: 'Resource submitted successfully and is awaiting admin approval.',
+    })
   } catch (error) {
     console.error('Resource submission error:', error)
     return NextResponse.json(

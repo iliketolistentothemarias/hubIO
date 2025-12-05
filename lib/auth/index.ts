@@ -50,7 +50,7 @@ export class AuthService {
       id: `user_${Date.now()}`,
       email: `user@${provider}.com`,
       name: `User from ${provider}`,
-      role: 'resident',
+      role: 'volunteer',
       preferences: {
         theme: 'auto',
         language: 'en',
@@ -108,7 +108,7 @@ export class AuthService {
         id: `user_${Date.now()}`,
         email,
         name: email.split('@')[0],
-        role: 'resident',
+        role: 'volunteer',
         preferences: {
           theme: 'auto',
           language: 'en',
@@ -168,7 +168,7 @@ export class AuthService {
       id: `user_${Date.now()}`,
       email,
       name,
-      role: 'resident',
+      role: 'volunteer',
       preferences: {
         theme: 'auto',
         language: 'en',

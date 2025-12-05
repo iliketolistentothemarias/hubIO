@@ -25,7 +25,7 @@ export class AdminService {
    */
   async approveResource(resourceId: string, adminId: string): Promise<Resource> {
     const admin = await this.auth.getCurrentUser()
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
+    if (!admin || admin.role !== 'admin') {
       throw new Error('Unauthorized. Admin access required.')
     }
 
@@ -53,7 +53,7 @@ export class AdminService {
    */
   async rejectResource(resourceId: string, reason: string): Promise<boolean> {
     const admin = await this.auth.getCurrentUser()
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
+    if (!admin || admin.role !== 'admin') {
       throw new Error('Unauthorized. Admin access required.')
     }
 
@@ -74,7 +74,7 @@ export class AdminService {
    */
   async getPendingResources(): Promise<Resource[]> {
     const admin = await this.auth.getCurrentUser()
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
+    if (!admin || admin.role !== 'admin') {
       throw new Error('Unauthorized. Admin access required.')
     }
 
@@ -130,7 +130,7 @@ export class AdminService {
    */
   async getSystemStats() {
     const admin = await this.auth.getCurrentUser()
-    if (!admin || (admin.role !== 'admin' && admin.role !== 'moderator')) {
+    if (!admin || admin.role !== 'admin') {
       throw new Error('Unauthorized. Admin access required.')
     }
 

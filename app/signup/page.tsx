@@ -25,6 +25,7 @@ function SignUpContent() {
     confirmPassword: '',
   })
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
 
@@ -34,6 +35,7 @@ function SignUpContent() {
       [e.target.name]: e.target.value,
     })
     setError('')
+    setSuccessMessage('')
   }
 
   // Cooldown timer effect
@@ -78,61 +80,43 @@ function SignUpContent() {
     }
 
     try {
-      // Call signup API
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            name: formData.name,
+            role: 'volunteer',
+          },
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          name: formData.name,
-        }),
       })
 
-      const data = await response.json()
-
-      if (!data.success) {
-        setError(data.error || 'Failed to create account')
+      if (error || !data.user) {
+        setError(error?.message || 'Failed to create account')
         setIsLoading(false)
-        
-        // If it's a cooldown error (429), set the cooldown timer
-        if (response.status === 429) {
-          setCooldownSeconds(10)
-        }
         return
       }
 
-      // Store session in Supabase client if available
-      if (data.data?.session) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: data.data.session.access_token,
-          refresh_token: data.data.session.refresh_token,
-        })
+      // Ensure profile reflects volunteer role/name
+      await supabase
+        .from('users')
+        .update({ name: formData.name, role: 'volunteer' })
+        .eq('id', data.user.id)
 
-        if (sessionError) {
-          console.error('Session error:', sessionError)
-          // If session setting fails, redirect to login
-          router.push('/login?message=Account created successfully. Please sign in.')
-          return
-        }
-      } else {
-        // If no session was created, redirect to login
-        router.push('/login?message=Account created successfully. Please sign in.')
+      if (!data.session) {
+        setSuccessMessage(
+          `Account created! We've sent a verification email to ${formData.email}. Please confirm your account before signing in.`
+        )
+        setIsLoading(false)
         return
       }
 
-      // Check if there's a redirect URL stored
       const redirectUrl = sessionStorage.getItem('redirectAfterLogin')
-      const pendingAction = sessionStorage.getItem('pendingAction')
-      
       if (redirectUrl) {
         sessionStorage.removeItem('redirectAfterLogin')
         sessionStorage.removeItem('pendingAction')
         router.push(redirectUrl)
       } else {
-        // Redirect to dashboard
         router.push('/dashboard')
       }
     } catch (err: any) {
@@ -143,8 +127,8 @@ function SignUpContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 
-                    dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-[#f5ede1]/30 
+                    dark:from-[#0B0A0F] dark:via-[#1F1B28] dark:to-[#0B0A0F] flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -153,10 +137,10 @@ function SignUpContent() {
         <LiquidGlass intensity="strong">
           <div className="p-8">
             <div className="text-center mb-8">
-              <h1 className="text-3xl font-display font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-3xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2">
                 Create Account
               </h1>
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-[#6B5D47] dark:text-[#B8A584]">
                 Join your community hub today
               </p>
               {message && (
@@ -175,53 +159,59 @@ function SignUpContent() {
                   {error}
                 </div>
               )}
+              {successMessage && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 
+                              rounded-2xl text-green-600 dark:text-green-400 text-sm">
+                  {successMessage}
+                </div>
+              )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-[#6B5D47] dark:text-[#B8A584] mb-2">
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#B8A584]" />
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
-                             focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-[#2c2c3e] 
+                             bg-white dark:bg-[#1F1B28] text-[#2C2416] dark:text-[#F5F3F0] 
+                             focus:border-[#8B6F47] dark:focus:border-[#D4A574] focus:outline-none"
                     placeholder="John Doe"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-[#6B5D47] dark:text-[#B8A584] mb-2">
                   Email
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#B8A584]" />
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
-                             focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-[#2c2c3e] 
+                             bg-white dark:bg-[#1F1B28] text-[#2C2416] dark:text-[#F5F3F0] 
+                             focus:border-[#8B6F47] dark:focus:border-[#D4A574] focus:outline-none"
                     placeholder="you@example.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-[#6B5D47] dark:text-[#B8A584] mb-2">
                   Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#B8A584]" />
                   <input
                     type="password"
                     name="password"
@@ -229,23 +219,23 @@ function SignUpContent() {
                     onChange={handleChange}
                     required
                     minLength={6}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
-                             focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-[#2c2c3e] 
+                             bg-white dark:bg-[#1F1B28] text-[#2C2416] dark:text-[#F5F3F0] 
+                             focus:border-[#8B6F47] dark:focus:border-[#D4A574] focus:outline-none"
                     placeholder="••••••••"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-[#6B5D47]/70 dark:text-[#B8A584]/70">
                   Must be at least 6 characters
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-[#6B5D47] dark:text-[#B8A584] mb-2">
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#B8A584]" />
                   <input
                     type="password"
                     name="confirmPassword"
@@ -253,9 +243,9 @@ function SignUpContent() {
                     onChange={handleChange}
                     required
                     minLength={6}
-                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-gray-700 
-                             bg-white dark:bg-gray-800 text-gray-900 dark:text-white 
-                             focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none"
+                    className="w-full pl-10 pr-4 py-3 rounded-2xl border-2 border-gray-200 dark:border-[#2c2c3e] 
+                             bg-white dark:bg-[#1F1B28] text-[#2C2416] dark:text-[#F5F3F0] 
+                             focus:border-[#8B6F47] dark:focus:border-[#D4A574] focus:outline-none"
                     placeholder="••••••••"
                   />
                 </div>
@@ -266,7 +256,7 @@ function SignUpContent() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={isLoading || cooldownSeconds > 0}
-                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-3 rounded-2xl 
+                className="w-full bg-gradient-to-r from-[#8B6F47] to-[#D4A574] text-white py-3 rounded-2xl 
                          font-semibold flex items-center justify-center gap-2 shadow-lg hover:shadow-xl 
                          transition-all disabled:opacity-50"
               >
@@ -275,9 +265,9 @@ function SignUpContent() {
               </motion.button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-6 text-center text-sm text-[#6B5D47] dark:text-[#B8A584]">
               Already have an account?{' '}
-              <Link href="/login" className="text-primary-600 dark:text-primary-400 font-medium hover:underline">
+              <Link href="/login" className="text-[#8B6F47] dark:text-[#D4A574] font-medium hover:underline">
                 Sign in
               </Link>
             </p>

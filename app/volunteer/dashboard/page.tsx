@@ -22,8 +22,9 @@ import TabNavigation from '@/components/TabNavigation'
 import LiquidGlass from '@/components/LiquidGlass'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import AuthRequired from '@/components/auth/AuthRequired'
 
-export default function VolunteerDashboard() {
+function VolunteerDashboardContent() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [volunteerStats, setVolunteerStats] = useState({
@@ -40,7 +41,8 @@ export default function VolunteerDashboard() {
       const currentUser = await auth.getCurrentUser()
       
       if (!currentUser) {
-        router.push('/login/volunteer')
+        router.push('/login')
+      router.push('/login')
         return
       }
 
@@ -89,18 +91,18 @@ export default function VolunteerDashboard() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-20 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#0B0A0F] pt-20 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#8B6F47] dark:border-[#D4A574] mx-auto mb-4"></div>
+          <p className="text-[#6B5D47] dark:text-[#B8A584]">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-primary-50/30 
-                    dark:from-[#1C1B18] dark:via-gray-800 dark:to-primary-900/10 pt-20">
+    <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-[#f5ede1]/30 
+                    dark:from-[#0B0A0F] dark:via-[#1F1B28] dark:to-[#0B0A0F] pt-20">
       <div className="container-custom section-padding">
         {/* Header */}
         <motion.div
@@ -108,10 +110,10 @@ export default function VolunteerDashboard() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2">
             Volunteer Dashboard
           </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-400">
+          <p className="text-lg text-[#6B5D47] dark:text-[#B8A584]">
             Welcome back, {user.name}! Track your impact and find new opportunities.
           </p>
         </motion.div>
@@ -158,6 +160,17 @@ export default function VolunteerDashboard() {
         </TabNavigation>
       </div>
     </div>
+  )
+}
+
+export default function VolunteerDashboard() {
+  return (
+    <AuthRequired
+      featureName="volunteer dashboard"
+      description="Track volunteer hours, achievements, and opportunities after signing in."
+    >
+      <VolunteerDashboardContent />
+    </AuthRequired>
   )
 }
 
