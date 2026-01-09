@@ -2,6 +2,7 @@ services:
   - type: web
     name: hubio
     runtime: node
+    plan: starter
     buildCommand: npm ci && npm run build
     startCommand: npm start
     envVars:
@@ -11,4 +12,3 @@ services:
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
         sync: false
-    plan: starter
