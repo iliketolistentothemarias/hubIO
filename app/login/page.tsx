@@ -76,6 +76,10 @@ function LoginContent() {
 
       setIsLoading(false)
       router.push(finalRedirect)
+    } catch (err: any) {
+      console.error('Login error:', err)
+      setError(err.message || 'An unexpected error occurred. Please try again.')
+      setIsLoading(false)
     }
   }
 
