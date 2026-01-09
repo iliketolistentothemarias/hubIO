@@ -2,6 +2,10 @@
   "name": "communify",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,7 +15,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^8.1.3",
