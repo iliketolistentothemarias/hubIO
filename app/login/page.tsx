@@ -10,7 +10,7 @@
 import { useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Mail, Lock, Chrome, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import LiquidGlass from '@/components/LiquidGlass'
 import Link from 'next/link'
@@ -77,35 +77,7 @@ function LoginContent() {
 
       setIsLoading(false)
       router.push(finalRedirect)
-    } catch (err: any) {
-      console.error('Login error:', err)
-      setError(err.message || 'An unexpected error occurred')
-      setIsLoading(false)
     }
-  }
-
-  const handleGoogleLogin = async () => {
-    setError('')
-    setIsLoading(true)
-    
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-
-    if (error) {
-      console.error('Google OAuth error:', error)
-      // Check if provider is not enabled
-      if (error.message?.includes('not enabled') || error.message?.includes('Unsupported provider')) {
-        setError('Google OAuth is not enabled. Please enable it in your Supabase dashboard under Authentication > Providers.')
-      } else {
-        setError(error.message || 'Failed to sign in with Google')
-      }
-      setIsLoading(false)
-    }
-    // OAuth will redirect on success, so we don't need to handle it here
   }
 
   return (
@@ -131,32 +103,6 @@ function LoginContent() {
                   {message}
                 </div>
               )}
-            </div>
-
-            {/* Google OAuth Button */}
-            <div className="mb-6">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGoogleLogin}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-2xl 
-                         bg-white dark:bg-[#1F1B28] border-2 border-gray-200 dark:border-[#2c2c3e] 
-                         text-[#6B5D47] dark:text-[#B8A584] hover:border-[#8B6F47] dark:hover:border-[#D4A574] 
-                         transition-all font-medium disabled:opacity-50"
-              >
-                <Chrome className="w-5 h-5" />
-                Continue with Google
-              </motion.button>
-            </div>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-[#2c2c3e]"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-[#1F1B28] text-[#6B5D47] dark:text-[#B8A584]">Or continue with email</span>
-              </div>
             </div>
 
             {/* Email Form */}
