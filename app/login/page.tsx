@@ -9,7 +9,7 @@
 import { useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Info } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import LiquidGlass from '@/components/LiquidGlass'
 import Link from 'next/link'
@@ -28,13 +28,13 @@ function LoginContent() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     setError('')
     setIsLoading(true)
 
     try {
       console.log('Attempting login...')
-      
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -59,7 +59,7 @@ function LoginContent() {
       const urlParams = new URLSearchParams(window.location.search)
       const redirectParam = urlParams.get('redirect')
       const redirectUrl = redirectParam || sessionStorage.getItem('redirectAfterLogin')
-      
+
       if (rememberMe) {
         localStorage.setItem('remember_me', 'true')
       } else {
@@ -102,17 +102,60 @@ function LoginContent() {
               </p>
               {message && (
                 <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 
-                              rounded-2xl text-blue-600 dark:text-blue-400 text-sm">
+                               rounded-2xl text-blue-600 dark:text-blue-400 text-sm">
                   {message}
                 </div>
               )}
+            </div>
+
+            {/* Test Credentials Section */}
+            <div className="mb-8 p-4 rounded-2xl bg-[#F5F3F0]/50 dark:bg-white/5 border border-[#E8E0D6] dark:border-white/10">
+              <div className="flex items-center gap-2 mb-3 text-[#8B6F47] dark:text-[#D4A574]">
+                <Info className="w-4 h-4" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider">Test Environment Access</h3>
+              </div>
+
+              <div className="space-y-4 text-sm text-[#6B5D47] dark:text-[#B8A584]">
+                <div>
+                  <p className="font-medium mb-1">Available Test Accounts:</p>
+                  <ul className="space-y-1 ml-1">
+                    <li className="flex justify-between">
+                      <span>Volunteer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser1@gmail.com</span></span>
+                      <span className="opacity-60">testuser1</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Volunteer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser2@gmail.com</span></span>
+                      <span className="opacity-60">testuser2</span>
+                    </li>
+                    <li className="flex justify-between font-semibold">
+                      <span>Admin: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser3@gmail.com</span></span>
+                      <span className="opacity-60">testuser3</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <p className="italic text-xs">
+                  The admin panel is located in the top right corner after clicking on the profile name.
+                </p>
+
+                <div className="pt-3 border-t border-[#E8E0D6] dark:border-white/10 grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold opacity-50">Team ID</p>
+                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0]">2043-901</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold opacity-50">Individual IDs</p>
+                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0] text-[10px]">2043-062, 2043-083</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Email Form */}
             <form onSubmit={handleEmailLogin} className="space-y-4">
               {error && (
                 <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 
-                              rounded-2xl text-red-600 dark:text-red-400 text-sm">
+                               rounded-2xl text-red-600 dark:text-red-400 text-sm">
                   {error}
                 </div>
               )}
@@ -197,42 +240,6 @@ function LoginContent() {
                 Sign up
               </Link>
             </p>
-
-            {/* Test User Information */}
-            <div className="mt-8 pt-8 border-t border-[#E8E0D6] dark:border-[#4A4844]">
-              <h3 className="text-sm font-semibold text-[#2C2416] dark:text-[#F5F3F0] mb-4">
-                Test User Credentials
-              </h3>
-              <div className="space-y-4 text-xs text-[#6B5D47] dark:text-[#B8A584]">
-                <div className="p-3 bg-[#f5ede1]/50 dark:bg-[#3b352c]/30 rounded-xl border border-[#E8E0D6] dark:border-[#4A4844]">
-                  <p><span className="font-semibold">Username:</span> testuser1@gmail.com</p>
-                  <p><span className="font-semibold">Password:</span> testuser1</p>
-                  <p><span className="font-semibold">Role:</span> Volunteer</p>
-                </div>
-                <div className="p-3 bg-[#f5ede1]/50 dark:bg-[#3b352c]/30 rounded-xl border border-[#E8E0D6] dark:border-[#4A4844]">
-                  <p><span className="font-semibold">Username:</span> testuser2@gmail.com</p>
-                  <p><span className="font-semibold">Password:</span> testuser2</p>
-                  <p><span className="font-semibold">Role:</span> Volunteer</p>
-                </div>
-                <div className="p-3 bg-[#f5ede1]/50 dark:bg-[#3b352c]/30 rounded-xl border border-[#E8E0D6] dark:border-[#4A4844]">
-                  <p><span className="font-semibold">Username:</span> testuser3@gmail.com</p>
-                  <p><span className="font-semibold">Password:</span> testuser3</p>
-                  <p><span className="font-semibold">Role:</span> Admin</p>
-                </div>
-                
-                <div className="mt-4 space-y-3 pt-3 border-t border-[#E8E0D6] dark:border-[#4A4844]">
-                  <p className="text-[#6B5D47] dark:text-[#B8A584]">
-                    The admin panel is located in the top right corner after clicking on the profile name.
-                  </p>
-                  <p>
-                    <span className="font-semibold">Team ID:</span> 2043-901
-                  </p>
-                  <p>
-                    <span className="font-semibold">Individual IDs:</span> 2043-062, 2043-083
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </LiquidGlass>
       </motion.div>
@@ -254,4 +261,3 @@ export default function LoginPage() {
     </Suspense>
   )
 }
-
