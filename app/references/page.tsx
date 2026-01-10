@@ -30,7 +30,7 @@ export default function ReferencesPage() {
                         Project References
                     </h1>
                     <p className="text-lg text-[#6B5D47] dark:text-[#B8A584] max-w-2xl mx-auto">
-                        Documentation, research sources, and copyright certifications for the HubIO platform.
+                        Documentation, research sources, and copyright certifications for the Communify platform.
                     </p>
                 </motion.div>
 
@@ -78,7 +78,7 @@ export default function ReferencesPage() {
                                 </div>
                                 <div className="mt-4 flex justify-between items-center px-4">
                                     <p className="text-sm text-[#6B5D47] dark:text-[#B8A584]">
-                                        Source: HubIO Project Bibliography
+                                        Source: Communify Project Bibliography
                                     </p>
                                     <a
                                         href="/sadasd.pdf"
