@@ -33,14 +33,13 @@ export default function AdminLoginPage() {
     try {
       const auth = getAuthService()
       const session = await auth.signInWithEmail(email, password)
-      
-      // Check if user has admin role
-      if (session.user.role !== 'admin' && session.user.role !== 'moderator') {
+
+      if (session.user.role !== 'admin') {
         setError('Access denied. Admin privileges required.')
         setIsLoading(false)
         return
       }
-      
+
       router.push('/admin/dashboard')
     } catch (err: any) {
       setError(err.message || 'Failed to sign in')
@@ -70,7 +69,7 @@ export default function AdminLoginPage() {
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
                 Secure access to HubIO administration and management tools.
               </p>
-              
+
               <div className="space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">

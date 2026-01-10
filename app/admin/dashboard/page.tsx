@@ -13,13 +13,13 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { 
-  BarChart3, Users, FileText, Shield, Settings, AlertCircle, 
-  CheckCircle, XCircle, TrendingUp, Activity, Database, Bell 
+import {
+  BarChart3, Users, FileText, Shield, Settings, AlertCircle,
+  CheckCircle, XCircle, TrendingUp, Activity, Database, Bell
 } from 'lucide-react'
-import { getAuthService, requireRole } from '@/lib/auth'
-import { getDatabase } from '@/lib/db/schema'
-import { getAnalytics } from '@/lib/utils/analytics'
+import { getAuthService, requireRole } from '../../../lib/auth'
+import { getDatabase } from '../../../lib/db/schema'
+import { getAnalytics } from '../../../lib/utils/analytics'
 import TabNavigation from '@/components/TabNavigation'
 import LiquidGlass from '@/components/LiquidGlass'
 import { useRouter } from 'next/navigation'
@@ -32,25 +32,29 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     // Check admin access
-    try {
-      const auth = getAuthService()
-      const user = auth.getCurrentUser()
-      
-      if (!user || (user.role !== 'admin' && user.role !== 'moderator')) {
-        router.push('/login/admin')
-        return
-      }
+    const checkAdmin = async () => {
+      try {
+        const auth = getAuthService()
+        const user = await auth.getCurrentUser()
 
-      loadDashboardData()
-    } catch (error) {
-      router.push('/login/admin')
+        if (!user || user.role !== 'admin') {
+          router.push('/login/admin')
+          return
+        }
+
+        loadDashboardData()
+      } catch (error) {
+        router.push('/login/admin')
+      }
     }
+
+    checkAdmin()
   }, [router])
 
   const loadDashboardData = () => {
     const db = getDatabase()
     const analytics = getAnalytics()
-    
+
     // Get stats
     const communityStats = analytics.getCommunityStats()
     setStats(communityStats)
