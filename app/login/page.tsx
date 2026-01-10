@@ -10,7 +10,7 @@
 import { useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Mail, Lock, Chrome, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Eye, EyeOff, Info } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import LiquidGlass from '@/components/LiquidGlass'
 import Link from 'next/link'
@@ -29,13 +29,13 @@ function LoginContent() {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    
+
     setError('')
     setIsLoading(true)
 
     try {
       console.log('Attempting login...')
-      
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -60,7 +60,7 @@ function LoginContent() {
       const urlParams = new URLSearchParams(window.location.search)
       const redirectParam = urlParams.get('redirect')
       const redirectUrl = redirectParam || sessionStorage.getItem('redirectAfterLogin')
-      
+
       if (rememberMe) {
         localStorage.setItem('remember_me', 'true')
       } else {
@@ -84,29 +84,6 @@ function LoginContent() {
     }
   }
 
-  const handleGoogleLogin = async () => {
-    setError('')
-    setIsLoading(true)
-    
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-
-    if (error) {
-      console.error('Google OAuth error:', error)
-      // Check if provider is not enabled
-      if (error.message?.includes('not enabled') || error.message?.includes('Unsupported provider')) {
-        setError('Google OAuth is not enabled. Please enable it in your Supabase dashboard under Authentication > Providers.')
-      } else {
-        setError(error.message || 'Failed to sign in with Google')
-      }
-      setIsLoading(false)
-    }
-    // OAuth will redirect on success, so we don't need to handle it here
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-white to-[#f5ede1]/30 
@@ -133,29 +110,46 @@ function LoginContent() {
               )}
             </div>
 
-            {/* Google OAuth Button */}
-            <div className="mb-6">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGoogleLogin}
-                disabled={isLoading}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-2xl 
-                         bg-white dark:bg-[#1F1B28] border-2 border-gray-200 dark:border-[#2c2c3e] 
-                         text-[#6B5D47] dark:text-[#B8A584] hover:border-[#8B6F47] dark:hover:border-[#D4A574] 
-                         transition-all font-medium disabled:opacity-50"
-              >
-                <Chrome className="w-5 h-5" />
-                Continue with Google
-              </motion.button>
-            </div>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-[#2c2c3e]"></div>
+            {/* Test Credentials Section */}
+            <div className="mb-8 p-4 rounded-2xl bg-[#F5F3F0]/50 dark:bg-white/5 border border-[#E8E0D6] dark:border-white/10">
+              <div className="flex items-center gap-2 mb-3 text-[#8B6F47] dark:text-[#D4A574]">
+                <Info className="w-4 h-4" />
+                <h3 className="text-sm font-semibold uppercase tracking-wider">Test Environment Access</h3>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-[#1F1B28] text-[#6B5D47] dark:text-[#B8A584]">Or continue with email</span>
+
+              <div className="space-y-4 text-sm text-[#6B5D47] dark:text-[#B8A584]">
+                <div>
+                  <p className="font-medium mb-1">Available Test Accounts:</p>
+                  <ul className="space-y-1 ml-1">
+                    <li className="flex justify-between">
+                      <span>Volunteer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser1@gmail.com</span></span>
+                      <span className="opacity-60">testuser1</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Volunteer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser2@gmail.com</span></span>
+                      <span className="opacity-60">testuser2</span>
+                    </li>
+                    <li className="flex justify-between font-semibold">
+                      <span>Admin: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser3@gmail.com</span></span>
+                      <span className="opacity-60">testuser3</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <p className="italic text-xs">
+                  The admin panel is located in the top right corner after clicking on the profile name.
+                </p>
+
+                <div className="pt-3 border-t border-[#E8E0D6] dark:border-white/10 grid grid-cols-2 gap-2">
+                  <div>
+                    <p className="text-[10px] uppercase font-bold opacity-50">Team ID</p>
+                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0]">2043-901</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold opacity-50">Individual IDs</p>
+                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0] text-[10px]">2043-062, 2043-083</p>
+                  </div>
+                </div>
               </div>
             </div>
 

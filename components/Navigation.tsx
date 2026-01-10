@@ -25,6 +25,7 @@ const ALL_ROUTES = [
   '/analytics',
   '/submit',
   '/about',
+  '/references',
   '/login',
   '/signup',
 ]
@@ -48,7 +49,7 @@ export default function Navigation() {
         router.prefetch(route)
       })
     }, 1000)
-    
+
     return () => clearTimeout(timer)
   }, [router])
   useEffect(() => {
@@ -112,34 +113,34 @@ export default function Navigation() {
     label: string
     submenu?: Array<{ href: string; label: string }>
   }> = [
-    { href: '/', label: 'Home' },
-    { 
-      label: 'Resources',
-      submenu: [
-        { href: '/directory', label: 'All Resources' },
-        { href: '/highlights', label: 'Featured' },
-        { href: '/business', label: 'Businesses' },
-        { href: '/grants', label: 'Grants' },
-      ]
-    },
-    { href: '/events', label: 'Events' },
-    { href: '/messages', label: 'Messages' },
-    { href: '/dashboard', label: 'Dashboard' },
-    { 
-      href: '/analytics', 
-      label: 'Analytics',
-    },
-    { href: '/submit', label: 'Submit' },
-    { href: '/about', label: 'About' },
-  ]
+      { href: '/', label: 'Home' },
+      {
+        label: 'Resources',
+        submenu: [
+          { href: '/directory', label: 'All Resources' },
+          { href: '/highlights', label: 'Featured' },
+          { href: '/business', label: 'Businesses' },
+          { href: '/grants', label: 'Grants' },
+        ]
+      },
+      { href: '/events', label: 'Events' },
+      { href: '/messages', label: 'Messages' },
+      { href: '/dashboard', label: 'Dashboard' },
+      {
+        href: '/analytics',
+        label: 'Analytics',
+      },
+      { href: '/submit', label: 'Submit' },
+      { href: '/about', label: 'About' },
+      { href: '/references', label: 'References' },
+    ]
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${scrolled
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
           : 'bg-transparent'
-      }`}
+        }`}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center gap-6 h-16 md:h-20 mx-auto w-full">
@@ -172,11 +173,10 @@ export default function Navigation() {
               >
                 {item.submenu ? (
                   <button
-                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${
-                      item.submenu.some(sub => pathname === sub.href)
+                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
-                    }`}
+                      }`}
                   >
                     <motion.span
                       whileHover={{ scale: 1.1 }}
@@ -195,11 +195,10 @@ export default function Navigation() {
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${
-                      pathname === item.href
+                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${pathname === item.href
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
-                    }`}
+                      }`}
                   >
                     <motion.span
                       whileHover={{ scale: 1.1 }}
@@ -216,49 +215,48 @@ export default function Navigation() {
                     )}
                   </Link>
                 ) : null}
-                    <AnimatePresence>
-                      {item.submenu && openDropdown === item.label && (
+                <AnimatePresence>
+                  {item.submenu && openDropdown === item.label && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2, type: 'spring', stiffness: 300 }}
+                      className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-[#2A2824] rounded-lg shadow-md border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
+                    >
+                      {item.submenu.map((subItem, subIndex) => (
                         <motion.div
-                          initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                          transition={{ duration: 0.2, type: 'spring', stiffness: 300 }}
-                          className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-[#2A2824] rounded-lg shadow-md border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
+                          key={subItem.href}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: subIndex * 0.05 }}
                         >
-                          {item.submenu.map((subItem, subIndex) => (
-                            <motion.div
-                              key={subItem.href}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: subIndex * 0.05 }}
-                            >
-                              <Link
-                                href={subItem.href}
-                              className={`block px-4 py-3 text-sm transition-all duration-200 ${
-                                pathname === subItem.href
-                                  ? 'bg-[#F5F3F0] dark:bg-[#353330] text-[#2C2416] dark:text-[#F5F3F0]'
-                                  : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330]'
+                          <Link
+                            href={subItem.href}
+                            className={`block px-4 py-3 text-sm transition-all duration-200 ${pathname === subItem.href
+                                ? 'bg-[#F5F3F0] dark:bg-[#353330] text-[#2C2416] dark:text-[#F5F3F0]'
+                                : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330]'
                               }`}
-                              >
-                                <motion.span
-                                  whileHover={{ x: 5 }}
-                                  className="flex items-center gap-2"
-                                >
-                                  {subItem.label}
-                                  {pathname === subItem.href && (
-                                    <motion.div
-                                      initial={{ scale: 0 }}
-                                      animate={{ scale: 1 }}
-                                      className="w-1.5 h-1.5 bg-primary-600 dark:bg-primary-400 rounded-full"
-                                    />
-                                  )}
-                                </motion.span>
-                              </Link>
-                            </motion.div>
-                          ))}
+                          >
+                            <motion.span
+                              whileHover={{ x: 5 }}
+                              className="flex items-center gap-2"
+                            >
+                              {subItem.label}
+                              {pathname === subItem.href && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="w-1.5 h-1.5 bg-primary-600 dark:bg-primary-400 rounded-full"
+                                />
+                              )}
+                            </motion.span>
+                          </Link>
                         </motion.div>
-                      )}
-                    </AnimatePresence>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             ))}
           </div>
@@ -316,7 +314,7 @@ export default function Navigation() {
                            hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   <User className="w-4 h-4" />
-                      <span className="font-medium truncate">{displayName || user.email}</span>
+                  <span className="font-medium truncate">{displayName || user.email}</span>
                 </motion.button>
 
                 <AnimatePresence>
@@ -334,15 +332,15 @@ export default function Navigation() {
                           Role: {user.role}
                         </span>
                       </div>
-                    {user.role === 'admin' && (
-                      <Link
-                        href="/admin"
-                        onClick={() => setUserMenuOpen(false)}
-                        className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
-                      >
-                        Admin Dashboard
-                      </Link>
-                    )}
+                      {user.role === 'admin' && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
                       <Link
                         href="/submit"
                         onClick={() => setUserMenuOpen(false)}
@@ -379,9 +377,9 @@ export default function Navigation() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                      className="px-5 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium whitespace-nowrap flex items-center justify-center min-w-[190px]"
+                    className="px-5 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium whitespace-nowrap flex items-center justify-center min-w-[190px]"
                   >
-                          <span className="whitespace-nowrap">Sign Up</span>
+                    <span className="whitespace-nowrap">Sign Up</span>
                   </motion.button>
                 </Link>
               </>
@@ -453,11 +451,10 @@ export default function Navigation() {
                               key={subItem.href}
                               href={subItem.href}
                               onClick={() => setIsOpen(false)}
-                              className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all ${
-                                pathname === subItem.href
+                              className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all ${pathname === subItem.href
                                   ? 'bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 text-[#8B6F47] dark:text-[#D4A574]'
                                   : 'text-[#6B5D47] dark:text-[#B8A584] active:bg-gray-100 dark:active:bg-[#2c2c3e]'
-                              }`}
+                                }`}
                             >
                               {subItem.label}
                             </Link>
@@ -467,11 +464,10 @@ export default function Navigation() {
                         <Link
                           href={item.href}
                           onClick={() => setIsOpen(false)}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all ${
-                            pathname === item.href
+                          className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all ${pathname === item.href
                               ? 'bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 text-[#8B6F47] dark:text-[#D4A574]'
                               : 'text-[#6B5D47] dark:text-[#B8A584] active:bg-gray-100 dark:active:bg-[#2c2c3e]'
-                          }`}
+                            }`}
                         >
                           {item.label}
                         </Link>
