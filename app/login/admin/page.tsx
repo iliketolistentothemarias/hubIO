@@ -67,7 +67,7 @@ export default function AdminLoginPage() {
                 Admin Portal
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-8">
-                Secure access to HubIO administration and management tools.
+                Secure access to Communify administration and management tools.
               </p>
 
               <div className="space-y-4">

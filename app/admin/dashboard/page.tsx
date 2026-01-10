@@ -105,7 +105,7 @@ export default function AdminDashboard() {
             Admin Dashboard
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-400">
-            Manage and monitor the HubIO platform
+            Manage and monitor the Communify platform
           </p>
         </motion.div>
 
