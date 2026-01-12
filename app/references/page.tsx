@@ -26,7 +26,7 @@ export default function ReferencesPage() {
                     <div className="inline-flex items-center justify-center p-2 bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 rounded-full mb-4">
                         <BookOpen className="w-6 h-6 text-[#8B6F47] dark:text-[#D4A574]" />
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-4">
+                    <h1 className="text-3xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-4">
                         Project References
                     </h1>
                     <p className="text-lg text-[#6B5D47] dark:text-[#B8A584] max-w-2xl mx-auto">
@@ -36,10 +36,10 @@ export default function ReferencesPage() {
 
                 {/* Tabs System */}
                 <Tabs.Root defaultValue="bibliography" className="w-full">
-                    <Tabs.List className="flex flex-wrap justify-center gap-3 p-1.5 bg-[#E8E0D6] dark:bg-white/5 rounded-2xl w-fit mx-auto mb-10 shadow-inner">
+                    <Tabs.List className="flex flex-wrap justify-center gap-3 p-1.5 bg-[#E8E0D6] dark:bg-white/5 rounded-2xl w-full md:w-fit mx-auto mb-10 shadow-inner">
                         <Tabs.Trigger
                             value="bibliography"
-                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
+                            className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl text-sm font-semibold transition-all duration-300
                          data-[state=active]:bg-white dark:data-[state=active]:bg-[#1F1B28]
                          data-[state=active]:text-[#8B6F47] dark:data-[state=active]:text-[#D4A574]
                          data-[state=active]:shadow-lg text-[#6B5D47] dark:text-[#B8A584]
@@ -50,7 +50,7 @@ export default function ReferencesPage() {
                         </Tabs.Trigger>
                         <Tabs.Trigger
                             value="worklog"
-                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
+                            className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl text-sm font-semibold transition-all duration-300
                          data-[state=active]:bg-white dark:data-[state=active]:bg-[#1F1B28]
                          data-[state=active]:text-[#8B6F47] dark:data-[state=active]:text-[#D4A574]
                          data-[state=active]:shadow-lg text-[#6B5D47] dark:text-[#B8A584]
@@ -61,7 +61,7 @@ export default function ReferencesPage() {
                         </Tabs.Trigger>
                         <Tabs.Trigger
                             value="copyright"
-                            className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300
+                            className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl text-sm font-semibold transition-all duration-300
                          data-[state=active]:bg-white dark:data-[state=active]:bg-[#1F1B28]
                          data-[state=active]:text-[#8B6F47] dark:data-[state=active]:text-[#D4A574]
                          data-[state=active]:shadow-lg text-[#6B5D47] dark:text-[#B8A584]
@@ -80,7 +80,7 @@ export default function ReferencesPage() {
                             transition={{ duration: 0.5 }}
                         >
                             <LiquidGlass intensity="medium">
-                                <div className="p-2 h-[850px] rounded-[2rem] overflow-hidden bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-md">
+                                <div className="p-2 h-[500px] md:h-[850px] rounded-[2rem] bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-md">
                                     <iframe
                                         src="/sadasd.pdf"
                                         className="w-full h-full rounded-2xl bg-white/90 dark:bg-white/10"
@@ -112,7 +112,7 @@ export default function ReferencesPage() {
                             transition={{ duration: 0.5 }}
                         >
                             <LiquidGlass intensity="medium">
-                                <div className="p-2 h-[850px] rounded-[2rem] overflow-hidden bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-md">
+                                <div className="p-2 h-[500px] md:h-[850px] rounded-[2rem] bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-md">
                                     <iframe
                                         src="/work-log.pdf"
                                         className="w-full h-full rounded-2xl bg-white/90 dark:bg-white/10"
@@ -144,7 +144,7 @@ export default function ReferencesPage() {
                             transition={{ duration: 0.5 }}
                         >
                             <LiquidGlass intensity="medium">
-                                <div className="p-2 h-[850px] rounded-[2rem] overflow-hidden bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-md">
+                                <div className="p-2 h-[500px] md:h-[850px] rounded-[2rem] bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-md">
                                     <iframe
                                         src="/copyright-checklist.pdf"
                                         className="w-full h-full rounded-2xl bg-white/90 dark:bg-white/10"
