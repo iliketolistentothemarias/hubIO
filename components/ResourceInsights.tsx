@@ -36,19 +36,34 @@ export default function ResourceInsights() {
     }
   }, [])
 
-  const chartData = insights.topCategories.map(([category, count]) => ({
-    category,
-    count,
-    percentage: (count / insights.totalResources) * 100,
-  }))
+  const chartData = useMemo(() => {
+    const topSum = insights.topCategories.reduce((sum, [, count]) => sum + count, 0)
+    const otherCount = insights.totalResources - topSum
+
+    const data = insights.topCategories.map(([category, count]) => ({
+      category,
+      count,
+      percentage: (count / insights.totalResources) * 100,
+    }))
+
+    if (otherCount > 0) {
+      data.push({
+        category: 'Other',
+        count: otherCount,
+        percentage: (otherCount / insights.totalResources) * 100,
+      })
+    }
+
+    return data
+  }, [insights])
 
   return (
     <div className="bg-gradient-to-br from-primary-50/80 to-secondary-50/80 dark:from-gray-800/80 dark:to-gray-900/80 
                     backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/30 dark:border-gray-700/30"
-          style={{
-            backdropFilter: 'saturate(180%) blur(20px)',
-            WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-          }}
+      style={{
+        backdropFilter: 'saturate(180%) blur(20px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(20px)',
+      }}
     >
       <div className="flex items-center gap-3 mb-6">
         <BarChart3 className="w-8 h-8 text-primary-600 dark:text-primary-400" />
