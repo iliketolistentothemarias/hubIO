@@ -3,17 +3,21 @@
 import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { BarChart3, TrendingUp, Users, MapPin, PieChart, Award } from 'lucide-react'
-import { resources } from '@/data/resources'
+import { useData } from '@/contexts/DataContext'
 
 export default function ResourceInsights() {
+  const { resources } = useData()
+
   const insights = useMemo(() => {
     const categoryCounts: Record<string, number> = {}
     const totalResources = resources.length
     const featuredCount = resources.filter((r) => r.featured).length
     const withRatings = resources.filter((r) => r.rating).length
-    const avgRating = resources
-      .filter((r) => r.rating)
-      .reduce((sum, r) => sum + (r.rating || 0), 0) / withRatings
+    const avgRating = withRatings > 0
+      ? resources
+        .filter((r) => r.rating)
+        .reduce((sum, r) => sum + (r.rating || 0), 0) / withRatings
+      : 0
     const totalCapacity = resources
       .filter((r) => r.capacity)
       .reduce((sum, r) => sum + (r.capacity || 0), 0)
