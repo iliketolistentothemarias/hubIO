@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, Heart, Moon, Sun, Star, ChevronDown, User, LogOut } from 'lucide-react'
@@ -11,6 +12,7 @@ import { supabase } from '@/lib/supabase/client'
 import Notifications from '@/components/Notifications'
 
 export default function Navigation() {
+  const [portalReady, setPortalReady] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
@@ -34,6 +36,10 @@ export default function Navigation() {
     return () => {
       if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
     }
+  }, [])
+
+  useEffect(() => {
+    setPortalReady(true)
   }, [])
   const pathname = usePathname()
   const router = useRouter()
@@ -163,12 +169,12 @@ export default function Navigation() {
     ]
 
   return (
+    <>
     <nav
-      className={`fixed top-0 left-0 right-0 z-[9999] transition-all duration-200 ${scrolled
+      className={`fixed top-0 left-0 right-0 z-[50002] transition-all duration-200 ${scrolled
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
           : 'bg-transparent'
         }`}
-      style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)' }}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between md:justify-center gap-4 md:gap-6 h-16 md:h-20 mx-auto w-full">
@@ -428,7 +434,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 md:hidden relative z-[9999]">
+          <div className="flex items-center gap-2 md:hidden">
             <button
               onClick={toggleTheme}
               className="p-2.5 rounded-xl bg-white dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584] 
@@ -450,25 +456,31 @@ export default function Navigation() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/50 dark:bg-black/60 z-[1000]"
-              style={{ touchAction: 'none' }}
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] bg-white dark:bg-[#1a1a1a] z-[1001] shadow-2xl overflow-y-auto overscroll-contain"
-            >
+    </nav>
+
+      {/* Mobile menu: portal to body so it is never trapped under page stacking contexts (e.g. motion transforms) */}
+      {portalReady &&
+        createPortal(
+          <AnimatePresence>
+            {isOpen && (
+              <>
+                <motion.div
+                  key="mobile-menu-backdrop"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsOpen(false)}
+                  className="md:hidden fixed inset-0 bg-black/50 dark:bg-black/60 z-[50000]"
+                  style={{ touchAction: 'none' }}
+                />
+                <motion.div
+                  key="mobile-menu-panel"
+                  initial={{ x: '100%' }}
+                  animate={{ x: 0 }}
+                  exit={{ x: '100%' }}
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                  className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain"
+                >
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between">
                   <span className="text-xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0]">Menu</span>
@@ -589,11 +601,14 @@ export default function Navigation() {
                   )}
                 </div>
               </div>
-            </motion.div>
-          </>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>,
+          document.body
         )}
-      </AnimatePresence>
-    </nav>
+
+    </>
   )
 }
 
