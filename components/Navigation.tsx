@@ -428,7 +428,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 md:hidden relative z-[9999]">
             <button
               onClick={toggleTheme}
               className="p-2.5 rounded-xl bg-white dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584] 
