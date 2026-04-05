@@ -33,7 +33,7 @@ type CommunityTab = 'chat' | 'members'
 export default function ResourceDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const { id } = params
+  const id = typeof params.id === 'string' ? params.id : params.id?.[0]
   const { isFavorite, toggleFavorite } = useFavorites()
   
   const [dbResources, setDbResources] = useState<any[]>([])
@@ -192,6 +192,9 @@ export default function ResourceDetailPage() {
 
   // Fetch current user + join status when resource loads
   useEffect(() => {
+    let cancelled = false
+    let rtChannel: ReturnType<typeof supabase.channel> | null = null
+
     const fetchJoinStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return
@@ -207,21 +210,35 @@ export default function ResourceDetailPage() {
         }
       } catch { /* ignore */ }
     }
-    fetchJoinStatus()
 
-    // Real-time: update join status when signup record changes
-    if (!resource?.id) return
-    const uid = session.user?.id
-    const rtChannel = supabase
-      .channel(`join-status-${resource.id}-${uid}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'resource_signups',
-        filter: `resource_id=eq.${resource.id}`,
-      }, () => { fetchJoinStatus() })
-      .subscribe()
-    return () => { supabase.removeChannel(rtChannel) }
+    const run = async () => {
+      await fetchJoinStatus()
+      if (cancelled || !resource?.id) return
+      const { data: { session } } = await supabase.auth.getSession()
+      const uid = session?.user?.id ?? 'guest'
+      rtChannel = supabase
+        .channel(`join-status-${resource.id}-${uid}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'resource_signups',
+            filter: `resource_id=eq.${resource.id}`,
+          },
+          () => {
+            void fetchJoinStatus()
+          }
+        )
+        .subscribe()
+    }
+
+    void run()
+
+    return () => {
+      cancelled = true
+      if (rtChannel) supabase.removeChannel(rtChannel)
+    }
   }, [resource?.id])
 
   useEffect(() => {
