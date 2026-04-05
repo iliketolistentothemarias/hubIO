@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Store, Star, MapPin, Phone, Globe, Clock, Award, TrendingUp, 
@@ -89,9 +89,35 @@ export default function BusinessPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<'rating' | 'reviews' | 'name'>('rating')
   const [detailBusiness, setDetailBusiness] = useState<Business | null>(null)
+  const [communityBusinesses, setCommunityBusinesses] = useState<Business[]>([])
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('approvedBusinesses') || '[]')
+      const mapped: Business[] = stored.map((b: any) => ({
+        id: b.id,
+        name: b.businessName,
+        category: b.category,
+        description: b.description,
+        address: b.address || '',
+        phone: b.phone || '',
+        website: b.website || '',
+        email: b.email || '',
+        rating: 0,
+        reviewCount: 0,
+        hours: b.hours || '',
+        verified: false,
+        featured: false,
+        tags: [],
+      }))
+      setCommunityBusinesses(mapped)
+    } catch { /* ignore */ }
+  }, [])
+
+  const allBusinesses = useMemo(() => [...mockBusinesses, ...communityBusinesses], [communityBusinesses])
 
   const filteredBusinesses = useMemo(() => {
-    let filtered = mockBusinesses
+    let filtered = allBusinesses
 
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(b => b.category === selectedCategory)

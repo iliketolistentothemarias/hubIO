@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   DollarSign, Calendar, Target, FileText, Award, TrendingUp, 
@@ -87,6 +87,29 @@ export default function GrantsPage() {
   const [applyGrant, setApplyGrant] = useState<Grant | null>(null)
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [communityGrants, setCommunityGrants] = useState<Grant[]>([])
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('approvedGrants') || '[]')
+      const mapped: Grant[] = stored.map((g: any) => ({
+        id: g.id,
+        title: g.title,
+        organization: g.organization,
+        description: g.description,
+        category: g.category,
+        amount: g.amount,
+        eligibility: g.eligibility ? g.eligibility.split(',').map((s: string) => s.trim()) : [],
+        requirements: g.requirements ? g.requirements.split(',').map((s: string) => s.trim()) : [],
+        status: 'open' as const,
+        applications: 0,
+        verified: false,
+      }))
+      setCommunityGrants(mapped)
+    } catch { /* ignore */ }
+  }, [])
+
+  const allGrants = useMemo(() => [...mockGrants, ...communityGrants], [communityGrants])
 
   const [form, setForm] = useState({
     applicantName: '',
@@ -98,7 +121,7 @@ export default function GrantsPage() {
   })
 
   const filteredGrants = useMemo(() => {
-    let filtered = mockGrants
+    let filtered = allGrants
 
     if (selectedCategory !== 'All') {
       filtered = filtered.filter(g => g.category === selectedCategory)

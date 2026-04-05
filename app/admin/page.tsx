@@ -8,7 +8,7 @@ import { apiFetch } from '@/lib/api/client-fetch'
 import { RefreshCw, Check, Users, Search, ChevronDown, Loader2, FileText, Trash2 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 
-type AdminTab = 'submissions' | 'resources' | 'users' | 'grant-applications' | 'biz-submissions' | 'grant-listings'
+type AdminTab = 'submissions' | 'resources' | 'users' | 'grant-applications' | 'biz-submissions' | 'grant-listings' | 'live-businesses' | 'live-grants'
 
 interface GrantApplication {
   id: string
@@ -123,6 +123,10 @@ export default function AdminDashboardPage() {
   const [bizSubmissions, setBizSubmissions] = useState<BizSubmission[]>([])
   const [grantListings, setGrantListings] = useState<GrantListing[]>([])
 
+  // Live (approved) businesses and grants shown on site
+  const [liveBusinesses, setLiveBusinesses] = useState<BizSubmission[]>([])
+  const [liveGrants, setLiveGrants] = useState<GrantListing[]>([])
+
   const backgroundClasses = useMemo(() => {
     return themeMode === 'light'
       ? 'bg-[#FAF9F6] text-[#1C1B18]'
@@ -230,6 +234,17 @@ export default function AdminDashboardPage() {
     } catch { /* ignore */ }
   }
 
+  const approveBizSubmission = (id: string) => {
+    const item = bizSubmissions.find(s => s.id === id)
+    if (!item) return
+    try {
+      const live = JSON.parse(localStorage.getItem('approvedBusinesses') || '[]') as BizSubmission[]
+      live.push(item)
+      localStorage.setItem('approvedBusinesses', JSON.stringify(live))
+      deleteBizSubmission(id)
+    } catch { /* ignore */ }
+  }
+
   const loadGrantListings = () => {
     try {
       const stored = JSON.parse(localStorage.getItem('grantListingSubmissions') || '[]') as GrantListing[]
@@ -242,6 +257,47 @@ export default function AdminDashboardPage() {
       const updated = grantListings.filter(s => s.id !== id)
       localStorage.setItem('grantListingSubmissions', JSON.stringify(updated))
       setGrantListings(updated)
+    } catch { /* ignore */ }
+  }
+
+  const approveGrantListing = (id: string) => {
+    const item = grantListings.find(s => s.id === id)
+    if (!item) return
+    try {
+      const live = JSON.parse(localStorage.getItem('approvedGrants') || '[]') as GrantListing[]
+      live.push(item)
+      localStorage.setItem('approvedGrants', JSON.stringify(live))
+      deleteGrantListing(id)
+    } catch { /* ignore */ }
+  }
+
+  const loadLiveBusinesses = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('approvedBusinesses') || '[]') as BizSubmission[]
+      setLiveBusinesses(stored)
+    } catch { setLiveBusinesses([]) }
+  }
+
+  const removeLiveBusiness = (id: string) => {
+    try {
+      const updated = liveBusinesses.filter(b => b.id !== id)
+      localStorage.setItem('approvedBusinesses', JSON.stringify(updated))
+      setLiveBusinesses(updated)
+    } catch { /* ignore */ }
+  }
+
+  const loadLiveGrants = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('approvedGrants') || '[]') as GrantListing[]
+      setLiveGrants(stored)
+    } catch { setLiveGrants([]) }
+  }
+
+  const removeLiveGrant = (id: string) => {
+    try {
+      const updated = liveGrants.filter(g => g.id !== id)
+      localStorage.setItem('approvedGrants', JSON.stringify(updated))
+      setLiveGrants(updated)
     } catch { /* ignore */ }
   }
 
@@ -438,17 +494,13 @@ export default function AdminDashboardPage() {
     }
   }, [activeTab, isAdminVerified])
 
-  // Load grant applications when tab switches to 'grant-applications'
   useEffect(() => {
-    if (isAdminVerified && activeTab === 'grant-applications') {
-      loadGrantApplications()
-    }
-    if (isAdminVerified && activeTab === 'biz-submissions') {
-      loadBizSubmissions()
-    }
-    if (isAdminVerified && activeTab === 'grant-listings') {
-      loadGrantListings()
-    }
+    if (!isAdminVerified) return
+    if (activeTab === 'grant-applications') loadGrantApplications()
+    if (activeTab === 'biz-submissions') loadBizSubmissions()
+    if (activeTab === 'grant-listings') loadGrantListings()
+    if (activeTab === 'live-businesses') loadLiveBusinesses()
+    if (activeTab === 'live-grants') loadLiveGrants()
   }, [activeTab, isAdminVerified])
 
   // Close role dropdown on outside click
@@ -546,36 +598,44 @@ export default function AdminDashboardPage() {
                   Communify Admin
                 </p>
                 <h1 className="text-4xl font-bold tracking-tight">
-                  {activeTab === 'submissions' ? 'Resource Approvals'
-                    : activeTab === 'resources' ? 'Published Resources'
-                    : activeTab === 'users' ? 'User Roles'
-                    : activeTab === 'grant-applications' ? 'Grant Applications'
-                    : activeTab === 'biz-submissions' ? 'Business Submissions'
-                    : 'Grant Listing Submissions'}
+                  {{
+                    'submissions': 'Resource Approvals',
+                    'biz-submissions': 'Business Submissions',
+                    'grant-listings': 'Grant Listing Submissions',
+                    'resources': 'Published Resources',
+                    'live-businesses': 'Live Businesses',
+                    'live-grants': 'Live Grants',
+                    'users': 'User Roles',
+                    'grant-applications': 'Grant Applications',
+                  }[activeTab]}
                 </h1>
               <p className={`text-base ${headerTextColor} max-w-2xl`}>
-                  {activeTab === 'submissions'
-                    ? 'Every submission lands here first. Approve resources so they land in the public directory.'
-                    : activeTab === 'resources'
-                    ? 'Manage all published resources in the directory.'
-                    : activeTab === 'users'
-                    ? 'View and change every user\'s role in real time.'
-                    : activeTab === 'grant-applications'
-                    ? 'All grant applications submitted through the Grants page.'
-                    : activeTab === 'biz-submissions'
-                    ? 'Business listings submitted for review via the Submit page.'
-                    : 'New grant opportunities submitted for review via the Submit page.'}
+                  {{
+                    'submissions': 'Review and approve community resource submissions before they go live.',
+                    'biz-submissions': 'Business listings submitted for review. Approve to publish them on the site.',
+                    'grant-listings': 'Grant opportunities submitted for review. Approve to list them in the Grants directory.',
+                    'resources': 'All published resources in the directory. Toggle featured/verified or remove.',
+                    'live-businesses': 'Businesses currently visible on the Business page. Remove to unpublish.',
+                    'live-grants': 'Grants currently visible on the Grants page. Remove to unpublish.',
+                    'users': 'View and change every user\'s role in real time.',
+                    'grant-applications': 'Applications submitted through the Grants page "Apply Now" button.',
+                  }[activeTab]}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
-                    if (activeTab === 'submissions') fetchSubmissions()
-                    else if (activeTab === 'resources') fetchPublishedResources()
-                    else if (activeTab === 'users') fetchUsers(userSearch)
-                    else if (activeTab === 'grant-applications') loadGrantApplications()
-                    else if (activeTab === 'biz-submissions') loadBizSubmissions()
-                    else loadGrantListings()
+                    const map: Record<AdminTab, () => void> = {
+                      submissions: fetchSubmissions,
+                      resources: fetchPublishedResources,
+                      users: () => fetchUsers(userSearch),
+                      'grant-applications': loadGrantApplications,
+                      'biz-submissions': loadBizSubmissions,
+                      'grant-listings': loadGrantListings,
+                      'live-businesses': loadLiveBusinesses,
+                      'live-grants': loadLiveGrants,
+                    }
+                    map[activeTab]?.()
                   }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 transition"
                 >
@@ -585,41 +645,71 @@ export default function AdminDashboardPage() {
               </div>
             </header>
 
-            {/* Tab bar */}
-            <div className={`flex overflow-x-auto scrollbar-none gap-1 p-1 rounded-2xl ${
-              themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'
-            }`}>
-              {([
-                { id: 'submissions', label: 'Submissions' },
-                { id: 'resources', label: 'Resources' },
-                { id: 'users', label: 'Users' },
-                { id: 'biz-submissions', label: 'Businesses' },
-                { id: 'grant-listings', label: 'Grant Listings' },
-                { id: 'grant-applications', label: 'Grant Apps' },
-              ] as { id: AdminTab; label: string }[]).map(({ id, label }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap ${
-                    activeTab === id
-                      ? 'bg-white text-[#2C2416] shadow'
-                      : themeMode === 'dark'
-                        ? 'text-white/70 hover:text-white'
-                        : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
-                  }`}
-                >
-                  {label}
-                  {id === 'grant-applications' && grantApplications.length > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{grantApplications.length}</span>
-                  )}
-                  {id === 'biz-submissions' && bizSubmissions.length > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{bizSubmissions.length}</span>
-                  )}
-                  {id === 'grant-listings' && grantListings.length > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{grantListings.length}</span>
-                  )}
-                </button>
-              ))}
+            {/* ── Grouped Tab Navigation ── */}
+            <div className="space-y-3">
+              {/* Pending Review group */}
+              <div>
+                <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-1.5 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                  Pending Review
+                </p>
+                <div className={`flex flex-wrap gap-1 p-1 rounded-2xl ${themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
+                  {([
+                    { id: 'submissions' as AdminTab, label: 'Resources', badge: submissions.length },
+                    { id: 'biz-submissions' as AdminTab, label: 'Businesses', badge: bizSubmissions.length },
+                    { id: 'grant-listings' as AdminTab, label: 'Grant Listings', badge: grantListings.length },
+                  ]).map(({ id, label, badge }) => (
+                    <button key={id} onClick={() => setActiveTab(id)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
+                        activeTab === id ? 'bg-white text-[#2C2416] shadow' : themeMode === 'dark' ? 'text-white/70 hover:text-white' : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
+                      }`}>
+                      {label}
+                      {badge > 0 && <span className="px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-bold leading-none">{badge}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Published group */}
+              <div>
+                <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-1.5 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                  Published / Live
+                </p>
+                <div className={`flex flex-wrap gap-1 p-1 rounded-2xl ${themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
+                  {([
+                    { id: 'resources' as AdminTab, label: 'Resources' },
+                    { id: 'live-businesses' as AdminTab, label: 'Businesses' },
+                    { id: 'live-grants' as AdminTab, label: 'Grants' },
+                  ]).map(({ id, label }) => (
+                    <button key={id} onClick={() => setActiveTab(id)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap ${
+                        activeTab === id ? 'bg-white text-[#2C2416] shadow' : themeMode === 'dark' ? 'text-white/70 hover:text-white' : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
+                      }`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Management group */}
+              <div>
+                <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-1.5 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                  Management
+                </p>
+                <div className={`flex flex-wrap gap-1 p-1 rounded-2xl ${themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
+                  {([
+                    { id: 'users' as AdminTab, label: 'Users' },
+                    { id: 'grant-applications' as AdminTab, label: 'Grant Applications', badge: grantApplications.length },
+                  ]).map(({ id, label, badge }) => (
+                    <button key={id} onClick={() => setActiveTab(id)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
+                        activeTab === id ? 'bg-white text-[#2C2416] shadow' : themeMode === 'dark' ? 'text-white/70 hover:text-white' : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
+                      }`}>
+                      {label}
+                      {badge && badge > 0 && <span className="px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{badge}</span>}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {errorMessage && (
@@ -1093,16 +1183,16 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="flex gap-2 pt-2">
                           <button
-                            onClick={() => deleteBizSubmission(biz.id)}
+                            onClick={() => approveBizSubmission(biz.id)}
                             className="px-5 py-2 rounded-full bg-emerald-500/90 text-white text-sm font-semibold transition"
                           >
-                            Approve
+                            Approve &amp; Publish
                           </button>
                           <button
                             onClick={() => deleteBizSubmission(biz.id)}
                             className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
                           >
-                            Remove
+                            Reject
                           </button>
                         </div>
                       </div>
@@ -1148,18 +1238,101 @@ export default function AdminDashboardPage() {
                         </div>
                         <div className="flex gap-2 pt-2">
                           <button
-                            onClick={() => deleteGrantListing(gl.id)}
+                            onClick={() => approveGrantListing(gl.id)}
                             className="px-5 py-2 rounded-full bg-emerald-500/90 text-white text-sm font-semibold transition"
                           >
-                            Approve
+                            Approve &amp; Publish
                           </button>
                           <button
                             onClick={() => deleteGrantListing(gl.id)}
                             className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
                           >
-                            Remove
+                            Reject
                           </button>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {/* ── Live Businesses tab ── */}
+            {activeTab === 'live-businesses' && (
+              <div className="space-y-5">
+                {liveBusinesses.length === 0 ? (
+                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
+                    <FileText size={48} className="mx-auto opacity-30 mb-3" />
+                    <p className="text-lg font-semibold">No live businesses yet</p>
+                    <p className="text-sm opacity-70 mt-1">Approve a business submission to publish it on the site.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {liveBusinesses.map((biz) => (
+                      <div key={biz.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Live on Site</p>
+                            <h3 className="text-xl font-bold">{biz.businessName}</h3>
+                            <p className="text-sm opacity-70">{biz.category}</p>
+                          </div>
+                          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500 text-xs font-semibold">Published</span>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3 text-sm">
+                          <div className="space-y-1">
+                            {biz.address && <p><span className="opacity-60">Address:</span> {biz.address}</p>}
+                            {biz.phone && <p><span className="opacity-60">Phone:</span> {biz.phone}</p>}
+                          </div>
+                          <div className="space-y-1">
+                            <p><span className="opacity-60">Website:</span>{' '}
+                              <a href={biz.website} target="_blank" rel="noreferrer" className="underline text-blue-400 break-all">{biz.website}</a>
+                            </p>
+                            {biz.hours && <p><span className="opacity-60">Hours:</span> {biz.hours}</p>}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeLiveBusiness(biz.id)}
+                          className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                        >
+                          Remove from Site
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Live Grants tab ── */}
+            {activeTab === 'live-grants' && (
+              <div className="space-y-5">
+                {liveGrants.length === 0 ? (
+                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
+                    <FileText size={48} className="mx-auto opacity-30 mb-3" />
+                    <p className="text-lg font-semibold">No live grants yet</p>
+                    <p className="text-sm opacity-70 mt-1">Approve a grant listing to publish it on the Grants page.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {liveGrants.map((gl) => (
+                      <div key={gl.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Live on Site</p>
+                            <h3 className="text-xl font-bold">{gl.title}</h3>
+                            <p className="text-sm opacity-70">{gl.organization} · {gl.category}</p>
+                          </div>
+                          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500 text-xs font-semibold">Published</span>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-3 text-sm">
+                          <p><span className="opacity-60">Amount:</span> {gl.amount}</p>
+                          <p><span className="opacity-60">Eligibility:</span> {gl.eligibility}</p>
+                        </div>
+                        <button
+                          onClick={() => removeLiveGrant(gl.id)}
+                          className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                        >
+                          Remove from Site
+                        </button>
                       </div>
                     ))}
                   </div>
