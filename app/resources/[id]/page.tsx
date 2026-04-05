@@ -12,13 +12,14 @@
  * - Share functionality
  */
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MapPin, Phone, Mail, Globe, Clock, Star, Heart, Share2, 
   ArrowLeft, Calendar, Users, Award, Languages, CheckCircle,
-  Navigation, ExternalLink, Lock, Loader2, UserCheck, X
+  Navigation, ExternalLink, Lock, Loader2, UserCheck, X,
+  MessageSquare, Send, VolumeX, Volume2,
 } from 'lucide-react'
 import { resources as fallbackResources } from '@/data/resources'
 import { useFavorites } from '@/contexts/FavoritesContext'
@@ -98,8 +99,94 @@ export default function ResourceDetailPage() {
   const [applyError, setApplyError] = useState('')
   const [applySuccess, setApplySuccess] = useState(false)
 
-  // Fetch current user + join status when resource loads
+  // ── Community (chat + members) ─────────────────────────────────
+  type CommunityTab = 'chat' | 'members'
+  const [communityTab, setCommunityTab] = useState<CommunityTab>('chat')
+  const [announcements, setAnnouncements] = useState<any[]>([])
+  const [chatMsg, setChatMsg] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
+  const [chatSending, setChatSending] = useState(false)
+  const [communityMembers, setCommunityMembers] = useState<any[]>([])
+  const [membersLoading, setMembersLoading] = useState(false)
+  const chatBottomRef = useRef<HTMLDivElement>(null)
+
+  // Load community data when user is approved/owner
   useEffect(() => {
+    if ((joinStatus === 'approved' || joinStatus === 'owner') && resource?.id) {
+      if (communityTab === 'chat') loadAnnouncements()
+      else loadCommunityMembers()
+    }
+  }, [communityTab, joinStatus, resource?.id])
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [announcements])
+
+  const loadAnnouncements = async () => {
+    if (!resource?.id) return
+    setChatLoading(true)
+    try {
+      const res = await apiFetch(`/api/resources/${resource.id}/announcements?limit=60`)
+      const json = await res.json()
+      if (json.success) setAnnouncements(json.data || [])
+    } catch { /* ignore */ } finally { setChatLoading(false) }
+  }
+
+  const loadCommunityMembers = async () => {
+    if (!resource?.id) return
+    setMembersLoading(true)
+    try {
+      const res = await apiFetch(`/api/resources/${resource.id}/members`)
+      const json = await res.json()
+      if (json.success) setCommunityMembers(json.data || [])
+    } catch { /* ignore */ } finally { setMembersLoading(false) }
+  }
+
+  const sendChatMsg = async () => {
+    if (!chatMsg.trim() || chatSending || !resource?.id) return
+    const content = chatMsg.trim()
+    setChatMsg('')
+    setChatSending(true)
+    const optimistic = {
+      id: `opt-${Date.now()}`,
+      content,
+      user_id: currentUserId,
+      created_at: new Date().toISOString(),
+      users: { name: 'You', id: currentUserId },
+    }
+    setAnnouncements((p) => [...p, optimistic])
+    try {
+      const res = await apiFetch(`/api/resources/${resource.id}/announcements`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      })
+      const json = await res.json()
+      if (json.success && json.data) {
+        setAnnouncements((p) => p.map((m) => m.id === optimistic.id ? json.data : m))
+      }
+    } catch { /* optimistic stays */ } finally { setChatSending(false) }
+  }
+
+  // Real-time chat subscription (only when community is visible)
+  useEffect(() => {
+    if ((joinStatus !== 'approved' && joinStatus !== 'owner') || !resource?.id) return
+    const channel = supabase
+      .channel(`resource-chat-${resource.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'resource_announcements',
+        filter: `resource_id=eq.${resource.id}`,
+      }, (payload: any) => {
+        setAnnouncements((p) => {
+          if (p.some((m) => m.id === payload.new.id)) return p
+          return [...p, { ...payload.new, users: { name: '...', id: payload.new.user_id } }]
+        })
+      })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [joinStatus, resource?.id])
     const fetchJoinStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return
@@ -443,6 +530,139 @@ export default function ResourceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Community Section — visible to approved members and owners */}
+      {(joinStatus === 'approved' || joinStatus === 'owner') && resource && (
+        <div className="mt-8 bg-white dark:bg-[#1C1B18] rounded-3xl border border-[#E8E0D6] dark:border-[#3A3830] overflow-hidden">
+          {/* Header */}
+          <div className="px-6 pt-6 pb-4 border-b border-[#E8E0D6] dark:border-[#3A3830] flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Community</h2>
+              <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mt-0.5">Chat and connect with other members</p>
+            </div>
+            <div className="flex bg-[#F5F3F0] dark:bg-[#2A2824] rounded-xl p-1 gap-1">
+              {(['chat', 'members'] as CommunityTab[]).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setCommunityTab(t)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition-all touch-manipulation ${
+                    communityTab === t
+                      ? 'bg-white dark:bg-[#1C1B18] text-[#2C2416] dark:text-[#F5F3F0] shadow-sm'
+                      : 'text-[#6B5D47] dark:text-[#B8A584]'
+                  }`}
+                >
+                  {t === 'chat' ? <MessageSquare className="w-4 h-4" /> : <Users className="w-4 h-4" />}
+                  {t === 'chat' ? 'Chat' : 'Members'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Chat Tab */}
+          {communityTab === 'chat' && (
+            <div className="flex flex-col" style={{ height: 'min(500px, calc(100svh - 280px))' }}>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {chatLoading ? (
+                  <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#8B6F47]" /></div>
+                ) : announcements.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-[#6B5D47] dark:text-[#B8A584]">
+                    <MessageSquare className="w-8 h-8 mb-2 opacity-30" />
+                    <p className="text-sm font-medium">No messages yet</p>
+                    <p className="text-xs opacity-60 mt-1">Be the first to start the conversation!</p>
+                  </div>
+                ) : (
+                  <>
+                    {announcements.map((msg) => {
+                      const isMe = msg.user_id === currentUserId
+                      return (
+                        <div key={msg.id} className={`flex gap-2 ${isMe ? 'flex-row-reverse' : ''}`}>
+                          <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white ${isMe ? 'bg-[#8B6F47]' : 'bg-[#6B5D47]'}`}>
+                            {(msg.users?.name || 'U')[0].toUpperCase()}
+                          </div>
+                          <div className={`max-w-xs lg:max-w-md flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
+                            {!isMe && <p className="text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] px-1">{msg.users?.name || 'Member'}</p>}
+                            <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-[#8B6F47] text-white rounded-tr-sm' : 'bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] rounded-tl-sm'}`}>
+                              {msg.content}
+                            </div>
+                            <p className="text-[10px] text-[#6B5D47]/50 px-1">
+                              {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    <div ref={chatBottomRef} />
+                  </>
+                )}
+              </div>
+              {/* Input */}
+              <div className="p-3 border-t border-[#E8E0D6] dark:border-[#3A3830] flex items-end gap-2">
+                <textarea
+                  value={chatMsg}
+                  onChange={(e) => setChatMsg(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsg() } }}
+                  placeholder="Say something..."
+                  rows={1}
+                  style={{ minHeight: '44px', fontSize: '16px' }}
+                  className="flex-1 resize-none rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] px-3 py-2 text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30 max-h-28 overflow-y-auto"
+                />
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={sendChatMsg}
+                  disabled={!chatMsg.trim() || chatSending}
+                  className="p-3 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] disabled:opacity-40 transition-all touch-manipulation"
+                >
+                  {chatSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                </motion.button>
+              </div>
+            </div>
+          )}
+
+          {/* Members Tab */}
+          {communityTab === 'members' && (
+            <div className="p-4 max-h-[500px] overflow-y-auto space-y-3">
+              {membersLoading ? (
+                <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#8B6F47]" /></div>
+              ) : communityMembers.length === 0 ? (
+                <div className="text-center py-12 text-[#6B5D47] dark:text-[#B8A584]">
+                  <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm font-medium">No members yet</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] font-medium mb-2">{communityMembers.length} member{communityMembers.length !== 1 ? 's' : ''}</p>
+                  {communityMembers.map((m: any) => (
+                    <div key={m.user_id} className="flex items-center gap-3 p-3 rounded-2xl bg-[#F5F3F0] dark:bg-[#2A2824]">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#D4A574] to-[#8B6F47] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {m.name[0]?.toUpperCase() || '?'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-semibold text-sm text-[#2C2416] dark:text-[#F5F3F0] truncate">{m.name}</p>
+                          {m.is_owner && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574]">
+                              {m.role}
+                            </span>
+                          )}
+                          {m.muted_from_chat && (
+                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                              <VolumeX className="w-3 h-3" /> muted
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {m.user_id === currentUserId && (
+                        <span className="text-xs text-[#8B6F47] dark:text-[#D4A574] font-semibold">You</span>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Apply to Join Modal */}
       <AnimatePresence>

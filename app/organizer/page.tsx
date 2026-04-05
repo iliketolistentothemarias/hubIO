@@ -7,11 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, Check, X, Loader2, ChevronLeft, Globe, Lock, Plus,
   Save, Settings, Users, MessageSquare, Send, MoreVertical,
+  UserMinus, VolumeX, Volume2, ShieldOff,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
 
-type ManageTab = 'settings' | 'members' | 'chat'
+type ManageTab = 'settings' | 'join-requests' | 'members' | 'chat'
 
 interface OrgResource {
   id: string
@@ -37,6 +38,18 @@ interface Application {
   } | null
   created_at: string
   users: { id: string; name: string; email: string; avatar: string | null } | null
+}
+
+interface Member {
+  user_id: string
+  name: string
+  email: string
+  avatar: string | null
+  role: string
+  muted_from_chat: boolean
+  joined_at: string
+  signup_id: string | null
+  is_owner: boolean
 }
 
 interface Announcement {
@@ -73,6 +86,10 @@ export default function OrganizerPage() {
   const [applications, setApplications] = useState<Application[]>([])
   const [appsLoading, setAppsLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  // Members tab
+  const [members, setMembers] = useState<Member[]>([])
+  const [membersLoading, setMembersLoading] = useState(false)
 
   // Chat
   const [announcements, setAnnouncements] = useState<Announcement[]>([])
@@ -168,8 +185,10 @@ export default function OrganizerPage() {
   // ─── Applications/Members ───────────────────────────────────────────────────
 
   useEffect(() => {
-    if (manageTab === 'members' && selectedResource) {
+    if (manageTab === 'join-requests' && selectedResource) {
       loadApplications()
+    } else if (manageTab === 'members' && selectedResource) {
+      loadMembers()
     }
   }, [manageTab, selectedResource])
 
@@ -184,6 +203,17 @@ export default function OrganizerPage() {
     finally { setAppsLoading(false) }
   }
 
+  const loadMembers = async () => {
+    if (!selectedResource) return
+    setMembersLoading(true)
+    try {
+      const res = await apiFetch(`/api/resources/${selectedResource.id}/members`)
+      const json = await res.json()
+      if (json.success) setMembers(json.data || [])
+    } catch (e) { console.error(e) }
+    finally { setMembersLoading(false) }
+  }
+
   const handleApplicationAction = async (applicantUserId: string, action: 'approve' | 'reject') => {
     if (!selectedResource) return
     setActionLoading(`${applicantUserId}-${action}`)
@@ -196,6 +226,29 @@ export default function OrganizerPage() {
       const json = await res.json()
       if (json.success) {
         setApplications((prev) => prev.filter((a) => a.user_id !== applicantUserId))
+      }
+    } catch (e) { console.error(e) }
+    finally { setActionLoading(null) }
+  }
+
+  const handleMemberAction = async (memberUserId: string, action: 'mute' | 'unmute' | 'remove') => {
+    if (!selectedResource) return
+    setActionLoading(`${memberUserId}-${action}`)
+    try {
+      const res = await apiFetch(`/api/resources/${selectedResource.id}/applications/${memberUserId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        if (action === 'remove') {
+          setMembers((prev) => prev.filter((m) => m.user_id !== memberUserId))
+        } else {
+          setMembers((prev) => prev.map((m) =>
+            m.user_id === memberUserId ? { ...m, muted_from_chat: action === 'mute' } : m
+          ))
+        }
       }
     } catch (e) { console.error(e) }
     finally { setActionLoading(null) }
@@ -291,7 +344,8 @@ export default function OrganizerPage() {
 
   const manageTabs: { id: ManageTab; label: string; icon: React.ElementType }[] = [
     { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'members', label: 'Join Requests', icon: Users },
+    { id: 'join-requests', label: 'Join Requests', icon: Users },
+    { id: 'members', label: 'Members', icon: ShieldOff },
     { id: 'chat', label: 'Chat & Announcements', icon: MessageSquare },
   ]
 
@@ -467,9 +521,9 @@ export default function OrganizerPage() {
                   </motion.div>
                 )}
 
-                {/* Members / Join Requests Tab */}
-                {manageTab === 'members' && (
-                  <motion.div key="members" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                {/* Join Requests Tab */}
+                {manageTab === 'join-requests' && (
+                  <motion.div key="join-requests" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     {appsLoading ? (
                       <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#8B6F47]" /></div>
                     ) : applications.length === 0 ? (
@@ -539,6 +593,97 @@ export default function OrganizerPage() {
                                 Reject
                               </motion.button>
                             </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
+                {/* Members Tab */}
+                {manageTab === 'members' && (
+                  <motion.div key="members" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    {membersLoading ? (
+                      <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#8B6F47]" /></div>
+                    ) : members.length === 0 ? (
+                      <div className="text-center py-16 text-[#6B5D47] dark:text-[#B8A584]">
+                        <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                        <p className="font-semibold">No members yet</p>
+                        <p className="text-sm mt-1 opacity-70">Approved members will appear here.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] font-medium mb-2">{members.length} member{members.length !== 1 ? 's' : ''}</p>
+                        {members.map((member) => (
+                          <motion.div
+                            key={member.user_id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className={`bg-white dark:bg-[#1C1B18] rounded-2xl border p-4 flex items-center gap-4 ${
+                              member.muted_from_chat
+                                ? 'border-amber-200 dark:border-amber-900/40'
+                                : 'border-[#E8E0D6] dark:border-[#3A3830]'
+                            }`}
+                          >
+                            {/* Avatar */}
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4A574] to-[#8B6F47] flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                              {member.name[0]?.toUpperCase() || '?'}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <p className="font-bold text-[#2C2416] dark:text-[#F5F3F0] text-sm truncate">{member.name}</p>
+                                {member.is_owner && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574]">
+                                    {member.role}
+                                  </span>
+                                )}
+                                {member.muted_from_chat && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                                    <VolumeX className="w-3 h-3" /> Muted
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] truncate">{member.email}</p>
+                              <p className="text-[10px] text-[#6B5D47]/60 dark:text-[#B8A584]/60 mt-0.5">
+                                Joined {new Date(member.joined_at).toLocaleDateString()}
+                              </p>
+                            </div>
+
+                            {/* Actions (only for non-owners) */}
+                            {!member.is_owner && (
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleMemberAction(member.user_id, member.muted_from_chat ? 'unmute' : 'mute')}
+                                  disabled={actionLoading !== null}
+                                  title={member.muted_from_chat ? 'Unmute from chat' : 'Mute from chat'}
+                                  className={`p-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 transition-all touch-manipulation ${
+                                    member.muted_from_chat
+                                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                      : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                  }`}
+                                >
+                                  {actionLoading === `${member.user_id}-mute` || actionLoading === `${member.user_id}-unmute`
+                                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                                    : member.muted_from_chat ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => handleMemberAction(member.user_id, 'remove')}
+                                  disabled={actionLoading !== null}
+                                  title="Remove from resource"
+                                  className="p-2.5 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm font-semibold disabled:opacity-50 transition-all touch-manipulation"
+                                >
+                                  {actionLoading === `${member.user_id}-remove`
+                                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                                    : <UserMinus className="w-4 h-4" />}
+                                </motion.button>
+                              </div>
+                            )}
                           </motion.div>
                         ))}
                       </div>

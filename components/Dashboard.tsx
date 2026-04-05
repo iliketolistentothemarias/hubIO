@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, Calendar, Users, ArrowRight, MapPin, Lock, Globe, Loader2 } from 'lucide-react'
+import { Search, Calendar, Users, ArrowRight, MapPin, Lock, Globe, Loader2, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase/client'
@@ -28,6 +28,19 @@ export default function Dashboard() {
   const [joinedEvents, setJoinedEvents] = useState<JoinedEvent[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
 
+  // Joined resources
+  interface JoinedResource {
+    id: string
+    name: string
+    category: string
+    description: string
+    visibility: 'public' | 'private'
+    status: string
+    is_owner: boolean
+  }
+  const [joinedResources, setJoinedResources] = useState<JoinedResource[]>([])
+  const [resourcesLoading, setResourcesLoading] = useState(false)
+
   useEffect(() => {
     let mounted = true
     supabase.auth.getUser().then(async ({ data }) => {
@@ -50,6 +63,8 @@ export default function Dashboard() {
 
         // Load joined events
         loadJoinedEvents(data.user.id)
+        // Load joined resources
+        loadJoinedResources(data.user.id)
       }
     })
     return () => { mounted = false }
@@ -85,6 +100,50 @@ export default function Dashboard() {
       console.error(e)
     } finally {
       setEventsLoading(false)
+    }
+  }
+
+  const loadJoinedResources = async (uid: string) => {
+    setResourcesLoading(true)
+    try {
+      // Resources where user is an approved signup
+      const { data: signups } = await supabase
+        .from('resource_signups')
+        .select(`
+          resource_id,
+          resources (
+            id, name, category, description, visibility, status
+          )
+        `)
+        .eq('user_id', uid)
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      // Resources the user submitted themselves (owner)
+      const { data: owned } = await supabase
+        .from('resources')
+        .select('id, name, category, description, visibility, status')
+        .eq('submitted_by', uid)
+        .eq('status', 'accepted')
+        .order('created_at', { ascending: false })
+        .limit(10)
+
+      const ownedIds = new Set((owned || []).map((r: any) => r.id))
+
+      const list: JoinedResource[] = [
+        ...(owned || []).map((r: any) => ({ ...r, is_owner: true })),
+        ...((signups || [])
+          .filter((s: any) => s.resources && !ownedIds.has(s.resource_id))
+          .map((s: any) => ({ ...s.resources, is_owner: false }))
+        ),
+      ]
+
+      setJoinedResources(list)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setResourcesLoading(false)
     }
   }
 
@@ -208,6 +267,77 @@ export default function Dashboard() {
                           Joined
                         </span>
                       )}
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Your Resources */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Your Resources</h2>
+            <Link href="/directory" className="text-sm text-[#8B6F47] dark:text-[#D4A574] hover:underline flex items-center gap-1">
+              Browse all <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          {resourcesLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-[#8B6F47]" />
+            </div>
+          ) : joinedResources.length === 0 ? (
+            <div className={`${cardBase}`}>
+              <div className="text-center text-[#6B5D47] dark:text-[#B8A584] py-6">
+                <BookOpen className="w-10 h-10 mx-auto mb-3 opacity-40" />
+                <p className="font-semibold mb-2">You haven't joined any resources yet</p>
+                <Link href="/directory" className="text-sm text-[#8B6F47] dark:text-[#D4A574] hover:underline">
+                  Explore the directory
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {joinedResources.map((res, i) => (
+                <motion.div
+                  key={res.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                >
+                  <Link href={`/resources/${res.id}`}>
+                    <div className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574]">
+                          {res.category}
+                        </span>
+                        <span className={`flex items-center gap-1 text-xs font-semibold ${
+                          res.visibility === 'private'
+                            ? 'text-amber-600 dark:text-amber-400'
+                            : 'text-green-600 dark:text-green-400'
+                        }`}>
+                          {res.visibility === 'private' ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
+                          {res.visibility}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2 line-clamp-2">{res.name}</h3>
+                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] line-clamp-2 mb-3">{res.description}</p>
+                      <div className="flex items-center gap-2">
+                        {res.is_owner ? (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574] font-semibold">
+                            Owner
+                          </span>
+                        ) : (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold">
+                            Member
+                          </span>
+                        )}
+                        <span className="text-xs text-[#6B5D47]/60 dark:text-[#B8A584]/60 flex items-center gap-1">
+                          <Users className="w-3 h-3" /> Community →
+                        </span>
+                      </div>
                     </div>
                   </Link>
                 </motion.div>

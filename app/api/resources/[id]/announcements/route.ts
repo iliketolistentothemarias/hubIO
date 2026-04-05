@@ -81,6 +81,18 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 })
     }
 
+    // Block muted users from posting
+    const admin2 = createAdminClient()
+    const { data: signup } = await admin2
+      .from('resource_signups')
+      .select('muted_from_chat')
+      .eq('resource_id', resourceId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (signup?.muted_from_chat) {
+      return NextResponse.json({ success: false, error: 'You have been muted from this chat' }, { status: 403 })
+    }
+
     const { content } = await request.json()
     if (!content?.trim()) {
       return NextResponse.json({ success: false, error: 'content is required' }, { status: 400 })
