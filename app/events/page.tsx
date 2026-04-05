@@ -441,16 +441,6 @@ function ListView({ events, onRSVP, rsvping }: { events: any[]; onRSVP: (event: 
     </div>
   )
 }
-                  )}
-                </button>
-              </div>
-            </div>
-          </LiquidGlass>
-        </motion.div>
-      ))}
-    </div>
-  )
-}
 
 function getDaysInMonth(date: Date): number {
   const year = date.getFullYear()
