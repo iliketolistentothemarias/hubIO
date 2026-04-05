@@ -19,6 +19,7 @@ export default function BusinessPage() {
   const [sortBy, setSortBy] = useState<'rating' | 'reviews' | 'name'>('rating')
   const [detailBusiness, setDetailBusiness] = useState<Business | null>(null)
   const [communityBusinesses, setCommunityBusinesses] = useState<Business[]>([])
+  const [removedDefaultIds, setRemovedDefaultIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     try {
@@ -40,10 +41,20 @@ export default function BusinessPage() {
         tags: [],
       }))
       setCommunityBusinesses(mapped)
+      const removed = JSON.parse(localStorage.getItem('removedDefaultBizIds') || '[]') as string[]
+      setRemovedDefaultIds(new Set(removed))
     } catch { /* ignore */ }
   }, [])
 
-  const allBusinesses = useMemo(() => [...mockBusinesses, ...communityBusinesses], [communityBusinesses])
+  const visibleMockBusinesses = useMemo(
+    () => mockBusinesses.filter(b => !removedDefaultIds.has(b.id)),
+    [removedDefaultIds]
+  )
+
+  const allBusinesses = useMemo(
+    () => [...visibleMockBusinesses, ...communityBusinesses],
+    [visibleMockBusinesses, communityBusinesses]
+  )
 
   const filteredBusinesses = useMemo(() => {
     let filtered = allBusinesses

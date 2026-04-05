@@ -129,6 +129,10 @@ export default function AdminDashboardPage() {
   const [liveBusinesses, setLiveBusinesses] = useState<BizSubmission[]>([])
   const [liveGrants, setLiveGrants] = useState<GrantListing[]>([])
 
+  // Track which default (mock) items have been removed by admin
+  const [removedDefaultBizIds, setRemovedDefaultBizIds] = useState<Set<string>>(new Set())
+  const [removedDefaultGrantIds, setRemovedDefaultGrantIds] = useState<Set<string>>(new Set())
+
   const backgroundClasses = useMemo(() => {
     return themeMode === 'light'
       ? 'bg-[#FAF9F6] text-[#1C1B18]'
@@ -277,6 +281,8 @@ export default function AdminDashboardPage() {
     try {
       const stored = JSON.parse(localStorage.getItem('approvedBusinesses') || '[]') as BizSubmission[]
       setLiveBusinesses(stored)
+      const removedIds = JSON.parse(localStorage.getItem('removedDefaultBizIds') || '[]') as string[]
+      setRemovedDefaultBizIds(new Set(removedIds))
     } catch { setLiveBusinesses([]) }
   }
 
@@ -288,10 +294,20 @@ export default function AdminDashboardPage() {
     } catch { /* ignore */ }
   }
 
+  const removeDefaultBusiness = (id: string) => {
+    try {
+      const updated = new Set(removedDefaultBizIds).add(id)
+      localStorage.setItem('removedDefaultBizIds', JSON.stringify([...updated]))
+      setRemovedDefaultBizIds(updated)
+    } catch { /* ignore */ }
+  }
+
   const loadLiveGrants = () => {
     try {
       const stored = JSON.parse(localStorage.getItem('approvedGrants') || '[]') as GrantListing[]
       setLiveGrants(stored)
+      const removedIds = JSON.parse(localStorage.getItem('removedDefaultGrantIds') || '[]') as string[]
+      setRemovedDefaultGrantIds(new Set(removedIds))
     } catch { setLiveGrants([]) }
   }
 
@@ -300,6 +316,14 @@ export default function AdminDashboardPage() {
       const updated = liveGrants.filter(g => g.id !== id)
       localStorage.setItem('approvedGrants', JSON.stringify(updated))
       setLiveGrants(updated)
+    } catch { /* ignore */ }
+  }
+
+  const removeDefaultGrant = (id: string) => {
+    try {
+      const updated = new Set(removedDefaultGrantIds).add(id)
+      localStorage.setItem('removedDefaultGrantIds', JSON.stringify([...updated]))
+      setRemovedDefaultGrantIds(updated)
     } catch { /* ignore */ }
   }
 
@@ -1262,39 +1286,47 @@ export default function AdminDashboardPage() {
             {activeTab === 'live-businesses' && (
               <div className="space-y-5">
                 {/* Default (built-in) businesses */}
-                <div>
-                  <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
-                    Default Listings
-                  </p>
-                  <div className="space-y-4">
-                    {mockBusinesses.map((biz) => (
-                      <div key={biz.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Built-in Listing</p>
-                            <h3 className="text-xl font-bold">{biz.name}</h3>
-                            <p className="text-sm opacity-70">{biz.category}</p>
+                {mockBusinesses.filter(b => !removedDefaultBizIds.has(b.id)).length > 0 && (
+                  <div>
+                    <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                      Default Listings
+                    </p>
+                    <div className="space-y-4">
+                      {mockBusinesses.filter(b => !removedDefaultBizIds.has(b.id)).map((biz) => (
+                        <div key={biz.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.3em] opacity-60">Built-in Listing</p>
+                              <h3 className="text-xl font-bold">{biz.name}</h3>
+                              <p className="text-sm opacity-70">{biz.category}</p>
+                            </div>
+                            <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Default</span>
                           </div>
-                          <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Default</span>
+                          <div className="grid md:grid-cols-2 gap-3 text-sm">
+                            <div className="space-y-1">
+                              {biz.address && <p><span className="opacity-60">Address:</span> {biz.address}</p>}
+                              {biz.phone && <p><span className="opacity-60">Phone:</span> {biz.phone}</p>}
+                            </div>
+                            <div className="space-y-1">
+                              {biz.website && (
+                                <p><span className="opacity-60">Website:</span>{' '}
+                                  <a href={biz.website} target="_blank" rel="noreferrer" className="underline text-blue-400 break-all">{biz.website}</a>
+                                </p>
+                              )}
+                              {biz.hours && <p><span className="opacity-60">Hours:</span> {biz.hours}</p>}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => removeDefaultBusiness(biz.id)}
+                            className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                          >
+                            Remove from Site
+                          </button>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-3 text-sm">
-                          <div className="space-y-1">
-                            {biz.address && <p><span className="opacity-60">Address:</span> {biz.address}</p>}
-                            {biz.phone && <p><span className="opacity-60">Phone:</span> {biz.phone}</p>}
-                          </div>
-                          <div className="space-y-1">
-                            {biz.website && (
-                              <p><span className="opacity-60">Website:</span>{' '}
-                                <a href={biz.website} target="_blank" rel="noreferrer" className="underline text-blue-400 break-all">{biz.website}</a>
-                              </p>
-                            )}
-                            {biz.hours && <p><span className="opacity-60">Hours:</span> {biz.hours}</p>}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Community-approved businesses */}
                 <div>
@@ -1347,29 +1379,37 @@ export default function AdminDashboardPage() {
             {activeTab === 'live-grants' && (
               <div className="space-y-5">
                 {/* Default (built-in) grants */}
-                <div>
-                  <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
-                    Default Listings
-                  </p>
-                  <div className="space-y-4">
-                    {mockGrants.map((gl) => (
-                      <div key={gl.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
-                        <div className="flex flex-wrap items-start justify-between gap-4">
-                          <div>
-                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Built-in Listing</p>
-                            <h3 className="text-xl font-bold">{gl.title}</h3>
-                            <p className="text-sm opacity-70">{gl.organization} · {gl.category}</p>
+                {mockGrants.filter(g => !removedDefaultGrantIds.has(g.id)).length > 0 && (
+                  <div>
+                    <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                      Default Listings
+                    </p>
+                    <div className="space-y-4">
+                      {mockGrants.filter(g => !removedDefaultGrantIds.has(g.id)).map((gl) => (
+                        <div key={gl.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.3em] opacity-60">Built-in Listing</p>
+                              <h3 className="text-xl font-bold">{gl.title}</h3>
+                              <p className="text-sm opacity-70">{gl.organization} · {gl.category}</p>
+                            </div>
+                            <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Default</span>
                           </div>
-                          <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Default</span>
+                          <div className="grid md:grid-cols-2 gap-3 text-sm">
+                            <p><span className="opacity-60">Amount:</span> {gl.amount}</p>
+                            <p><span className="opacity-60">Eligibility:</span> {gl.eligibility.join(', ')}</p>
+                          </div>
+                          <button
+                            onClick={() => removeDefaultGrant(gl.id)}
+                            className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                          >
+                            Remove from Site
+                          </button>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-3 text-sm">
-                          <p><span className="opacity-60">Amount:</span> {gl.amount}</p>
-                          <p><span className="opacity-60">Eligibility:</span> {gl.eligibility.join(', ')}</p>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Community-approved grants */}
                 <div>

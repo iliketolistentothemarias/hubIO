@@ -33,6 +33,7 @@ export default function GrantsPage() {
   const [submitted, setSubmitted] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [communityGrants, setCommunityGrants] = useState<Grant[]>([])
+  const [removedDefaultIds, setRemovedDefaultIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     try {
@@ -51,10 +52,20 @@ export default function GrantsPage() {
         verified: false,
       }))
       setCommunityGrants(mapped)
+      const removed = JSON.parse(localStorage.getItem('removedDefaultGrantIds') || '[]') as string[]
+      setRemovedDefaultIds(new Set(removed))
     } catch { /* ignore */ }
   }, [])
 
-  const allGrants = useMemo(() => [...mockGrants, ...communityGrants], [communityGrants])
+  const visibleMockGrants = useMemo(
+    () => mockGrants.filter(g => !removedDefaultIds.has(g.id)),
+    [removedDefaultIds]
+  )
+
+  const allGrants = useMemo(
+    () => [...visibleMockGrants, ...communityGrants],
+    [visibleMockGrants, communityGrants]
+  )
 
   const [form, setForm] = useState({
     applicantName: '',
