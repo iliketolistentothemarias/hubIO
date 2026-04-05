@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -118,12 +118,7 @@ export default function OrganizerPage() {
     check()
   }, [router])
 
-  useEffect(() => {
-    if (!userId || checking) return
-    loadResources()
-  }, [userId, checking])
-
-  const loadResources = async () => {
+  const loadResources = useCallback(async () => {
     if (!userId) return
     setResourcesLoading(true)
     try {
@@ -135,7 +130,73 @@ export default function OrganizerPage() {
       setResources((data || []) as OrgResource[])
     } catch (e) { console.error(e) }
     finally { setResourcesLoading(false) }
-  }
+  }, [userId])
+
+  useEffect(() => {
+    if (!userId || checking) return
+    loadResources()
+  }, [userId, checking, loadResources])
+
+  // When an admin deletes a resource from the dashboard, keep this list in sync (no full page refresh needed).
+  // DELETE uses an unfiltered listener + client check — Realtime filters are unreliable for DELETE on some setups.
+  useEffect(() => {
+    if (!userId || checking) return
+
+    const channel = supabase
+      .channel(`organizer-resources-sync-${userId}`)
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'resources' },
+        (payload) => {
+          const old = payload.old as { id?: string; submitted_by?: string }
+          const id = old?.id
+          if (!id) return
+          // If Realtime includes submitted_by, ignore other users' rows
+          if (old.submitted_by !== undefined && old.submitted_by !== userId) return
+
+          setResources((prev) => {
+            if (!prev.some((r) => r.id === id)) return prev
+            return prev.filter((r) => r.id !== id)
+          })
+          setSelectedResource((prev) => (prev?.id === id ? null : prev))
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'resources',
+          filter: `submitted_by=eq.${userId}`,
+        },
+        () => loadResources()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'resources',
+          filter: `submitted_by=eq.${userId}`,
+        },
+        () => loadResources()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [userId, checking, loadResources])
+
+  // Fallback if realtime is delayed: refetch when the user returns to this tab
+  useEffect(() => {
+    if (!userId || checking) return
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadResources()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [userId, checking, loadResources])
 
   const openResource = (res: OrgResource) => {
     setSelectedResource(res)
