@@ -16,7 +16,7 @@ export default function Navigation() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const dropdownTimer = useRef<NodeJS.Timeout | null>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -45,6 +45,24 @@ export default function Navigation() {
       document.body.style.touchAction = ''
     }
   }, [isOpen])
+
+  // Close dropdown on click-outside or Escape
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null)
+      }
+    }
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenDropdown(null)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -152,7 +170,7 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex items-center gap-6 justify-center">
+          <div className="hidden md:flex items-center gap-6 justify-center" ref={dropdownRef}>
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href || item.label}
@@ -160,16 +178,10 @@ export default function Navigation() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15, delay: index * 0.02 }}
                 className="relative"
-                onMouseEnter={() => {
-                  if (dropdownTimer.current) clearTimeout(dropdownTimer.current)
-                  if (item.submenu) setOpenDropdown(item.label)
-                }}
-                onMouseLeave={() => {
-                  dropdownTimer.current = setTimeout(() => setOpenDropdown(null), 120)
-                }}
               >
                 {item.submenu ? (
                   <button
+                    onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
                     className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
@@ -231,6 +243,7 @@ export default function Navigation() {
                           >
                             <Link
                               href={subItem.href}
+                              onClick={() => setOpenDropdown(null)}
                               className={`block px-4 py-3 text-sm transition-all duration-200 ${pathname === subItem.href
                                   ? 'bg-[#F5F3F0] dark:bg-[#353330] text-[#2C2416] dark:text-[#F5F3F0]'
                                   : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330]'
