@@ -97,6 +97,7 @@ export default function OrganizerPage() {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatSending, setChatSending] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const chatChannelRef = useRef<any>(null)
 
@@ -350,6 +351,7 @@ export default function OrganizerPage() {
     const content = chatInput.trim()
     setChatInput('')
     setChatSending(true)
+    setChatError(null)
 
     // Optimistic update — show immediately
     const optimisticId = `opt-${Date.now()}`
@@ -377,12 +379,12 @@ export default function OrganizerPage() {
         // Roll back on failure
         setAnnouncements((prev) => prev.filter((m) => m.id !== optimisticId))
         setChatInput(content)
-        console.error('Send failed:', json.error)
+        setChatError(json.error || 'Failed to send message')
       }
     } catch (e) {
       setAnnouncements((prev) => prev.filter((m) => m.id !== optimisticId))
       setChatInput(content)
-      console.error('Failed to send chat message:', e)
+      setChatError('Failed to send — check your connection')
     } finally {
       setChatSending(false)
     }
@@ -794,25 +796,33 @@ export default function OrganizerPage() {
                     </div>
 
                     {/* Input */}
-                    <div className="p-3 border-t border-[#E8E0D6] dark:border-[#3A3830] flex items-end gap-2">
-                      <textarea
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={handleChatKeyDown}
-                        placeholder="Send an announcement or message… (Enter to send)"
-                        rows={1}
-                        className="flex-1 resize-none px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
-                        style={{ maxHeight: 100 }}
-                      />
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={handleSendMessage}
-                        disabled={!chatInput.trim() || chatSending}
-                        className="p-2.5 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] disabled:opacity-40 transition-all"
-                      >
-                        {chatSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                      </motion.button>
+                    <div className="border-t border-[#E8E0D6] dark:border-[#3A3830]">
+                      {chatError && (
+                        <div className="px-3 pt-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+                          <span className="flex-1">⚠ {chatError}</span>
+                          <button onClick={() => setChatError(null)} className="font-bold hover:opacity-70">×</button>
+                        </div>
+                      )}
+                      <div className="p-3 flex items-end gap-2">
+                        <textarea
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={handleChatKeyDown}
+                          placeholder="Send an announcement or message… (Enter to send)"
+                          rows={1}
+                          className="flex-1 resize-none px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          style={{ maxHeight: 100 }}
+                        />
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={handleSendMessage}
+                          disabled={!chatInput.trim() || chatSending}
+                          className="p-2.5 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] disabled:opacity-40 transition-all"
+                        >
+                          {chatSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                        </motion.button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
