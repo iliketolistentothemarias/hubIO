@@ -54,7 +54,7 @@ export default function RootLayout({
               <ClientBootstrap />
               <InitialDataLoader />
               <Navigation />
-              <main className="min-h-screen relative" role="main" aria-label="Main content">
+              <main className="min-h-screen" role="main" aria-label="Main content">
                 {children}
               </main>
               <Footer />

@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Nav always on top — forces GPU compositor layer so iOS Safari never renders it behind Framer Motion transform layers */
+nav[class*="fixed"][class*="z-"] {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  isolation: isolate;
+  will-change: transform;
+}
+
 /* Mobile hyphenation — breaks long words at syllable boundaries with a hyphen */
 @media (max-width: 768px) {
   h1, h2, h3, h4, h5, h6, p, span, a, li, td, th, label, button {

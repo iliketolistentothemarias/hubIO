@@ -132,6 +132,7 @@ export default function Navigation() {
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
           : 'bg-transparent'
         }`}
+      style={{ transform: 'translateZ(0)', WebkitTransform: 'translateZ(0)', isolation: 'isolate' }}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between md:justify-center gap-4 md:gap-6 h-16 md:h-20 mx-auto w-full">

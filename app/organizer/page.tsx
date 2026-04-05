@@ -316,7 +316,15 @@ export default function OrganizerPage() {
           ...(payload.new as Announcement),
           users: profile || null,
         }
-        setAnnouncements((prev) => [...prev, msg])
+        setAnnouncements((prev) => {
+          // Don't add if already exists (optimistic update already placed it)
+          if (prev.some((m) => m.id === msg.id)) return prev
+          // Remove any optimistic placeholder with same content/user
+          const withoutOptimistic = prev.filter(
+            (m) => !(m.id.startsWith('opt-') && m.content === msg.content && m.user_id === msg.user_id)
+          )
+          return [...withoutOptimistic, msg]
+        })
       })
       .subscribe()
 
@@ -338,13 +346,38 @@ export default function OrganizerPage() {
     const content = chatInput.trim()
     setChatInput('')
     setChatSending(true)
+
+    // Optimistic update — show immediately
+    const optimisticId = `opt-${Date.now()}`
+    const optimistic: Announcement = {
+      id: optimisticId,
+      resource_id: selectedResource.id,
+      user_id: userId || '',
+      content,
+      created_at: new Date().toISOString(),
+      users: null,
+    }
+    setAnnouncements((prev) => [...prev, optimistic])
+
     try {
-      await apiFetch(`/api/resources/${selectedResource.id}/announcements`, {
+      const res = await apiFetch(`/api/resources/${selectedResource.id}/announcements`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content }),
       })
+      const json = await res.json()
+      if (json.success && json.data) {
+        // Replace optimistic with real message
+        setAnnouncements((prev) => prev.map((m) => m.id === optimisticId ? json.data : m))
+      } else {
+        // Roll back on failure
+        setAnnouncements((prev) => prev.filter((m) => m.id !== optimisticId))
+        setChatInput(content)
+        console.error('Send failed:', json.error)
+      }
     } catch (e) {
+      setAnnouncements((prev) => prev.filter((m) => m.id !== optimisticId))
+      setChatInput(content)
       console.error('Failed to send chat message:', e)
     } finally {
       setChatSending(false)
