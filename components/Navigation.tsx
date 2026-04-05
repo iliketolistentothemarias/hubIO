@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Menu, X, Heart, Moon, Sun, Star, ChevronDown, User, LogOut } from 'lucide-react'
@@ -16,6 +16,7 @@ export default function Navigation() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const dropdownTimer = useRef<NodeJS.Timeout | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -138,8 +139,13 @@ export default function Navigation() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15, delay: index * 0.02 }}
                 className="relative"
-                onMouseEnter={() => item.submenu && setOpenDropdown(item.label)}
-                onMouseLeave={() => setOpenDropdown(null)}
+                onMouseEnter={() => {
+                  if (dropdownTimer.current) clearTimeout(dropdownTimer.current)
+                  if (item.submenu) setOpenDropdown(item.label)
+                }}
+                onMouseLeave={() => {
+                  dropdownTimer.current = setTimeout(() => setOpenDropdown(null), 120)
+                }}
               >
                 {item.submenu ? (
                   <button
@@ -187,44 +193,46 @@ export default function Navigation() {
                 ) : null}
                 <AnimatePresence>
                   {item.submenu && openDropdown === item.label && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.2, type: 'spring', stiffness: 300 }}
-                      className="absolute top-full left-0 mt-2 w-48 bg-white dark:bg-[#2A2824] rounded-lg shadow-md border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
-                    >
-                      {item.submenu.map((subItem, subIndex) => (
-                        <motion.div
-                          key={subItem.href}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: subIndex * 0.05 }}
-                        >
-                          <Link
-                            href={subItem.href}
-                            className={`block px-4 py-3 text-sm transition-all duration-200 ${pathname === subItem.href
-                                ? 'bg-[#F5F3F0] dark:bg-[#353330] text-[#2C2416] dark:text-[#F5F3F0]'
-                                : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330]'
-                              }`}
+                    <div className="absolute top-full left-0 w-48 pt-2">
+                      <motion.div
+                        initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                        transition={{ duration: 0.15, type: 'spring', stiffness: 300 }}
+                        className="bg-white dark:bg-[#2A2824] rounded-lg shadow-md border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
+                      >
+                        {item.submenu.map((subItem, subIndex) => (
+                          <motion.div
+                            key={subItem.href}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: subIndex * 0.05 }}
                           >
-                            <motion.span
-                              whileHover={{ x: 5 }}
-                              className="flex items-center gap-2"
+                            <Link
+                              href={subItem.href}
+                              className={`block px-4 py-3 text-sm transition-all duration-200 ${pathname === subItem.href
+                                  ? 'bg-[#F5F3F0] dark:bg-[#353330] text-[#2C2416] dark:text-[#F5F3F0]'
+                                  : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330]'
+                                }`}
                             >
-                              {subItem.label}
-                              {pathname === subItem.href && (
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  className="w-1.5 h-1.5 bg-primary-600 dark:bg-primary-400 rounded-full"
-                                />
-                              )}
-                            </motion.span>
-                          </Link>
-                        </motion.div>
-                      ))}
-                    </motion.div>
+                              <motion.span
+                                whileHover={{ x: 5 }}
+                                className="flex items-center gap-2"
+                              >
+                                {subItem.label}
+                                {pathname === subItem.href && (
+                                  <motion.div
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    className="w-1.5 h-1.5 bg-primary-600 dark:bg-primary-400 rounded-full"
+                                  />
+                                )}
+                              </motion.span>
+                            </Link>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </div>
                   )}
                 </AnimatePresence>
               </motion.div>

@@ -816,7 +816,7 @@ export default function ChatWindow({
               setNewMessage(e.target.value)
               handleTyping()
             }}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder="Type a message..."
             rows={1}
             className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 
