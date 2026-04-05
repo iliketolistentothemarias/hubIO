@@ -451,7 +451,9 @@ export default function AdminDashboardPage() {
             </header>
 
             {/* Tab bar */}
-            <div className="flex overflow-x-auto scrollbar-none gap-1 p-1 rounded-2xl bg-white/10 w-fit">
+            <div className={`flex overflow-x-auto scrollbar-none gap-1 p-1 rounded-2xl w-fit ${
+              themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'
+            }`}>
               {(['submissions', 'resources', 'users'] as AdminTab[]).map((tab) => (
                 <button
                   key={tab}
@@ -459,7 +461,9 @@ export default function AdminDashboardPage() {
                   className={`px-5 py-2 rounded-xl text-sm font-semibold capitalize transition whitespace-nowrap ${
                     activeTab === tab
                       ? 'bg-white text-[#2C2416] shadow'
-                      : 'text-white/70 hover:text-white'
+                      : themeMode === 'dark'
+                        ? 'text-white/70 hover:text-white'
+                        : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
                   }`}
                 >
                   {tab === 'submissions' ? 'Submissions' : tab === 'resources' ? 'Resources' : 'Users'}

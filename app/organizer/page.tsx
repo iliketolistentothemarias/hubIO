@@ -54,6 +54,7 @@ interface Member {
 
 interface Announcement {
   id: string
+  resource_id?: string
   content: string
   created_at: string
   user_id: string
@@ -96,7 +97,7 @@ export default function OrganizerPage() {
   const [chatLoading, setChatLoading] = useState(false)
   const [chatInput, setChatInput] = useState('')
   const [chatSending, setChatSending] = useState(false)
-  const chatBottomRef = useRef<HTMLDivElement>(null)
+  const chatContainerRef = useRef<HTMLDivElement>(null)
   const chatChannelRef = useRef<any>(null)
 
   // Auth gate
@@ -336,9 +337,12 @@ export default function OrganizerPage() {
     }
   }, [manageTab, selectedResource?.id])
 
-  // Scroll to bottom when new messages arrive
+  // Scroll to bottom when new messages arrive (scroll the chat container, not the page)
   useEffect(() => {
-    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = chatContainerRef.current
+    if (container) {
+      container.scrollTop = container.scrollHeight
+    }
   }, [announcements])
 
   const handleSendMessage = async () => {
@@ -755,7 +759,7 @@ export default function OrganizerPage() {
                     style={{ height: 'min(520px, calc(100svh - 300px))' }}
                   >
                     {/* Messages */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-4 space-y-3">
                       {chatLoading ? (
                         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-[#8B6F47]" /></div>
                       ) : announcements.length === 0 ? (
@@ -787,7 +791,6 @@ export default function OrganizerPage() {
                           </div>
                         )
                       })}
-                      <div ref={chatBottomRef} />
                     </div>
 
                     {/* Input */}
