@@ -11,7 +11,7 @@ export async function GET(
     const conversationId = params.conversationId
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -19,12 +19,11 @@ export async function GET(
       )
     }
 
-    // Fetch messages for the conversation
     const { data: messages, error } = await supabase
       .from('messages')
       .select(`
         *,
-        sender:users!messages_sender_id_fkey(id, email)
+        sender:users(id, name, avatar)
       `)
       .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true })
@@ -37,23 +36,23 @@ export async function GET(
       )
     }
 
-    // Format the messages
-    const formattedMessages = messages?.map((msg: any) => ({
+    const formattedMessages = (messages ?? []).map((msg: any) => ({
       id: msg.id,
       conversationId: msg.conversation_id,
       senderId: msg.sender_id,
-      senderName: msg.sender?.email || 'Unknown',
-      senderAvatar: undefined,
+      senderName: msg.sender?.name || 'Unknown',
+      senderAvatar: msg.sender?.avatar,
       content: msg.content,
       type: msg.type || 'text',
       createdAt: msg.created_at,
-      read: msg.read || false,
-    })) || []
+      conversation_id: msg.conversation_id,
+      sender_id: msg.sender_id,
+      created_at: msg.created_at,
+      updated_at: msg.updated_at ?? msg.created_at,
+      sender: msg.sender,
+    }))
 
-    return NextResponse.json({
-      success: true,
-      data: formattedMessages,
-    })
+    return NextResponse.json({ success: true, data: formattedMessages })
   } catch (error) {
     console.error('Error in messages API:', error)
     return NextResponse.json(
@@ -72,7 +71,7 @@ export async function POST(
     const conversationId = params.conversationId
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    
+
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -90,7 +89,6 @@ export async function POST(
       )
     }
 
-    // 1. Insert new message (include sender join for clients)
     const { data: message, error } = await supabase
       .from('messages')
       .insert({
@@ -99,12 +97,7 @@ export async function POST(
         content,
         type,
       })
-      .select(
-        `
-        *,
-        sender:users(id, name, avatar)
-      `
-      )
+      .select(`*, sender:users(id, name, avatar)`)
       .single()
 
     if (error) {
@@ -115,13 +108,14 @@ export async function POST(
       )
     }
 
-    // 2. Fire and forget background updates
-    Promise.all([
-      supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId),
-      supabase.from('message_status').insert({ message_id: message.id, user_id: user.id, status: 'sent' }),
-    ]).catch((err) => console.error('Background API message tasks failed:', err))
+    // Fire and forget: update conversation timestamp
+    supabase.from('conversations')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('id', conversationId)
+      .then(() => {})
+      .catch((err: any) => console.error('BG update failed:', err))
 
-    // 3. Realtime: server-side broadcast so every participant gets the event (not RLS-filtered like postgres_changes)
+    // Realtime broadcast to all participants
     const { data: participantRows } = await supabase
       .from('conversation_participants')
       .select('user_id')
@@ -130,7 +124,6 @@ export async function POST(
     const participantIds = (participantRows ?? []).map((r) => r.user_id).filter(Boolean) as string[]
     void broadcastNewMessageAfterInsert(conversationId, message.id, participantIds)
 
-    // 4. Response — dual shape: camelCase (Messaging.tsx / GET) + snake_case (ChatWindow)
     const s = message.sender as { id?: string; name?: string; avatar?: string } | null
     const senderName = s?.name || user.email || 'Unknown'
     return NextResponse.json({
