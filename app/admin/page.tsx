@@ -800,7 +800,9 @@ export default function AdminDashboardPage() {
                                 ? 'border-purple-400/50 text-purple-400 bg-purple-400/10'
                                 : u.role === 'organizer'
                                 ? 'border-emerald-400/50 text-emerald-400 bg-emerald-400/10'
-                                : 'border-white/20 text-white/70 bg-white/5'
+                                : themeMode === 'dark'
+                                ? 'border-white/20 text-white/70 bg-white/5'
+                                : 'border-[#8B6F47]/30 text-[#6B5D47] bg-[#8B6F47]/5'
                             } ${roleChanging === u.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}`}
                           >
                             {roleChanging === u.id ? (
