@@ -25,8 +25,6 @@ interface AnalyticsData {
     postsCreated: number
   }
   trends: {
-    week: { date: string; value: number }[]
-    month: { date: string; value: number }[]
     year: { date: string; value: number }[]
   }
   categories: {
@@ -50,12 +48,11 @@ interface AnalyticsData {
 
 export default function AdvancedAnalytics() {
   const [data, setData] = useState<AnalyticsData | null>(null)
-  const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('month')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadAnalytics()
-  }, [timeRange])
+  }, [])
 
   const loadAnalytics = async () => {
     setLoading(true)
@@ -74,14 +71,6 @@ export default function AdvancedAnalytics() {
           postsCreated: 5,
         },
         trends: {
-          week: Array.from({ length: 7 }, (_, i) => ({
-            date: new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { weekday: 'short' }),
-            value: Math.floor(Math.random() * 20) + 10,
-          })),
-          month: Array.from({ length: 30 }, (_, i) => ({
-            date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-            value: Math.floor(Math.random() * 30) + 15,
-          })),
           year: Array.from({ length: 12 }, (_, i) => ({
             date: new Date(2024, i, 1).toLocaleDateString('en-US', { month: 'short' }),
             value: Math.floor(Math.random() * 100) + 50,
@@ -127,7 +116,7 @@ export default function AdvancedAnalytics() {
     )
   }
 
-  const currentTrend = data.trends[timeRange]
+  const currentTrend = data.trends.year
   const maxValue = Math.max(...currentTrend.map(t => t.value))
 
   return (
@@ -139,8 +128,8 @@ export default function AdvancedAnalytics() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
+            <div className="min-w-0">
               <h1 className="text-4xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2">
                 Your Analytics
               </h1>
@@ -148,21 +137,12 @@ export default function AdvancedAnalytics() {
                 Track your community engagement and impact
               </p>
             </div>
-            <div className="flex gap-2">
-              {(['week', 'month', 'year'] as const).map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setTimeRange(range)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    timeRange === range
-                      ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F]'
-                      : 'bg-[#f5ede1] dark:bg-[#1F1B28] text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#E8E0D6] dark:hover:bg-[#2c2c3e]'
-                  }`}
-                >
-                  {range.charAt(0).toUpperCase() + range.slice(1)}
-                </button>
-              ))}
-            </div>
+            <span
+              className="shrink-0 self-start px-4 py-2 rounded-lg font-medium bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] whitespace-nowrap"
+              aria-label="Time range: year"
+            >
+              Year
+            </span>
           </div>
         </motion.div>
 

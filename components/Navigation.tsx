@@ -479,7 +479,7 @@ export default function Navigation() {
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain"
+                  className="md:hidden fixed top-16 right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain"
                 >
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between">
