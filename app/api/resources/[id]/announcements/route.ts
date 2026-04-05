@@ -7,6 +7,14 @@ async function verifyAccess(resourceId: string, userId: string, userRole: string
   const admin = createAdminClient()
   if (userRole === 'admin') return true
 
+  // Check resource submitter (owner via resources table)
+  const { data: resource } = await admin
+    .from('resources')
+    .select('submitted_by')
+    .eq('id', resourceId)
+    .single()
+  if (resource?.submitted_by === userId) return true
+
   // Check owner/manager via resource_members
   const { data: member } = await admin
     .from('resource_members')

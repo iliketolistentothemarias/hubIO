@@ -23,10 +23,9 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 })
     }
 
-    const isOwner = resource.submitted_by === user.id
-    const isAdmin = user.role === 'admin'
+    const isOwner = resource.submitted_by === user.id || user.role === 'admin'
 
-    if (!isOwner && !isAdmin) {
+    if (!isOwner) {
       // Check if they are an approved member themselves
       const { data: memberCheck } = await admin
         .from('resource_signups')

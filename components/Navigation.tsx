@@ -31,6 +31,26 @@ export default function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Lock body scroll when mobile menu is open to prevent background scrolling glitch
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden'
+      document.body.style.touchAction = 'none'
+    } else {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+      document.body.style.touchAction = ''
+    }
+  }, [isOpen])
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsOpen(false)
+  }, [pathname])
+
   useEffect(() => {
     const loadUser = async () => {
       const { data, error } = await supabase.auth.getUser()
@@ -405,14 +425,15 @@ export default function Navigation() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-40"
+              className="md:hidden fixed inset-0 bg-black/50 dark:bg-black/60 z-[59]"
+              style={{ touchAction: 'none' }}
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] bg-white dark:bg-[#1a1a1a] z-50 shadow-2xl overflow-y-auto"
+              className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] bg-white dark:bg-[#1a1a1a] z-[60] shadow-2xl overflow-y-auto overscroll-contain"
             >
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between">

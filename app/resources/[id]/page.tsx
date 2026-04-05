@@ -461,10 +461,26 @@ export default function ResourceDetailPage() {
                         <Loader2 className="w-5 h-5 animate-spin" />
                         Application pending
                       </div>
-                    ) : joinStatus === 'rejected' ? (
-                      <div className="w-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
-                        Application not approved
-                      </div>
+                    ) : joinStatus === 'rejected' || joinStatus === 'cancelled' ? (
+                      // Allow re-applying after rejection/removal
+                      resource.visibility === 'private' ? (
+                        <button
+                          onClick={() => setShowApplyModal(true)}
+                          className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-3.5 rounded-xl md:rounded-2xl font-bold hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                        >
+                          <Lock className="w-5 h-5" />
+                          Apply Again
+                        </button>
+                      ) : (
+                        <button
+                          onClick={handleDirectJoin}
+                          disabled={joinLoading}
+                          className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-3.5 rounded-xl md:rounded-2xl font-bold hover:shadow-lg active:scale-[0.98] disabled:opacity-60 transition-all flex items-center justify-center gap-3"
+                        >
+                          {joinLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
+                          Re-join Resource
+                        </button>
+                      )
                     ) : resource.visibility === 'private' ? (
                       <button
                         onClick={() => setShowApplyModal(true)}

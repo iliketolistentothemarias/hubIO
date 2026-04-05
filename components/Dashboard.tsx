@@ -1,43 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Search, Calendar, Users, ArrowRight, MapPin, Lock, Globe, Loader2, BookOpen } from 'lucide-react'
+import { Search, Calendar, Users, ArrowRight, Lock, Globe, Loader2, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
 
-interface JoinedEvent {
+interface JoinedResource {
   id: string
-  title: string
-  date: string
-  location: string
+  name: string
+  category: string
+  description: string
   visibility: 'public' | 'private'
   status: string
-  category: string
-  approval_status: 'approved' | 'pending' | 'rejected'
+  is_owner: boolean
 }
 
 export default function Dashboard() {
   const [userName, setUserName] = useState('Community Member')
-  const [userId, setUserId] = useState<string | null>(null)
   const [stats, setStats] = useState([
     { label: 'Resources', value: 0, icon: Users, color: 'text-primary-600' },
-    { label: 'Events', value: 0, icon: Calendar, color: 'text-purple-600' },
+    { label: 'Community', value: 0, icon: Calendar, color: 'text-purple-600' },
   ])
-  const [joinedEvents, setJoinedEvents] = useState<JoinedEvent[]>([])
-  const [eventsLoading, setEventsLoading] = useState(false)
-
-  // Joined resources
-  interface JoinedResource {
-    id: string
-    name: string
-    category: string
-    description: string
-    visibility: 'public' | 'private'
-    status: string
-    is_owner: boolean
-  }
   const [joinedResources, setJoinedResources] = useState<JoinedResource[]>([])
   const [resourcesLoading, setResourcesLoading] = useState(false)
 
@@ -46,100 +31,32 @@ export default function Dashboard() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!mounted) return
       if (data.user) {
-        setUserId(data.user.id)
         const { data: profile } = await supabase
           .from('users')
           .select('name, resources_count, events_count')
           .eq('id', data.user.id)
           .single()
-        
+
         if (profile) {
           setUserName(profile.name || data.user.user_metadata?.name || data.user.email || 'Community Member')
           setStats([
             { label: 'Resources', value: profile.resources_count || 0, icon: Users, color: 'text-primary-600' },
-            { label: 'Events', value: profile.events_count || 0, icon: Calendar, color: 'text-purple-600' },
+            { label: 'Community', value: profile.events_count || 0, icon: Calendar, color: 'text-purple-600' },
           ])
         }
 
-        // Load joined events
-        loadJoinedEvents(data.user.id)
-        // Load joined resources
-        loadJoinedResources(data.user.id)
+        loadJoinedResources()
       }
     })
     return () => { mounted = false }
   }, [])
 
-  const loadJoinedEvents = async (uid: string) => {
-    setEventsLoading(true)
-    try {
-      // Fetch event_registrations for this user with event details
-      const { data: regs, error } = await supabase
-        .from('event_registrations')
-        .select(`
-          approval_status,
-          events (
-            id, title, date, location, visibility, status, category
-          )
-        `)
-        .eq('user_id', uid)
-        .neq('approval_status', 'rejected')
-        .order('registered_at', { ascending: false })
-        .limit(10)
-
-      if (!error && regs) {
-        const events: JoinedEvent[] = regs
-          .filter((r: any) => r.events)
-          .map((r: any) => ({
-            ...r.events,
-            approval_status: r.approval_status,
-          }))
-        setJoinedEvents(events)
-      }
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setEventsLoading(false)
-    }
-  }
-
-  const loadJoinedResources = async (uid: string) => {
+  const loadJoinedResources = async () => {
     setResourcesLoading(true)
     try {
-      // Resources where user is an approved signup
-      const { data: signups } = await supabase
-        .from('resource_signups')
-        .select(`
-          resource_id,
-          resources (
-            id, name, category, description, visibility, status
-          )
-        `)
-        .eq('user_id', uid)
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      // Resources the user submitted themselves (owner)
-      const { data: owned } = await supabase
-        .from('resources')
-        .select('id, name, category, description, visibility, status')
-        .eq('submitted_by', uid)
-        .eq('status', 'accepted')
-        .order('created_at', { ascending: false })
-        .limit(10)
-
-      const ownedIds = new Set((owned || []).map((r: any) => r.id))
-
-      const list: JoinedResource[] = [
-        ...(owned || []).map((r: any) => ({ ...r, is_owner: true })),
-        ...((signups || [])
-          .filter((s: any) => s.resources && !ownedIds.has(s.resource_id))
-          .map((s: any) => ({ ...s.resources, is_owner: false }))
-        ),
-      ]
-
-      setJoinedResources(list)
+      const res = await apiFetch('/api/resources/joined')
+      const json = await res.json()
+      if (json.success) setJoinedResources(json.data || [])
     } catch (e) {
       console.error(e)
     } finally {
@@ -199,86 +116,10 @@ export default function Dashboard() {
           })}
         </div>
 
-        {/* Your Events */}
+        {/* Your Community (joined resources / events) */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Your Events</h2>
-            <Link href="/events" className="text-sm text-[#8B6F47] dark:text-[#D4A574] hover:underline flex items-center gap-1">
-              Browse all <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-
-          {eventsLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-[#8B6F47]" />
-            </div>
-          ) : joinedEvents.length === 0 ? (
-            <div className={`${cardBase}`}>
-              <div className="text-center text-[#6B5D47] dark:text-[#B8A584] py-6">
-                <Calendar className="w-10 h-10 mx-auto mb-3 opacity-40" />
-                <p className="font-semibold mb-2">You haven't joined any events yet</p>
-                <Link href="/events" className="text-sm text-[#8B6F47] dark:text-[#D4A574] hover:underline">
-                  Browse upcoming events
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {joinedEvents.map((ev, i) => (
-                <motion.div
-                  key={ev.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Link href={`/events/${ev.id}`}>
-                    <div className="bg-white dark:bg-[#1f1b28] rounded-2xl border border-[#E8E0D6] dark:border-[#2c2c3e] p-4 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574]">
-                          {ev.category}
-                        </span>
-                        <span className={`flex items-center gap-1 text-xs font-semibold ${
-                          ev.visibility === 'private'
-                            ? 'text-amber-600 dark:text-amber-400'
-                            : 'text-green-600 dark:text-green-400'
-                        }`}>
-                          {ev.visibility === 'private' ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
-                          {ev.visibility}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2 line-clamp-2">{ev.title}</h3>
-                      <div className="flex items-center gap-1.5 text-xs text-[#6B5D47] dark:text-[#B8A584] mb-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span suppressHydrationWarning>
-                          {new Date(ev.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-[#6B5D47] dark:text-[#B8A584] mb-3">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span className="truncate">{ev.location}</span>
-                      </div>
-                      {ev.approval_status === 'pending' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 font-semibold">
-                          Pending approval
-                        </span>
-                      )}
-                      {ev.approval_status === 'approved' && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-semibold">
-                          Joined
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Your Resources */}
-        <div className="mb-12">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Your Resources</h2>
+            <h2 className="text-2xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Your Community</h2>
             <Link href="/directory" className="text-sm text-[#8B6F47] dark:text-[#D4A574] hover:underline flex items-center gap-1">
               Browse all <ArrowRight className="w-4 h-4" />
             </Link>

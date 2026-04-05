@@ -31,7 +31,8 @@ export async function POST(
       .eq('user_id', user.id)
       .maybeSingle()
 
-    if (existing) {
+    // Block active/pending statuses — but allow re-applying after removal or rejection
+    if (existing && !['cancelled', 'rejected'].includes(existing.status)) {
       return NextResponse.json(
         { success: false, error: 'Already joined or applied', currentStatus: existing.status },
         { status: 409 }
@@ -42,10 +43,8 @@ export async function POST(
     let application_data: any = null
 
     if (resource.visibility === 'public') {
-      // Direct join — approved immediately
       status = 'approved'
     } else {
-      // Private — requires application
       const body = await request.json().catch(() => ({}))
       const { name, email, phone, skills_answer } = body
       if (!name || !email || !skills_answer) {
@@ -58,19 +57,26 @@ export async function POST(
       application_data = { name, email, phone: phone || null, skills_answer }
     }
 
-    const { data: signup, error } = await admin
-      .from('resource_signups')
-      .insert({
-        resource_id: resourceId,
-        user_id: user.id,
-        status,
-        slots: 1,
-        application_data,
-      })
-      .select('id, status')
-      .single()
-
-    if (error) throw error
+    let signup: any
+    if (existing) {
+      // Re-join: update the existing record
+      const { data: updated, error } = await admin
+        .from('resource_signups')
+        .update({ status, application_data, muted_from_chat: false, updated_at: new Date().toISOString() })
+        .eq('id', existing.id)
+        .select('id, status')
+        .single()
+      if (error) throw error
+      signup = updated
+    } else {
+      const { data: inserted, error } = await admin
+        .from('resource_signups')
+        .insert({ resource_id: resourceId, user_id: user.id, status, slots: 1, application_data })
+        .select('id, status')
+        .single()
+      if (error) throw error
+      signup = inserted
+    }
 
     // If private, notify the resource owner about new application
     if (status === 'pending' && resource.submitted_by) {
