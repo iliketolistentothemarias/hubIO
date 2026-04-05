@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Mobile hyphenation — breaks long words at syllable boundaries with a hyphen */
+@media (max-width: 768px) {
+  h1, h2, h3, h4, h5, h6, p, span, a, li, td, th, label, button {
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+  /* Don't hyphenate short UI labels, badges, buttons with icons */
+  .no-hyphens, [class*="rounded-full"], code, pre {
+    hyphens: none;
+    -webkit-hyphens: none;
+    word-break: normal;
+  }
+}
+
 /* Accessibility - Screen Reader Only */
 .sr-only {
   position: absolute;

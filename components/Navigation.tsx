@@ -128,7 +128,7 @@ export default function Navigation() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-200 ${scrolled
+      className={`fixed top-0 left-0 right-0 z-[999] transition-all duration-200 ${scrolled
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
           : 'bg-transparent'
         }`}
@@ -425,7 +425,7 @@ export default function Navigation() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="md:hidden fixed inset-0 bg-black/50 dark:bg-black/60 z-[59]"
+              className="md:hidden fixed inset-0 bg-black/50 dark:bg-black/60 z-[1000]"
               style={{ touchAction: 'none' }}
             />
             <motion.div
@@ -433,7 +433,7 @@ export default function Navigation() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] bg-white dark:bg-[#1a1a1a] z-[60] shadow-2xl overflow-y-auto overscroll-contain"
+              className="md:hidden fixed top-0 right-0 bottom-0 w-[280px] bg-white dark:bg-[#1a1a1a] z-[1001] shadow-2xl overflow-y-auto overscroll-contain"
             >
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between">

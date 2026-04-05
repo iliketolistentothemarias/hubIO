@@ -34,13 +34,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       category: r.category || '',
       description: r.description || '',
       address: r.address || '',
+      status: r.status || 'pending',
+      visibility: r.visibility || 'public',
       location: r.location || { lat: 40.4406, lng: -79.9961, address: r.address || '', city: '', state: 'PA', zipCode: '' },
       phone: r.phone || '',
       email: r.email || '',
       website: r.website || undefined,
       tags: r.tags || [],
       featured: r.featured || false,
-      verified: r.verified || false,
+      verified: r.verified || r.status === 'accepted',
       rating: r.rating ? Number(r.rating) : undefined,
       reviewCount: r.review_count || 0,
       hours: r.hours || undefined,
@@ -58,6 +60,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('resources')
         .select('*')
+        .eq('status', 'accepted')
         .order('created_at', { ascending: false })
 
       if (data && !error) {

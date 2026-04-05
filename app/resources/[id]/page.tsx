@@ -18,7 +18,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MapPin, Phone, Mail, Globe, Clock, Star, Heart, Share2, 
   ArrowLeft, Calendar, Users, Award, Languages, CheckCircle,
-  Navigation, ExternalLink, Lock, Loader2, UserCheck, X,
+  ExternalLink, Lock, Loader2, UserCheck, X,
   MessageSquare, Send, VolumeX, Volume2,
 } from 'lucide-react'
 import { resources as fallbackResources } from '@/data/resources'
@@ -208,6 +208,20 @@ export default function ResourceDetailPage() {
       } catch { /* ignore */ }
     }
     fetchJoinStatus()
+
+    // Real-time: update join status when signup record changes
+    if (!resource?.id) return
+    const uid = session.user?.id
+    const rtChannel = supabase
+      .channel(`join-status-${resource.id}-${uid}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'resource_signups',
+        filter: `resource_id=eq.${resource.id}`,
+      }, () => { fetchJoinStatus() })
+      .subscribe()
+    return () => { supabase.removeChannel(rtChannel) }
   }, [resource?.id])
 
   useEffect(() => {
@@ -502,10 +516,6 @@ export default function ResourceDetailPage() {
                   </>
                 )}
 
-                <button className="w-full bg-white dark:bg-[#16141D] text-[#8B6F47] dark:text-[#D4A574] border-2 border-[#8B6F47] dark:border-[#D4A574] py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold hover:bg-[#8B6F47] hover:text-white dark:hover:bg-[#D4A574] dark:hover:text-[#1C1B18] transition-all flex items-center justify-center gap-3">
-                  <Navigation className="w-5 h-5" />
-                  Get Directions
-                </button>
                 <div className="grid grid-cols-2 gap-4">
                   <button 
                     onClick={() => toggleFavorite(resource.id)}
@@ -518,7 +528,14 @@ export default function ResourceDetailPage() {
                     <Heart className={`w-4 h-4 ${favorite ? 'fill-current' : ''}`} />
                     Save
                   </button>
-                  <button className="flex items-center justify-center gap-2 py-3 rounded-xl md:rounded-2xl font-bold bg-[#FAF9F6] dark:bg-[#16141D] text-[#6B5D47] border-2 border-[#E8E0D6] dark:border-[#2c2c3e]">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(window.location.href)
+                      const btn = document.activeElement as HTMLElement
+                      if (btn) { const orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = orig }, 1500) }
+                    }}
+                    className="flex items-center justify-center gap-2 py-3 rounded-xl md:rounded-2xl font-bold bg-[#FAF9F6] dark:bg-[#16141D] text-[#6B5D47] border-2 border-[#E8E0D6] dark:border-[#2c2c3e] transition-all active:bg-green-50 dark:active:bg-green-900/20"
+                  >
                     <Share2 className="w-4 h-4" />
                     Share
                   </button>
@@ -692,7 +709,7 @@ export default function ResourceDetailPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[998] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
             onClick={(e) => { if (e.target === e.currentTarget) setShowApplyModal(false) }}
           >
             <motion.div

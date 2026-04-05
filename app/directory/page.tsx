@@ -102,10 +102,7 @@ function DirectoryContent() {
       )
     }
 
-    // Ensure verified is only checked if we are not an admin or if we explicitly want only verified
-    // Actually, in the directory, we should probably only show verified resources unless they are featured
-    filtered = filtered.filter(resource => resource.verified || resource.featured)
-
+    // All resources from DataContext are already status='accepted' — no extra filter needed
     return filtered
   }, [searchQuery, selectedCategory, selectedTags, favoritesOnly, isFavorite])
 

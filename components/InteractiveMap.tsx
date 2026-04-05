@@ -88,11 +88,17 @@ export default function InteractiveMap({ resources, onResourceClick }: Interacti
 
   const resourcesWithCoords = useMemo(
     () => resources.filter((r) => {
-      const coords = r.coordinates || (r.location as any);
-      return coords && coords.lat && coords.lng;
+      const coords = (r as any).coordinates || (r.location as any);
+      return coords && (coords.lat || coords.latitude) && (coords.lng || coords.longitude);
     }).map(r => ({
       ...r,
-      displayCoords: r.coordinates || (r.location as any)
+      displayCoords: (() => {
+        const c = (r as any).coordinates || (r.location as any)
+        return {
+          lat: c.lat ?? c.latitude,
+          lng: c.lng ?? c.longitude,
+        }
+      })()
     })),
     [resources]
   )

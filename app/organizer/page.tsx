@@ -184,13 +184,37 @@ export default function OrganizerPage() {
 
   // ─── Applications/Members ───────────────────────────────────────────────────
 
+  const signupsChannelRef = useRef<any>(null)
+
   useEffect(() => {
-    if (manageTab === 'join-requests' && selectedResource) {
-      loadApplications()
-    } else if (manageTab === 'members' && selectedResource) {
-      loadMembers()
+    if (!selectedResource) return
+
+    if (manageTab === 'join-requests') loadApplications()
+    else if (manageTab === 'members') loadMembers()
+
+    // Real-time subscription for resource_signups changes
+    if (signupsChannelRef.current) supabase.removeChannel(signupsChannelRef.current)
+    signupsChannelRef.current = supabase
+      .channel(`org-signups-${selectedResource.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'resource_signups',
+        filter: `resource_id=eq.${selectedResource.id}`,
+      }, () => {
+        // Re-fetch whichever tab is active
+        if (manageTab === 'join-requests') loadApplications()
+        else if (manageTab === 'members') loadMembers()
+      })
+      .subscribe()
+
+    return () => {
+      if (signupsChannelRef.current) {
+        supabase.removeChannel(signupsChannelRef.current)
+        signupsChannelRef.current = null
+      }
     }
-  }, [manageTab, selectedResource])
+  }, [manageTab, selectedResource?.id])
 
   const loadApplications = async () => {
     if (!selectedResource) return

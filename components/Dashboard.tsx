@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Search, Calendar, Users, ArrowRight, Lock, Globe, Loader2, BookOpen } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -25,6 +25,7 @@ export default function Dashboard() {
   ])
   const [joinedResources, setJoinedResources] = useState<JoinedResource[]>([])
   const [resourcesLoading, setResourcesLoading] = useState(false)
+  const signupsChannelRef = useRef<any>(null)
 
   useEffect(() => {
     let mounted = true
@@ -46,9 +47,24 @@ export default function Dashboard() {
         }
 
         loadJoinedResources()
+
+        // Real-time: when user's signups change, reload
+        if (signupsChannelRef.current) supabase.removeChannel(signupsChannelRef.current)
+        signupsChannelRef.current = supabase
+          .channel(`dashboard-signups-${data.user.id}`)
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'resource_signups',
+            filter: `user_id=eq.${data.user.id}`,
+          }, () => { loadJoinedResources() })
+          .subscribe()
       }
     })
-    return () => { mounted = false }
+    return () => {
+      mounted = false
+      if (signupsChannelRef.current) supabase.removeChannel(signupsChannelRef.current)
+    }
   }, [])
 
   const loadJoinedResources = async () => {
