@@ -196,11 +196,11 @@ export default function Navigation() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15, delay: index * 0.02 }}
                 className="relative"
-                onMouseEnter={item.submenu ? () => handleMenuEnter(item.label) : undefined}
                 onMouseLeave={item.submenu ? handleMenuLeave : undefined}
               >
                 {item.submenu ? (
                   <button
+                    onMouseEnter={() => handleMenuEnter(item.label)}
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
                     className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
