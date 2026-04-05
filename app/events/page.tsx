@@ -174,7 +174,7 @@ export default function EventsPage() {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`flex-shrink-0 px-4 py-2 rounded-2xl text-sm font-bold transition-all active:scale-95 ${
+                    className={`flex-shrink-0 px-4 py-2.5 rounded-2xl text-sm font-bold transition-all active:scale-95 touch-manipulation min-h-[44px] ${
                       selectedCategory === cat
                         ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] shadow-lg'
                         : 'bg-white dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584] border border-[#E8E0D6] dark:border-[#4A4844] hover:shadow-md'
@@ -189,7 +189,7 @@ export default function EventsPage() {
               <div className="flex gap-2 bg-[#FAF9F6] dark:bg-[#16141D] rounded-2xl p-1 border border-[#E8E0D6] dark:border-[#2c2c3e]">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2.5 rounded-xl transition-all active:scale-90 ${
+                  className={`p-3 rounded-xl transition-all active:scale-90 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center ${
                     viewMode === 'grid' ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] shadow-md' : 'text-[#6B5D47] dark:text-[#B8A584]'
                   }`}
                 >
@@ -197,7 +197,7 @@ export default function EventsPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2.5 rounded-xl transition-all active:scale-90 ${
+                  className={`p-3 rounded-xl transition-all active:scale-90 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center ${
                     viewMode === 'list' ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] shadow-md' : 'text-[#6B5D47] dark:text-[#B8A584]'
                   }`}
                 >
@@ -205,7 +205,7 @@ export default function EventsPage() {
                 </button>
                 <button
                   onClick={() => setViewMode('calendar')}
-                  className={`p-2.5 rounded-xl transition-all active:scale-90 ${
+                  className={`p-3 rounded-xl transition-all active:scale-90 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center ${
                     viewMode === 'calendar' ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] shadow-md' : 'text-[#6B5D47] dark:text-[#B8A584]'
                   }`}
                 >
@@ -256,31 +256,32 @@ function CalendarView({ events, currentMonth, setCurrentMonth, onRSVP, rsvping }
 
   return (
     <LiquidGlass intensity="medium">
-      <div className="p-6">
+      <div className="p-3 md:p-6">
         {/* Calendar Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
           <button
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-            className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50"
+            className="p-3 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
             {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
           </h2>
           <button
             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-            className="p-2 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50"
+            className="p-3 rounded-xl hover:bg-white/50 dark:hover:bg-gray-700/50 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
         {/* Calendar Grid */}
-        <div className="grid grid-cols-7 gap-2">
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-            <div key={day} className="text-center font-semibold text-gray-600 dark:text-gray-400 py-2">
-              {day}
+        <div className="grid grid-cols-7 gap-1 md:gap-2">
+          {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+            <div key={i} className="text-center font-semibold text-gray-600 dark:text-gray-400 py-1.5 text-xs md:text-sm">
+              <span className="md:hidden">{day}</span>
+              <span className="hidden md:inline">{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i]}</span>
             </div>
           ))}
           {emptyDays.map((_, i) => (
@@ -292,25 +293,30 @@ function CalendarView({ events, currentMonth, setCurrentMonth, onRSVP, rsvping }
               <motion.div
                 key={day}
                 whileHover={{ scale: 1.05 }}
-                className={`aspect-square rounded-xl p-2 border-2 transition-all ${
+                className={`aspect-square rounded-lg md:rounded-xl p-0.5 md:p-2 border-2 transition-all ${
                   dayEvents.length > 0
                     ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 cursor-pointer'
                     : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'
                 }`}
               >
-                <div className="font-semibold text-gray-900 dark:text-white mb-1">{day}</div>
-                {dayEvents.slice(0, 2).map((event: Event) => (
-                  <div
-                    key={event.id}
-                    className="text-xs bg-primary-600 text-white rounded px-1 mb-1 truncate"
-                  >
-                    {event.name}
-                  </div>
-                ))}
-                {dayEvents.length > 2 && (
-                  <div className="text-xs text-primary-600 dark:text-primary-400">
-                    +{dayEvents.length - 2} more
-                  </div>
+                <div className="font-semibold text-gray-900 dark:text-white mb-0.5 text-[10px] md:text-sm leading-tight text-center md:text-left">{day}</div>
+                <div className="hidden md:block">
+                  {dayEvents.slice(0, 2).map((event: Event) => (
+                    <div
+                      key={event.id}
+                      className="text-xs bg-primary-600 text-white rounded px-1 mb-1 truncate"
+                    >
+                      {event.name}
+                    </div>
+                  ))}
+                  {dayEvents.length > 2 && (
+                    <div className="text-xs text-primary-600 dark:text-primary-400">
+                      +{dayEvents.length - 2}
+                    </div>
+                  )}
+                </div>
+                {dayEvents.length > 0 && (
+                  <div className="md:hidden w-1.5 h-1.5 rounded-full bg-primary-500 mx-auto mt-0.5" />
                 )}
               </motion.div>
             )

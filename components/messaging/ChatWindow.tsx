@@ -553,7 +553,7 @@ export default function ChatWindow({
           {onBack && (
             <button
               onClick={onBack}
-              className="md:hidden p-2 -ml-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="md:hidden p-3 -ml-1 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation"
               aria-label="Back to conversations"
             >
               <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
@@ -594,7 +594,7 @@ export default function ChatWindow({
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation"
             aria-label="Conversation info"
           >
             <Info className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -606,7 +606,7 @@ export default function ChatWindow({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors touch-manipulation"
               aria-label="More options"
             >
               <MoreVertical className="w-5 h-5 text-gray-600 dark:text-gray-400" />
@@ -846,13 +846,13 @@ export default function ChatWindow({
       </AnimatePresence>
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-        <div className="flex flex-wrap gap-2 mb-3">
+      <div className="p-3 md:p-4 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <div className="flex flex-wrap gap-1.5 mb-2">
           {COMMON_EMOJIS.map(emoji => (
             <button
               key={emoji}
               onClick={() => insertEmoji(emoji)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors text-xl"
+              className="p-1.5 min-w-[36px] min-h-[36px] hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors text-xl flex items-center justify-center touch-manipulation"
             >
               {emoji}
             </button>
@@ -869,11 +869,11 @@ export default function ChatWindow({
             onKeyDown={handleKeyPress}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 
+            className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-700 
                      bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white
                      focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none
-                     max-h-32 overflow-y-auto"
-            style={{ minHeight: '40px' }}
+                     max-h-32 overflow-y-auto text-[16px]"
+            style={{ minHeight: '44px' }}
           />
 
           {/* Send button */}

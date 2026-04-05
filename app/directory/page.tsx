@@ -206,7 +206,7 @@ function DirectoryContent() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="mb-8"
           >
-            <div className="bg-white/80 dark:bg-[#1F1B28]/80 backdrop-blur-xl rounded-3xl shadow-xl p-6 
+            <div className="bg-white/80 dark:bg-[#1F1B28]/80 backdrop-blur-xl rounded-3xl shadow-xl p-4 md:p-6 
                             border border-white/30 dark:border-[#2c2c3e]/50"
                   style={{
                     backdropFilter: 'saturate(180%) blur(20px)',
@@ -222,10 +222,10 @@ function DirectoryContent() {
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-2xl border-2 border-gray-200/50 dark:border-[#2c2c3e]/50 
-                               bg-white/80 dark:bg-[#1F1B28]/80 backdrop-blur-xl text-[#2C2416] dark:text-[#F5F3F0] 
+                    className="w-full px-4 py-3 rounded-2xl border-2 border-gray-200/50 dark:border-[#2c2c3e]/50 
+                               bg-white/80 dark:bg-[#1F1B28]/80 backdrop-blur-xl text-[#2C2416] dark:text-[#F5F3F0] text-[16px]
                                focus:border-primary-500 dark:focus:border-primary-400 focus:outline-none
-                               transition-all shadow-lg hover:shadow-xl"
+                               transition-all shadow-lg hover:shadow-xl touch-manipulation"
                     style={{
                       backdropFilter: 'saturate(180%) blur(20px)',
                       WebkitBackdropFilter: 'saturate(180%) blur(20px)',
@@ -249,36 +249,23 @@ function DirectoryContent() {
                           WebkitBackdropFilter: 'saturate(180%) blur(20px)',
                         }}
                   >
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2.5 rounded-xl transition-all duration-200 active:scale-90 ${
-                        viewMode === 'grid'
-                          ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] shadow-md'
-                          : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-gray-100 dark:hover:bg-[#2c2c3e]'
-                      }`}
-                    >
-                      <Grid3x3 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2.5 rounded-xl transition-all duration-200 active:scale-90 ${
-                        viewMode === 'list'
-                          ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] shadow-md'
-                          : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-gray-100 dark:hover:bg-[#2c2c3e]'
-                      }`}
-                    >
-                      <List className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('map')}
-                      className={`p-2.5 rounded-xl transition-all duration-200 active:scale-90 ${
-                        viewMode === 'map'
-                          ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] shadow-md'
-                          : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-gray-100 dark:hover:bg-[#2c2c3e]'
-                      }`}
-                    >
-                      <MapIcon className="w-5 h-5" />
-                    </button>
+                    {([
+                      { mode: 'grid', Icon: Grid3x3 },
+                      { mode: 'list', Icon: List },
+                      { mode: 'map', Icon: MapIcon },
+                    ] as const).map(({ mode, Icon }) => (
+                      <button
+                        key={mode}
+                        onClick={() => setViewMode(mode)}
+                        className={`p-3 rounded-xl transition-all duration-200 active:scale-90 touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center ${
+                          viewMode === mode
+                            ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] shadow-md'
+                            : 'text-[#6B5D47] dark:text-[#B8A584] hover:bg-gray-100 dark:hover:bg-[#2c2c3e]'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -331,9 +318,9 @@ function DirectoryContent() {
                         {tag}
                         <button
                           onClick={() => toggleTag(tag)}
-                          className="hover:text-primary-900 dark:hover:text-primary-100"
+                          className="p-1 min-w-[28px] min-h-[28px] flex items-center justify-center hover:text-primary-900 dark:hover:text-primary-100 touch-manipulation"
                         >
-                          <X className="w-3 h-3" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       </span>
                     ))}
@@ -353,7 +340,7 @@ function DirectoryContent() {
 
               {/* Compare Mode Toggle */}
               {comparingIds.length > 0 && (
-                <div className="mt-4 flex items-center justify-between p-4 bg-[#f5ede1]/80 dark:bg-[#1F1B28]/80 
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 p-4 bg-[#f5ede1]/80 dark:bg-[#1F1B28]/80 
                                 backdrop-blur-xl rounded-2xl border border-[#D4A574]/30 dark:border-[#D4A574]/20
                                 shadow-lg"
                       style={{
@@ -366,9 +353,9 @@ function DirectoryContent() {
                   </span>
                   <button
                     onClick={() => setCompareMode(true)}
-                    className="px-4 py-2 bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] rounded-2xl hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] 
+                    className="px-4 py-2.5 bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] rounded-2xl hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] 
                                active:scale-95 transition-all duration-200 text-sm font-medium flex items-center gap-2
-                               shadow-lg hover:shadow-xl"
+                               shadow-lg hover:shadow-xl touch-manipulation"
                   >
                     <GitCompare className="w-4 h-4" />
                     Compare
@@ -379,8 +366,8 @@ function DirectoryContent() {
           </motion.div>
 
           {/* Results Count */}
-          <div className="mb-6 flex items-center justify-between">
-            <p className="text-[#6B5D47] dark:text-[#B8A584]">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[#6B5D47] dark:text-[#B8A584] text-sm md:text-base">
               Showing <span className="font-semibold text-[#2C2416] dark:text-[#F5F3F0]">{filteredResources.length}</span> of{' '}
               <span className="font-semibold text-[#2C2416] dark:text-[#F5F3F0]">{resources.length}</span> resources
             </p>
@@ -388,9 +375,9 @@ function DirectoryContent() {
               <button
                 onClick={() => setCompareMode(true)}
                 className="text-sm text-[#8B6F47] dark:text-[#D4A574] hover:text-[#6B5D47] dark:hover:text-[#B8A584] 
-                           flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/80 dark:bg-[#1F1B28]/80 backdrop-blur-xl
+                           flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/80 dark:bg-[#1F1B28]/80 backdrop-blur-xl
                            shadow-lg hover:shadow-xl border border-white/30 dark:border-[#2c2c3e]/50
-                           active:scale-95 transition-all duration-200"
+                           active:scale-95 transition-all duration-200 touch-manipulation whitespace-nowrap"
                 style={{
                   backdropFilter: 'saturate(180%) blur(20px)',
                   WebkitBackdropFilter: 'saturate(180%) blur(20px)',

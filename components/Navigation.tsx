@@ -114,9 +114,9 @@ export default function Navigation() {
         }`}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center gap-6 h-16 md:h-20 mx-auto w-full">
+        <div className="flex items-center justify-between md:justify-center gap-4 md:gap-6 h-16 md:h-20 mx-auto w-full">
           {/* Logo */}
-          <div className="pr-8 flex items-center">
+          <div className="md:pr-8 flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center gap-2 group w-fit">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -419,7 +419,7 @@ export default function Navigation() {
                   <span className="text-xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0]">Menu</span>
                   <button
                     onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-xl bg-gray-100 dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584]"
+                    className="p-3 rounded-xl bg-gray-100 dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584]"
                   >
                     <X className="w-6 h-6" />
                   </button>

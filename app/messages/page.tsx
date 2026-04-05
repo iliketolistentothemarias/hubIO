@@ -131,11 +131,11 @@ function MessagesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#0B0A0F] pt-20">
-      <div className="container-custom h-[calc(100vh-5rem)]">
-        <div className="flex h-full rounded-lg overflow-hidden shadow-lg border border-[#E8E0D6] dark:border-[#2c2c3e]">
+    <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#0B0A0F] pt-16 md:pt-20">
+      <div className="container-custom h-[calc(100svh-4rem)] md:h-[calc(100svh-5rem)]">
+        <div className="flex h-full min-h-0 rounded-lg overflow-hidden shadow-lg border border-[#E8E0D6] dark:border-[#2c2c3e]">
           {/* Conversation List */}
-          <div className={`w-full md:w-96 flex-shrink-0 ${mobileView === 'chat' ? 'hidden md:block' : 'block'}`}>
+          <div className={`w-full md:w-96 flex-shrink-0 min-h-0 ${mobileView === 'chat' ? 'hidden md:flex md:flex-col' : 'flex flex-col'}`}>
             <ConversationList
               key={refreshKey}
               onSelectConversation={setSelectedConversation}
@@ -146,7 +146,7 @@ function MessagesContent() {
           </div>
 
           {/* Chat Window */}
-          <div className={`flex-1 ${mobileView === 'list' ? 'hidden md:block' : 'block'}`}>
+          <div className={`flex-1 min-h-0 ${mobileView === 'list' ? 'hidden md:flex md:flex-col' : 'flex flex-col'}`}>
             {selectedConversation ? (
               <ChatWindow
                 conversation={selectedConversation}
@@ -301,14 +301,14 @@ function MessagesContent() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowBlockDialog(false)}
-                  className="flex-1 px-4 py-2 rounded-lg border border-[#E8E0D6] dark:border-[#2c2c3e] 
-                           text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#f5ede1] dark:hover:bg-[#2c2c3e] transition-colors"
+                  className="flex-1 px-4 py-3 rounded-lg border border-[#E8E0D6] dark:border-[#2c2c3e] 
+                           text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#f5ede1] dark:hover:bg-[#2c2c3e] transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmBlockUser}
-                  className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  className="flex-1 px-4 py-3 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-medium"
                 >
                   Block User
                 </button>

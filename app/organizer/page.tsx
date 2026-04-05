@@ -300,14 +300,14 @@ export default function OrganizerPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Organizer Panel</h1>
-            <p className="text-[#6B5D47] dark:text-[#B8A584] mt-1">Manage your community resources</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Organizer Panel</h1>
+            <p className="text-[#6B5D47] dark:text-[#B8A584] mt-1 text-sm md:text-base">Manage your community resources</p>
           </div>
           <Link
             href="/submit"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] font-semibold text-sm hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors"
+            className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] font-semibold text-sm hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors touch-manipulation w-full sm:w-auto"
           >
             <Plus className="w-4 h-4" /> New Resource
           </Link>
@@ -385,18 +385,18 @@ export default function OrganizerPage() {
               <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mb-5">{selectedResource.category}</p>
 
               {/* Sub-tabs */}
-              <div className="flex gap-1 border-b border-[#E8E0D6] dark:border-[#3A3830] mb-6">
+              <div className="flex gap-0.5 border-b border-[#E8E0D6] dark:border-[#3A3830] mb-6 overflow-x-auto scrollbar-none -mx-1 px-1">
                 {manageTabs.map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
                     onClick={() => setManageTab(id)}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
+                    className={`flex items-center gap-1.5 px-3 md:px-4 py-3 text-xs md:text-sm font-semibold transition-colors border-b-2 -mb-px whitespace-nowrap flex-shrink-0 touch-manipulation ${
                       manageTab === id
                         ? 'border-[#8B6F47] text-[#8B6F47] dark:text-[#D4A574] dark:border-[#D4A574]'
                         : 'border-transparent text-[#6B5D47] dark:text-[#B8A584] hover:text-[#2C2416] dark:hover:text-[#F5F3F0]'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 flex-shrink-0" />
                     {label}
                   </button>
                 ))}
@@ -414,18 +414,18 @@ export default function OrganizerPage() {
                         <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-2">
                           Who can join this resource?
                         </label>
-                        <div className="flex gap-3">
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                           {(['public', 'private'] as const).map((v) => (
                             <button
                               key={v}
                               onClick={() => setSettingsForm((f) => ({ ...f, visibility: v }))}
-                              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
+                              className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition-all touch-manipulation ${
                                 settingsForm.visibility === v
                                   ? 'border-[#8B6F47] bg-[#8B6F47]/10 text-[#8B6F47] dark:border-[#D4A574] dark:bg-[#D4A574]/10 dark:text-[#D4A574]'
                                   : 'border-[#E8E0D6] dark:border-[#3A3830] text-[#6B5D47] dark:text-[#B8A584] hover:border-[#8B6F47]/50'
                               }`}
                             >
-                              {v === 'public' ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                              {v === 'public' ? <Globe className="w-4 h-4 flex-shrink-0" /> : <Lock className="w-4 h-4 flex-shrink-0" />}
                               {v === 'public' ? 'Public — anyone can join' : 'Private — I approve members'}
                             </button>
                           ))}
@@ -519,7 +519,7 @@ export default function OrganizerPage() {
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => handleApplicationAction(app.user_id, 'approve')}
                                 disabled={actionLoading !== null}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-600 text-white text-sm font-semibold disabled:opacity-50"
+                                className="flex items-center gap-1.5 px-4 py-3 rounded-xl bg-green-600 text-white text-sm font-semibold disabled:opacity-50 touch-manipulation"
                               >
                                 {actionLoading === `${app.user_id}-approve`
                                   ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -531,7 +531,7 @@ export default function OrganizerPage() {
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => handleApplicationAction(app.user_id, 'reject')}
                                 disabled={actionLoading !== null}
-                                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm font-semibold disabled:opacity-50"
+                                className="flex items-center gap-1.5 px-4 py-3 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm font-semibold disabled:opacity-50 touch-manipulation"
                               >
                                 {actionLoading === `${app.user_id}-reject`
                                   ? <Loader2 className="w-4 h-4 animate-spin" />
@@ -549,7 +549,8 @@ export default function OrganizerPage() {
                 {/* Chat Tab */}
                 {manageTab === 'chat' && (
                   <motion.div key="chat" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex flex-col h-[520px] bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] overflow-hidden"
+                    className="flex flex-col bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] overflow-hidden"
+                    style={{ height: 'min(520px, calc(100svh - 300px))' }}
                   >
                     {/* Messages */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-3">

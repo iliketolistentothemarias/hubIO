@@ -110,16 +110,16 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 gap-4 mb-12">
           {quickActions.map((action, index) => {
             const Icon = action.icon
             return (
               <Link key={index} href={action.href} prefetch={true}>
-                <div className={`${cardBase} cursor-pointer hover:-translate-y-1`}>
+                <div className={`${cardBase} cursor-pointer hover:-translate-y-1 min-h-[80px] flex flex-col items-center justify-center`}>
                   <div className={`inline-flex p-3 rounded-lg ${action.color} mb-3`}>
                     <Icon className="w-6 h-6 text-white dark:text-[#1C1B18]" />
                   </div>
-                  <div className="font-semibold text-[#2C2416] dark:text-[#F5F3F0]">{action.label}</div>
+                  <div className="font-semibold text-[#2C2416] dark:text-[#F5F3F0] text-sm md:text-base">{action.label}</div>
                 </div>
               </Link>
             )
@@ -127,7 +127,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 gap-4 mb-12">
           {stats.map((stat, index) => {
             const Icon = stat.icon
             return (

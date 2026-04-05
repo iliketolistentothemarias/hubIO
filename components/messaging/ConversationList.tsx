@@ -300,7 +300,7 @@ export default function ConversationList({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onNewConversation}
-            className="p-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors"
+            className="p-3 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors touch-manipulation"
             aria-label="New conversation"
           >
             <Plus className="w-5 h-5" />
@@ -315,8 +315,8 @@ export default function ConversationList({
             placeholder="Search conversations..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-[#E8E0D6] dark:border-[#2c2c3e] 
-                     bg-[#FAF9F6] dark:bg-[#1F1B28] text-[#2C2416] dark:text-[#F5F3F0]
+            className="w-full pl-10 pr-4 py-3 rounded-xl border border-[#E8E0D6] dark:border-[#2c2c3e] 
+                     bg-[#FAF9F6] dark:bg-[#1F1B28] text-[#2C2416] dark:text-[#F5F3F0] text-[16px]
                      focus:outline-none focus:ring-2 focus:ring-[#D4A574] transition-all"
           />
         </div>
@@ -342,7 +342,7 @@ export default function ConversationList({
             {!searchQuery && (
               <button
                 onClick={onNewConversation}
-                className="px-4 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors"
+                className="px-4 py-3 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors font-medium touch-manipulation"
               >
                 Start Conversation
               </button>
@@ -426,7 +426,7 @@ export default function ConversationList({
                         e.stopPropagation()
                         setActiveMenu(activeMenu === conversation.id ? null : conversation.id)
                       }}
-                      className="p-1 rounded-lg hover:bg-[#f5ede1] dark:hover:bg-[#2c2c3e] transition-colors"
+                      className="p-2.5 rounded-xl hover:bg-[#f5ede1] dark:hover:bg-[#2c2c3e] transition-colors touch-manipulation"
                     >
                       <MoreVertical className="w-5 h-5 text-[#6B5D47] dark:text-[#B8A584]" />
                     </button>
