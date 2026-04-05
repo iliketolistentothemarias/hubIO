@@ -44,6 +44,19 @@ export async function PATCH(
       })
       .eq('id', submissionId)
 
+    // Notify the submitter their resource was rejected
+    if (submission.submitted_by) {
+      await adminClient.from('notifications').insert({
+        user_id: submission.submitted_by,
+        type: 'resource_denied',
+        title: 'Resource submission not approved',
+        message: reason
+          ? `"${submission.name}" was not approved: ${reason}`
+          : `"${submission.name}" was not approved at this time.`,
+        read: false,
+      })
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Submission rejected successfully',

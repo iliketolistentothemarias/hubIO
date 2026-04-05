@@ -10,7 +10,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
-import { Calendar, MapPin, Clock, Users, Filter, Grid, List, Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Calendar, MapPin, Clock, Users, Filter, Grid, List, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Lock } from 'lucide-react'
 import TabNavigation from '@/components/TabNavigation'
 import LiquidGlass from '@/components/LiquidGlass'
 import { Event } from '@/lib/types'
@@ -34,35 +34,79 @@ export default function EventsPage() {
   const loadEvents = async () => {
     setLoading(true)
     
-    // Filter static events based on selected tab and category
-    let filteredEvents = [...staticEvents]
-    
-    // Filter by status (upcoming/past)
-    if (activeTab === 'upcoming') {
-      filteredEvents = filteredEvents.filter(e => e.status === 'upcoming' || e.status === 'ongoing')
-    } else if (activeTab === 'past') {
-      filteredEvents = filteredEvents.filter(e => e.status === 'completed' || e.status === 'cancelled')
+    try {
+      const params = new URLSearchParams()
+      if (activeTab !== 'all') params.set('status', activeTab)
+      if (selectedCategory !== 'All') params.set('category', selectedCategory)
+      params.set('status', activeTab === 'past' ? 'all' : activeTab)
+
+      const res = await fetch(`/api/events?${params}`)
+      const json = await res.json()
+
+      if (json.success) {
+        let data = json.data as Array<Record<string, unknown>>
+        // Filter past vs upcoming client-side since our DB has upcoming/ongoing/completed
+        if (activeTab === 'upcoming') {
+          data = data.filter((e) => e.status === 'upcoming' || e.status === 'ongoing')
+        } else if (activeTab === 'past') {
+          data = data.filter((e) => e.status === 'completed' || e.status === 'cancelled')
+        }
+        // Map to legacy Event shape expected by the list renderer
+        setEvents(
+          data.map((e) => ({
+            id: String(e.id),
+            name: String(e.title),
+            title: String(e.title),
+            description: String(e.description),
+            date: new Date(String(e.date)),
+            end_date: e.end_date ? new Date(String(e.end_date)) : undefined,
+            location: String(e.location),
+            organizer: String(e.organizer),
+            organizer_id: e.organizer_id ? String(e.organizer_id) : undefined,
+            capacity: e.capacity ? Number(e.capacity) : undefined,
+            attendees: Number(e.attendees ?? 0),
+            category: String(e.category),
+            tags: (e.tags as string[]) || [],
+            image: e.image ? String(e.image) : undefined,
+            status: String(e.status) as any,
+            featured: Boolean(e.featured),
+            visibility: (e.visibility as 'public' | 'private') || 'public',
+          }))
+        )
+      } else {
+        // Fallback to static events if API unavailable
+        let filteredEvents = [...staticEvents]
+        if (activeTab === 'upcoming') {
+          filteredEvents = filteredEvents.filter(e => e.status === 'upcoming' || e.status === 'ongoing')
+        } else if (activeTab === 'past') {
+          filteredEvents = filteredEvents.filter(e => e.status === 'completed' || e.status === 'cancelled')
+        }
+        if (selectedCategory !== 'All') {
+          filteredEvents = filteredEvents.filter(e => e.category === selectedCategory)
+        }
+        setEvents(filteredEvents)
+      }
+    } catch {
+      // Fallback to static events
+      let filteredEvents = [...staticEvents]
+      if (activeTab === 'upcoming') {
+        filteredEvents = filteredEvents.filter(e => e.status === 'upcoming' || e.status === 'ongoing')
+      } else if (activeTab === 'past') {
+        filteredEvents = filteredEvents.filter(e => e.status === 'completed' || e.status === 'cancelled')
+      }
+      if (selectedCategory !== 'All') {
+        filteredEvents = filteredEvents.filter(e => e.category === selectedCategory)
+      }
+      setEvents(filteredEvents)
+    } finally {
+      setLoading(false)
     }
-    
-    // Filter by category
-    if (selectedCategory !== 'All') {
-      filteredEvents = filteredEvents.filter(e => e.category === selectedCategory)
-    }
-    
-    setEvents(filteredEvents)
-    setLoading(false)
   }
 
   const [rsvping, setRsvping] = useState<string | null>(null)
 
   const handleRSVP = async (event: Event) => {
-    // UI showcase - just show a success message
-    setRsvping(event.id)
-    
-    setTimeout(() => {
-      alert(`Successfully registered for: ${event.name}!\n\nThis is a UI showcase, so no actual registration was performed.`)
-      setRsvping(null)
-    }, 1000)
+    router.push(`/events/${event.id}`)
   }
 
   const filteredEvents = useMemo(() => {
@@ -277,7 +321,7 @@ function CalendarView({ events, currentMonth, setCurrentMonth, onRSVP, rsvping }
   )
 }
 
-function GridView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event: Event) => void; rsvping: string | null }) {
+function GridView({ events, onRSVP, rsvping }: { events: any[]; onRSVP: (event: any) => void; rsvping: string | null }) {
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {events.map((event, index) => (
@@ -287,62 +331,49 @@ function GridView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: index * 0.1 }}
           whileHover={{ y: -5, scale: 1.02 }}
-          className="bg-white dark:bg-[#1F1B28] rounded-[2rem] border border-[#E8E0D6] dark:border-[#2c2c3e] overflow-hidden shadow-lg"
+          onClick={() => onRSVP(event)}
+          className="cursor-pointer bg-white dark:bg-[#1F1B28] rounded-[2rem] border border-[#E8E0D6] dark:border-[#2c2c3e] overflow-hidden shadow-lg"
         >
-          <div className="p-6 md:p-8">
-            <div className="flex items-start justify-between mb-4">
+          {event.image && (
+            <img src={event.image} alt={event.title || event.name} className="w-full h-36 object-cover" />
+          )}
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-3">
               <span className="px-3 py-1 bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574] text-[10px] font-black uppercase tracking-widest rounded-full border border-[#8B6F47]/10">
                 {event.category}
               </span>
-              {event.ticketPrice ? (
-                <span className="text-xl font-bold text-[#2C2416] dark:text-white">
-                  ${event.ticketPrice}
+              {event.visibility === 'private' ? (
+                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <Lock className="w-3 h-3" /> Private
                 </span>
               ) : (
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Free</span>
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">Public</span>
               )}
             </div>
 
-            <h3 className="text-xl md:text-2xl font-bold text-[#2C2416] dark:text-white mb-2">{event.name}</h3>
-            <p className="text-[#6B5D47] dark:text-[#B8A584] text-sm mb-6 line-clamp-2">{event.description}</p>
+            <h3 className="text-xl font-bold text-[#2C2416] dark:text-white mb-2">{event.title || event.name}</h3>
+            <p className="text-[#6B5D47] dark:text-[#B8A584] text-sm mb-4 line-clamp-2">{event.description}</p>
 
-            <div className="space-y-3 mb-8">
-              <div className="flex items-center gap-3 text-sm text-[#2C2416] dark:text-[#F5F3F0] font-medium">
-                <Calendar className="w-5 h-5 text-[#8B6F47]" />
+            <div className="space-y-2 mb-5">
+              <div className="flex items-center gap-2 text-sm text-[#2C2416] dark:text-[#F5F3F0]">
+                <Calendar className="w-4 h-4 text-[#8B6F47] flex-shrink-0" />
                 <span suppressHydrationWarning>
-                  {event.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                  {new Date(event.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-[#2C2416] dark:text-[#F5F3F0] font-medium">
-                <Clock className="w-5 h-5 text-[#8B6F47]" />
-                {event.time}
+              <div className="flex items-center gap-2 text-sm text-[#2C2416] dark:text-[#F5F3F0]">
+                <MapPin className="w-4 h-4 text-[#8B6F47] flex-shrink-0" />
+                <span className="truncate">{typeof event.location === 'string' ? event.location : event.location?.address}</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-[#2C2416] dark:text-[#F5F3F0] font-medium">
-                <MapPin className="w-5 h-5 text-[#8B6F47]" />
-                <span className="truncate">{event.location.address}</span>
+              <div className="flex items-center gap-2 text-sm text-[#2C2416] dark:text-[#F5F3F0]">
+                <Users className="w-4 h-4 text-[#8B6F47] flex-shrink-0" />
+                <span>{event.attendees ?? 0}{event.capacity ? ` / ${event.capacity}` : ''} attending</span>
               </div>
-              {event.capacity && (
-                <div className="flex items-center gap-3 text-sm text-[#2C2416] dark:text-[#F5F3F0] font-medium">
-                  <Users className="w-5 h-5 text-[#8B6F47]" />
-                  {event.registered} / {event.capacity} registered
-                </div>
-              )}
             </div>
 
-            <button 
-              onClick={() => onRSVP(event)}
-              disabled={rsvping === event.id}
-              className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-4 rounded-2xl font-bold hover:shadow-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-            >
-              {rsvping === event.id ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Processing...
-                </>
-              ) : (
-                event.rsvpRequired ? 'RSVP Now' : 'Register Now'
-              )}
-            </button>
+            <div className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-3 rounded-2xl font-bold text-center text-sm">
+              {event.visibility === 'private' ? 'Apply to Join' : 'View Event'}
+            </div>
           </div>
         </motion.div>
       ))}
@@ -350,7 +381,7 @@ function GridView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event
   )
 }
 
-function ListView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event: Event) => void; rsvping: string | null }) {
+function ListView({ events, onRSVP, rsvping }: { events: any[]; onRSVP: (event: any) => void; rsvping: string | null }) {
   return (
     <div className="space-y-4">
       {events.map((event, index) => (
@@ -360,54 +391,56 @@ function ListView({ events, onRSVP, rsvping }: { events: Event[]; onRSVP: (event
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: index * 0.1 }}
           whileHover={{ x: 5 }}
+          onClick={() => onRSVP(event)}
+          className="cursor-pointer"
         >
           <LiquidGlass intensity="light">
-            <div className="p-6 flex flex-col md:flex-row gap-6">
+            <div className="p-5 flex flex-col md:flex-row gap-5">
               <div className="flex-shrink-0">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-primary-400 to-secondary-400 flex items-center justify-center">
-                  <Calendar className="w-12 h-12 text-white" />
+                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#8B6F47] to-[#D4A574] flex items-center justify-center">
+                  <Calendar className="w-10 h-10 text-white" />
                 </div>
               </div>
               <div className="flex-1">
-                <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">{event.name}</h3>
-                  <span className="px-3 py-1 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-xs rounded-full">
+                <div className="flex items-start justify-between mb-1">
+                  <h3 className="text-lg font-bold text-[#2C2416] dark:text-white">{event.title || event.name}</h3>
+                  <span className="px-3 py-1 bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574] text-xs rounded-full ml-3 flex-shrink-0">
                     {event.category}
                   </span>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">{event.description}</p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary-600" />
-                    <span suppressHydrationWarning>{event.date.toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-primary-600" />
-                    <span>{event.time}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-primary-600" />
-                    <span className="truncate">{event.location.address}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-primary-600" />
-                    <span>{event.registered} registered</span>
-                  </div>
+                <p className="text-[#6B5D47] dark:text-[#B8A584] text-sm mb-3 line-clamp-2">{event.description}</p>
+                <div className="flex flex-wrap gap-4 text-sm text-[#6B5D47] dark:text-[#B8A584]">
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    <span suppressHydrationWarning>{new Date(event.date).toLocaleDateString()}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4" />
+                    {typeof event.location === 'string' ? event.location : event.location?.address}
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <Users className="w-4 h-4" />
+                    {event.attendees ?? 0} attending
+                  </span>
+                  {event.visibility === 'private' && (
+                    <span className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold">
+                      <Lock className="w-4 h-4" /> Private
+                    </span>
+                  )}
                 </div>
               </div>
-              <div className="flex-shrink-0">
-                <button 
-                  onClick={() => onRSVP(event)}
-                  disabled={rsvping === event.id}
-                  className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                >
-                  {rsvping === event.id ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      {event.rsvpRequired ? 'RSVPing...' : 'Registering...'}
-                    </>
-                  ) : (
-                    event.rsvpRequired ? 'RSVP Now' : 'Register Now'
+              <div className="flex-shrink-0 self-center">
+                <span className="px-5 py-2.5 bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] rounded-xl font-semibold text-sm">
+                  View
+                </span>
+              </div>
+            </div>
+          </LiquidGlass>
+        </motion.div>
+      ))}
+    </div>
+  )
+}
                   )}
                 </button>
               </div>

@@ -95,10 +95,19 @@ export async function PATCH(
         .update({ role: 'organizer' })
         .eq('id', submission.submitted_by)
         .eq('role', 'volunteer')
-      
+
       if (roleError) {
         console.warn('Failed to upgrade user role:', roleError)
       }
+
+      // Notify the submitter their resource was approved
+      await adminClient.from('notifications').insert({
+        user_id: submission.submitted_by,
+        type: 'resource_approved',
+        title: 'Your resource was approved!',
+        message: `"${submission.name}" is now live in the directory. You've been promoted to Community Organizer.`,
+        read: false,
+      })
     }
 
     return NextResponse.json({

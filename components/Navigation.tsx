@@ -307,7 +307,7 @@ export default function Navigation() {
                         <p className="text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0]">{displayName || user.email}</p>
                         <p className="text-xs text-[#6B5D47] dark:text-[#B8A584]">{user.email}</p>
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#f5ede1] text-[#6B5D47] dark:bg-[#3b352c] dark:text-[#D4A574]">
-                          Role: {user.role}
+                          {user.role === 'organizer' ? 'Community Organizer' : user.role === 'admin' ? 'Admin' : 'Volunteer'}
                         </span>
                       </div>
                       {user.role === 'admin' && (
@@ -317,6 +317,15 @@ export default function Navigation() {
                           className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
                         >
                           Admin Dashboard
+                        </Link>
+                      )}
+                      {(user.role === 'organizer' || user.role === 'admin') && (
+                        <Link
+                          href="/organizer"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
+                        >
+                          Organizer Panel
                         </Link>
                       )}
                       <Link
@@ -476,7 +485,28 @@ export default function Navigation() {
                       <div className="px-4">
                         <p className="font-bold text-[#2C2416] dark:text-[#F5F3F0]">{displayName || user.email}</p>
                         <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] truncate">{user.email}</p>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#f5ede1] text-[#6B5D47] dark:bg-[#3b352c] dark:text-[#D4A574] mt-1">
+                          {user.role === 'organizer' ? 'Community Organizer' : user.role === 'admin' ? 'Admin' : 'Volunteer'}
+                        </span>
                       </div>
+                      {user.role === 'admin' && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setIsOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 rounded-2xl font-medium text-[#6B5D47] dark:text-[#B8A584]"
+                        >
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      {(user.role === 'organizer' || user.role === 'admin') && (
+                        <Link
+                          href="/organizer"
+                          onClick={() => setIsOpen(false)}
+                          className="flex items-center gap-3 px-4 py-3 rounded-2xl font-medium text-[#6B5D47] dark:text-[#B8A584]"
+                        >
+                          Organizer Panel
+                        </Link>
+                      )}
                       <button
                         onClick={() => {
                           setIsOpen(false)
