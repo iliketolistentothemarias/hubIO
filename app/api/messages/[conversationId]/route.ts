@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServerClient, createAdminClient } from '@/lib/supabase/server'
 import { broadcastNewMessageAfterInsert } from '@/lib/realtime/server-broadcast'
 
 export async function GET(
@@ -123,6 +123,36 @@ export async function POST(
 
     const participantIds = (participantRows ?? []).map((r) => r.user_id).filter(Boolean) as string[]
     void broadcastNewMessageAfterInsert(conversationId, message.id, participantIds)
+
+    // Create in-app notifications for all recipients (not the sender)
+    const recipients = participantIds.filter((id) => id !== user.id)
+    if (recipients.length > 0) {
+      try {
+        const admin = createAdminClient()
+        // Get sender display name
+        const { data: senderProfile } = await admin
+          .from('users')
+          .select('name')
+          .eq('id', user.id)
+          .single()
+        const senderName = senderProfile?.name || user.email || 'Someone'
+        const preview =
+          message.content.length > 100
+            ? message.content.slice(0, 97) + '...'
+            : message.content
+        await admin.from('notifications').insert(
+          recipients.map((recipientId) => ({
+            user_id: recipientId,
+            type: 'message',
+            title: `New message from ${senderName}`,
+            message: preview,
+            read: false,
+          }))
+        )
+      } catch (notifErr) {
+        console.error('Failed to create message notifications:', notifErr)
+      }
+    }
 
     const s = message.sender as { id?: string; name?: string; avatar?: string } | null
     const senderName = s?.name || user.email || 'Unknown'

@@ -79,6 +79,13 @@ export default function ChatWindow({
     }
   }
 
+  // Request browser notification permission once on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {/* user denied – silently ignore */})
+    }
+  }, [])
+
   // Subscribe to real-time updates
   useEffect(() => {
     console.log('Subscribing to messages for conversation:', conversation.id)
@@ -109,6 +116,25 @@ export default function ChatWindow({
 
         if (message.sender_id !== currentUserId && shouldAutoScroll.current) {
           markMessagesAsRead([message.id])
+        }
+
+        // Browser push notification when tab is hidden or unfocused
+        if (
+          message.sender_id !== currentUserId &&
+          typeof window !== 'undefined' &&
+          'Notification' in window &&
+          Notification.permission === 'granted' &&
+          document.hidden
+        ) {
+          const senderName = message.sender?.name || 'Someone'
+          const n = new Notification(`New message from ${senderName}`, {
+            body: message.content,
+            icon: '/icon-192.png',
+            tag: conversation.id,
+            renotify: true,
+          })
+          n.onclick = () => { window.focus(); n.close() }
+          setTimeout(() => n.close(), 6000)
         }
       }
     )
@@ -156,6 +182,30 @@ export default function ChatWindow({
           if (shouldAutoScroll.current) {
             setTimeout(() => scrollToBottom(true), 50)
           }
+
+          // Browser push notification for new messages from others when tab is hidden (polling path)
+          if (
+            typeof window !== 'undefined' &&
+            'Notification' in window &&
+            Notification.permission === 'granted' &&
+            document.hidden
+          ) {
+            const newFromOthers = Array.from(byId.values()).filter(
+              (m) => m.sender_id !== currentUserId && !prev.some((p) => p.id === m.id)
+            )
+            for (const m of newFromOthers) {
+              const senderName = m.sender?.name || 'Someone'
+              const n = new Notification(`New message from ${senderName}`, {
+                body: m.content,
+                icon: '/icon-192.png',
+                tag: conversation.id,
+                renotify: true,
+              })
+              n.onclick = () => { window.focus(); n.close() }
+              setTimeout(() => n.close(), 6000)
+            }
+          }
+
           return sorted
         })
       } catch {

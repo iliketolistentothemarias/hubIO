@@ -55,8 +55,27 @@ export default function Notifications() {
             table: 'notifications',
           },
           (payload) => {
-            setNotifications((prev) => [payload.new as Notification, ...prev])
+            const notif = payload.new as Notification
+            setNotifications((prev) => [notif, ...prev])
             setUnreadCount((prev) => prev + 1)
+
+            // Browser push notification for message notifications when tab is hidden
+            if (
+              notif.type === 'message' &&
+              typeof window !== 'undefined' &&
+              'Notification' in window &&
+              Notification.permission === 'granted' &&
+              document.hidden
+            ) {
+              const n = new window.Notification(notif.title, {
+                body: notif.message,
+                icon: '/icon-192.png',
+                tag: 'msg-notif',
+                renotify: true,
+              })
+              n.onclick = () => { window.focus(); window.location.href = '/messages'; n.close() }
+              setTimeout(() => n.close(), 6000)
+            }
           }
         )
         .on(
