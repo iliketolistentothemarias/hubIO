@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Calendar, Users, BookOpen, Check, X, Loader2,
-  ChevronRight, Globe, Lock, AlertCircle, Plus
+  ChevronLeft, Globe, Lock, Plus, Save, Edit3, Eye
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
@@ -16,13 +16,18 @@ type Tab = 'events' | 'applications' | 'resources'
 interface OrgEvent {
   id: string
   title: string
+  description: string
   date: string
+  end_date?: string
   location: string
   visibility: 'public' | 'private'
   attendees: number
   capacity?: number
   status: string
+  category: string
+  tags: string[]
   application_question?: string
+  organizer_id?: string
 }
 
 interface Application {
@@ -60,6 +65,10 @@ export default function OrganizerPage() {
 
   const [events, setEvents] = useState<OrgEvent[]>([])
   const [eventsLoading, setEventsLoading] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<OrgEvent | null>(null)
+  const [editForm, setEditForm] = useState<Partial<OrgEvent>>({})
+  const [saving, setSaving] = useState(false)
+  const [saveMsg, setSaveMsg] = useState('')
 
   const [applications, setApplications] = useState<Application[]>([])
   const [appsLoading, setAppsLoading] = useState(false)
@@ -95,24 +104,60 @@ export default function OrganizerPage() {
   const loadEvents = async () => {
     setEventsLoading(true)
     try {
-      const admin = userRole === 'admin'
-      // Organizer sees only their events; admin can see all
-      const res = await apiFetch(
-        admin ? '/api/events?status=all&limit=100' : '/api/events?status=all&limit=100'
-      )
+      const res = await apiFetch('/api/events?status=all&limit=100')
       const json = await res.json()
       if (json.success) {
         const all: OrgEvent[] = json.data
-        setEvents(admin ? all : all.filter((e) => (e as any).organizer_id === userId))
+        setEvents(userRole === 'admin' ? all : all.filter((e: any) => e.organizer_id === userId))
       }
     } catch (e) { console.error(e) }
     finally { setEventsLoading(false) }
   }
 
+  const openEventEdit = (ev: OrgEvent) => {
+    setSelectedEvent(ev)
+    setEditForm({
+      title: ev.title,
+      description: ev.description,
+      date: ev.date ? ev.date.slice(0, 16) : '',
+      end_date: ev.end_date ? ev.end_date.slice(0, 16) : '',
+      location: ev.location,
+      category: ev.category,
+      capacity: ev.capacity,
+      visibility: ev.visibility,
+      application_question: ev.application_question || '',
+      status: ev.status,
+    })
+    setSaveMsg('')
+  }
+
+  const handleSaveEvent = async () => {
+    if (!selectedEvent) return
+    setSaving(true)
+    setSaveMsg('')
+    try {
+      const res = await apiFetch(`/api/events/${selectedEvent.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error)
+      // Update local list
+      setEvents((prev) => prev.map((e) => e.id === selectedEvent.id ? { ...e, ...editForm } as OrgEvent : e))
+      setSelectedEvent((prev) => prev ? { ...prev, ...editForm } as OrgEvent : prev)
+      setSaveMsg('Saved!')
+      setTimeout(() => setSaveMsg(''), 2000)
+    } catch (e) {
+      setSaveMsg('Failed to save: ' + (e as Error).message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const loadAllApplications = async () => {
     setAppsLoading(true)
     try {
-      // Load events first, then applications for private ones
       const res = await apiFetch('/api/events?status=all&limit=100')
       const json = await res.json()
       if (!json.success) return
@@ -139,8 +184,6 @@ export default function OrganizerPage() {
   const loadResources = async () => {
     setResourcesLoading(true)
     try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
       const { data } = await supabase
         .from('resources')
         .select('id, name, category, created_at')
@@ -181,9 +224,13 @@ export default function OrganizerPage() {
     { id: 'resources', label: 'My Resources', icon: BookOpen },
   ]
 
+  const statusOptions = ['upcoming', 'ongoing', 'completed', 'cancelled']
+  const visibilityOptions: ('public' | 'private')[] = ['public', 'private']
+
   return (
     <div className="min-h-screen bg-[#FAFAF8] dark:bg-[#0B0A0F] pt-20">
       <div className="max-w-5xl mx-auto px-4 py-8">
+
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
@@ -191,7 +238,7 @@ export default function OrganizerPage() {
             <p className="text-[#6B5D47] dark:text-[#B8A584] mt-1">Manage your events and community resources</p>
           </div>
           <Link
-            href="/events/create"
+            href="/submit"
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] font-semibold text-sm hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-colors"
           >
             <Plus className="w-4 h-4" /> New Event
@@ -203,7 +250,7 @@ export default function OrganizerPage() {
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setTab(id)}
+              onClick={() => { setTab(id); setSelectedEvent(null) }}
               className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold transition-colors border-b-2 -mb-px ${
                 tab === id
                   ? 'border-[#8B6F47] text-[#8B6F47] dark:text-[#D4A574] dark:border-[#D4A574]'
@@ -222,59 +269,210 @@ export default function OrganizerPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {/* My Events */}
-          {tab === 'events' && (
-            <motion.div key="events" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+
+          {/* ── My Events ── */}
+          {tab === 'events' && !selectedEvent && (
+            <motion.div key="events-list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {eventsLoading ? (
                 <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-[#8B6F47]" /></div>
               ) : events.length === 0 ? (
                 <div className="text-center py-16 text-[#6B5D47] dark:text-[#B8A584]">
                   <Calendar className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="font-semibold mb-2">No events yet</p>
-                  <Link href="/events/create" className="text-sm text-[#8B6F47] underline">Create your first event</Link>
+                  <Link href="/submit" className="text-sm text-[#8B6F47] underline">Submit your first event</Link>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {events.map((ev) => (
-                    <motion.div
+                    <motion.button
                       key={ev.id}
+                      onClick={() => openEventEdit(ev)}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-5 flex items-center justify-between gap-4"
+                      whileHover={{ y: -3, scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="text-left bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                     >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] truncate">{ev.title}</h3>
-                          <span className={`flex-shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                            ev.visibility === 'private'
-                              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
-                              : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                          }`}>
-                            {ev.visibility === 'private' ? <Lock className="w-3 h-3" /> : <Globe className="w-3 h-3" />}
-                            {ev.visibility}
-                          </span>
-                        </div>
-                        <p className="text-sm text-[#6B5D47] dark:text-[#B8A584]">
-                          {new Date(ev.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })} · {ev.location}
+                      <div className="flex items-start justify-between mb-3">
+                        <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                          ev.visibility === 'private'
+                            ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                            : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        }`}>
+                          {ev.visibility === 'private' ? <Lock className="w-2.5 h-2.5" /> : <Globe className="w-2.5 h-2.5" />}
+                          {ev.visibility}
+                        </span>
+                        <span className="p-1.5 rounded-lg bg-[#F5F3F0] dark:bg-[#2A2824] opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Edit3 className="w-3.5 h-3.5 text-[#8B6F47] dark:text-[#D4A574]" />
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1 line-clamp-2">{ev.title}</h3>
+                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] mb-3 line-clamp-2">{ev.description}</p>
+                      <div className="space-y-1">
+                        <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span suppressHydrationWarning>{new Date(ev.date).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </p>
-                        <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mt-0.5">
-                          {ev.attendees}{ev.capacity ? ` / ${ev.capacity}` : ''} attending · {ev.status}
+                        <p className="text-xs text-[#6B5D47] dark:text-[#B8A584]">
+                          {ev.attendees}{ev.capacity ? ` / ${ev.capacity}` : ''} attending · <span className="capitalize">{ev.status}</span>
                         </p>
                       </div>
-                      <Link
-                        href={`/events/${ev.id}`}
-                        className="flex-shrink-0 flex items-center gap-1 px-4 py-2 rounded-xl bg-[#F5F3F0] dark:bg-[#2A2824] text-sm text-[#6B5D47] dark:text-[#B8A584] font-semibold hover:bg-[#E8E0D6] dark:hover:bg-[#353330] transition-colors"
-                      >
-                        View <ChevronRight className="w-4 h-4" />
-                      </Link>
-                    </motion.div>
+                    </motion.button>
                   ))}
                 </div>
               )}
             </motion.div>
           )}
 
-          {/* Join Requests */}
+          {/* ── Event Edit Panel ── */}
+          {tab === 'events' && selectedEvent && (
+            <motion.div key="event-edit" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              {/* Back + view link */}
+              <div className="flex items-center justify-between mb-6">
+                <button
+                  onClick={() => setSelectedEvent(null)}
+                  className="flex items-center gap-2 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:text-[#2C2416] dark:hover:text-[#F5F3F0] transition-colors font-semibold"
+                >
+                  <ChevronLeft className="w-4 h-4" /> Back to events
+                </button>
+                <Link
+                  href={`/events/${selectedEvent.id}`}
+                  className="flex items-center gap-1.5 text-sm text-[#8B6F47] dark:text-[#D4A574] hover:underline"
+                >
+                  <Eye className="w-4 h-4" /> View public page
+                </Link>
+              </div>
+
+              <div className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-6 space-y-5">
+                <h2 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">Edit Event</h2>
+
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Title</label>
+                  <input
+                    value={editForm.title || ''}
+                    onChange={(e) => setEditForm((f) => ({ ...f, title: e.target.value }))}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Description</label>
+                  <textarea
+                    value={editForm.description || ''}
+                    onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
+                    rows={4}
+                    className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30 resize-none"
+                  />
+                </div>
+
+                {/* Date + End Date */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Start Date & Time</label>
+                    <input
+                      type="datetime-local"
+                      value={editForm.date || ''}
+                      onChange={(e) => setEditForm((f) => ({ ...f, date: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">End Date & Time (optional)</label>
+                    <input
+                      type="datetime-local"
+                      value={editForm.end_date || ''}
+                      onChange={(e) => setEditForm((f) => ({ ...f, end_date: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                    />
+                  </div>
+                </div>
+
+                {/* Location + Capacity */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Location</label>
+                    <input
+                      value={editForm.location || ''}
+                      onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Capacity (optional)</label>
+                    <input
+                      type="number"
+                      value={editForm.capacity || ''}
+                      onChange={(e) => setEditForm((f) => ({ ...f, capacity: e.target.value ? Number(e.target.value) : undefined }))}
+                      placeholder="Unlimited"
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                    />
+                  </div>
+                </div>
+
+                {/* Status + Visibility */}
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Status</label>
+                    <select
+                      value={editForm.status || 'upcoming'}
+                      onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                    >
+                      {statusOptions.map((s) => <option key={s} value={s} className="capitalize">{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Visibility</label>
+                    <select
+                      value={editForm.visibility || 'public'}
+                      onChange={(e) => setEditForm((f) => ({ ...f, visibility: e.target.value as 'public' | 'private' }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                    >
+                      {visibilityOptions.map((v) => <option key={v} value={v} className="capitalize">{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Application question (shown for private events) */}
+                {editForm.visibility === 'private' && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">
+                      Application question <span className="text-[#8B6F47] text-xs">(shown to applicants)</span>
+                    </label>
+                    <input
+                      value={editForm.application_question || ''}
+                      onChange={(e) => setEditForm((f) => ({ ...f, application_question: e.target.value }))}
+                      placeholder="e.g. What relevant skills do you have?"
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                    />
+                  </div>
+                )}
+
+                {/* Save */}
+                <div className="flex items-center gap-3 pt-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={handleSaveEvent}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] font-semibold text-sm disabled:opacity-50 transition-all"
+                  >
+                    {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    Save Changes
+                  </motion.button>
+                  {saveMsg && (
+                    <span className={`text-sm font-semibold ${saveMsg.startsWith('Failed') ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>
+                      {saveMsg}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── Join Requests ── */}
           {tab === 'applications' && (
             <motion.div key="applications" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {appsLoading ? (
@@ -352,7 +550,7 @@ export default function OrganizerPage() {
             </motion.div>
           )}
 
-          {/* My Resources */}
+          {/* ── My Resources ── */}
           {tab === 'resources' && (
             <motion.div key="resources" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               {resourcesLoading ? (
@@ -387,6 +585,7 @@ export default function OrganizerPage() {
               )}
             </motion.div>
           )}
+
         </AnimatePresence>
       </div>
     </div>

@@ -117,21 +117,22 @@ function LoginContent() {
 
               <div className="space-y-4 text-sm text-[#6B5D47] dark:text-[#B8A584]">
                 <div>
-                  <p className="font-medium mb-1">Available Test Accounts:</p>
-                  <ul className="space-y-1 ml-1">
-                    <li className="flex justify-between">
-                      <span>Volunteer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser1@gmail.com</span></span>
-                      <span className="opacity-60">testuser1</span>
-                    </li>
-                    <li className="flex justify-between">
-                      <span>Community Organizer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser2@gmail.com</span></span>
-                      <span className="opacity-60">testuser2</span>
-                    </li>
-                    <li className="flex justify-between font-semibold">
-                      <span>Admin: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser3@gmail.com</span></span>
-                      <span className="opacity-60">testuser3</span>
-                    </li>
-                  </ul>
+                  <p className="font-medium mb-2">Available Test Accounts:</p>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-0.5">
+                      <span className="text-xs opacity-60 uppercase font-bold tracking-wide">Volunteer</span>
+                      <span className="text-[#2C2416] dark:text-[#F5F3F0] text-xs truncate">testuser1@gmail.com</span>
+                      <span className="opacity-60 text-xs font-mono">testuser1</span>
+
+                      <span className="text-xs opacity-60 uppercase font-bold tracking-wide whitespace-nowrap">Organizer</span>
+                      <span className="text-[#2C2416] dark:text-[#F5F3F0] text-xs truncate">testuser2@gmail.com</span>
+                      <span className="opacity-60 text-xs font-mono">testuser2</span>
+
+                      <span className="text-xs opacity-60 uppercase font-bold tracking-wide font-semibold">Admin</span>
+                      <span className="text-[#2C2416] dark:text-[#F5F3F0] text-xs truncate font-semibold">testuser3@gmail.com</span>
+                      <span className="opacity-60 text-xs font-mono font-semibold">testuser3</span>
+                    </div>
+                  </div>
                 </div>
 
                 <p className="italic text-xs">
