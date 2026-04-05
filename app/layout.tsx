@@ -3,7 +3,6 @@ import { Poppins, Merriweather } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import BottomNav from '@/components/BottomNav'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import { FavoritesProvider } from '@/contexts/FavoritesContext'
 import { DataProvider } from '@/contexts/DataContext'
@@ -59,7 +58,6 @@ export default function RootLayout({
                 {children}
               </main>
               <Footer />
-              <BottomNav />
               <ToastContainer />
             </FavoritesProvider>
           </DataProvider>
