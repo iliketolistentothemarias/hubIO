@@ -1,23 +1,10 @@
 'use client'
 
-/**
- * Local Business Directory Page
- * 
- * Comprehensive directory of local businesses with advanced features:
- * - Business listings with detailed info
- * - Business categories and tags
- * - Reviews and ratings
- * - Business hours
- * - Contact information
- * - Special offers
- * - Business verification badges
- */
-
 import { useState, useMemo } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Store, Star, MapPin, Phone, Globe, Clock, Award, TrendingUp, 
-  Filter, Search, Grid, List, CheckCircle, DollarSign 
+  Filter, Search, Grid, List, CheckCircle, DollarSign, X, Mail
 } from 'lucide-react'
 import TabNavigation from '@/components/TabNavigation'
 import LiquidGlass from '@/components/LiquidGlass'
@@ -46,7 +33,7 @@ const mockBusinesses: Business[] = [
     id: '1',
     name: 'Downtown Coffee Co.',
     category: 'Food & Beverage',
-    description: 'Local coffee shop serving artisanal coffee and fresh pastries. Family-owned since 2010.',
+    description: 'Local coffee shop serving artisanal coffee and fresh pastries. Family-owned since 2010. We source our beans from sustainable farms and roast them in-house every morning. Our pastries are baked fresh daily by our in-house baker.',
     address: '123 Main Street',
     phone: '(555) 123-4567',
     website: 'https://downtowncoffee.com',
@@ -63,7 +50,7 @@ const mockBusinesses: Business[] = [
     id: '2',
     name: 'Green Thumb Garden Center',
     category: 'Retail',
-    description: 'Full-service garden center with plants, tools, and expert gardening advice.',
+    description: 'Full-service garden center with plants, tools, and expert gardening advice. We carry over 500 varieties of plants, from native wildflowers to exotic tropicals, plus all the supplies you need to help them thrive.',
     address: '456 Garden Way',
     phone: '(555) 234-5678',
     website: 'https://greenthumb.com',
@@ -80,7 +67,7 @@ const mockBusinesses: Business[] = [
     id: '3',
     name: 'Tech Repair Pro',
     category: 'Services',
-    description: 'Expert phone, tablet, and computer repair. Fast turnaround, warranty included.',
+    description: 'Expert phone, tablet, and computer repair. Fast turnaround, warranty included. Our certified technicians have over 10 years of combined experience and can fix everything from cracked screens to logic board failures.',
     address: '789 Tech Plaza',
     phone: '(555) 345-6789',
     website: 'https://techrepairpro.com',
@@ -101,6 +88,7 @@ export default function BusinessPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<'rating' | 'reviews' | 'name'>('rating')
+  const [detailBusiness, setDetailBusiness] = useState<Business | null>(null)
 
   const filteredBusinesses = useMemo(() => {
     let filtered = mockBusinesses
@@ -118,7 +106,6 @@ export default function BusinessPage() {
       )
     }
 
-    // Sort
     filtered.sort((a, b) => {
       if (sortBy === 'rating') return b.rating - a.rating
       if (sortBy === 'reviews') return b.reviewCount - a.reviewCount
@@ -162,7 +149,6 @@ export default function BusinessPage() {
         >
           <LiquidGlass intensity="medium">
             <div className="p-6">
-              {/* Search Bar */}
               <div className="relative mb-6">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
@@ -177,7 +163,6 @@ export default function BusinessPage() {
               </div>
 
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                {/* Category Filter */}
                 <div className="flex flex-wrap gap-2">
                   {categories.map((cat) => (
                     <button
@@ -194,7 +179,6 @@ export default function BusinessPage() {
                   ))}
                 </div>
 
-                {/* Sort and View */}
                 <div className="flex gap-2">
                   <select
                     value={sortBy}
@@ -237,18 +221,152 @@ export default function BusinessPage() {
             }
 
             return viewMode === 'list' ? (
-              <BusinessListView businesses={displayBusinesses} />
+              <BusinessListView businesses={displayBusinesses} onViewDetails={setDetailBusiness} />
             ) : (
-              <BusinessGridView businesses={displayBusinesses} />
+              <BusinessGridView businesses={displayBusinesses} onViewDetails={setDetailBusiness} />
             )
           }}
         </TabNavigation>
       </div>
+
+      {/* Business Details Modal */}
+      <AnimatePresence>
+        {detailBusiness && (
+          <>
+            <motion.div
+              key="biz-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDetailBusiness(null)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60000]"
+            />
+            <motion.div
+              key="biz-modal"
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 z-[60001] flex items-center justify-center p-4"
+              onClick={() => setDetailBusiness(null)}
+            >
+              <div
+                className="bg-white dark:bg-[#1a1a1a] rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal header */}
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{detailBusiness.name}</h2>
+                      {detailBusiness.verified && <CheckCircle className="w-5 h-5 text-green-500 shrink-0" />}
+                      {detailBusiness.featured && <Award className="w-5 h-5 text-yellow-500 shrink-0" />}
+                    </div>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{detailBusiness.category}</span>
+                  </div>
+                  <button
+                    onClick={() => setDetailBusiness(null)}
+                    className="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 transition shrink-0"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-6">
+                  {/* Rating */}
+                  <div className="flex items-center gap-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${i < Math.floor(detailBusiness.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300 dark:text-gray-600'}`}
+                      />
+                    ))}
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {detailBusiness.rating} ({detailBusiness.reviewCount} reviews)
+                    </span>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed">{detailBusiness.description}</p>
+
+                  {/* Contact details */}
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                      <MapPin className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+                      <span>{detailBusiness.address}</span>
+                    </div>
+                    <div className="flex items-start gap-3 text-gray-700 dark:text-gray-300">
+                      <Clock className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+                      <span>{detailBusiness.hours}</span>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Phone className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+                      <a href={`tel:${detailBusiness.phone}`} className="text-primary-600 hover:underline">
+                        {detailBusiness.phone}
+                      </a>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <Mail className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+                      <a href={`mailto:${detailBusiness.email}`} className="text-primary-600 hover:underline">
+                        {detailBusiness.email}
+                      </a>
+                    </div>
+                    {detailBusiness.website && (
+                      <div className="flex items-start gap-3">
+                        <Globe className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+                        <a href={detailBusiness.website} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline break-all">
+                          {detailBusiness.website}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Special offers */}
+                  {detailBusiness.offers && detailBusiness.offers.length > 0 && (
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-2xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <DollarSign className="w-4 h-4 text-yellow-600" />
+                        <span className="text-sm font-semibold text-yellow-800 dark:text-yellow-300">Special Offers</span>
+                      </div>
+                      <ul className="space-y-1">
+                        {detailBusiness.offers.map((offer, i) => (
+                          <li key={i} className="text-sm text-yellow-700 dark:text-yellow-400">• {offer}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2">
+                    {detailBusiness.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs rounded-full"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* CTA */}
+                  <a
+                    href={detailBusiness.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-3 rounded-2xl font-semibold hover:shadow-lg transition-all"
+                  >
+                    Visit Website
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
 
-function BusinessGridView({ businesses }: { businesses: Business[] }) {
+function BusinessGridView({ businesses, onViewDetails }: { businesses: Business[]; onViewDetails: (b: Business) => void }) {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {businesses.map((business, index) => (
@@ -261,7 +379,6 @@ function BusinessGridView({ businesses }: { businesses: Business[] }) {
         >
           <LiquidGlass intensity="medium">
             <div className="p-6">
-              {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
@@ -281,7 +398,6 @@ function BusinessGridView({ businesses }: { businesses: Business[] }) {
                 </div>
               </div>
 
-              {/* Rating */}
               <div className="flex items-center gap-2 mb-4">
                 <div className="flex items-center">
                   {[...Array(5)].map((_, i) => (
@@ -302,7 +418,6 @@ function BusinessGridView({ businesses }: { businesses: Business[] }) {
 
               <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{business.description}</p>
 
-              {/* Info */}
               <div className="space-y-2 mb-4 text-sm">
                 <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                   <MapPin className="w-4 h-4 text-primary-600" />
@@ -318,7 +433,6 @@ function BusinessGridView({ businesses }: { businesses: Business[] }) {
                 </div>
               </div>
 
-              {/* Offers */}
               {business.offers && business.offers.length > 0 && (
                 <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl">
                   <div className="flex items-center gap-2 mb-2">
@@ -331,7 +445,6 @@ function BusinessGridView({ businesses }: { businesses: Business[] }) {
                 </div>
               )}
 
-              {/* Tags */}
               <div className="flex flex-wrap gap-2 mb-4">
                 {business.tags.slice(0, 3).map((tag) => (
                   <span
@@ -343,7 +456,10 @@ function BusinessGridView({ businesses }: { businesses: Business[] }) {
                 ))}
               </div>
 
-              <button className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-2 rounded-2xl font-semibold hover:shadow-lg transition-all">
+              <button
+                onClick={() => onViewDetails(business)}
+                className="w-full bg-gradient-to-r from-primary-600 to-secondary-600 text-white py-2 rounded-2xl font-semibold hover:shadow-lg transition-all"
+              >
                 View Details
               </button>
             </div>
@@ -354,7 +470,7 @@ function BusinessGridView({ businesses }: { businesses: Business[] }) {
   )
 }
 
-function BusinessListView({ businesses }: { businesses: Business[] }) {
+function BusinessListView({ businesses, onViewDetails }: { businesses: Business[]; onViewDetails: (b: Business) => void }) {
   return (
     <div className="space-y-4">
       {businesses.map((business, index) => (
@@ -415,7 +531,10 @@ function BusinessListView({ businesses }: { businesses: Business[] }) {
                 </div>
               </div>
               <div className="flex-shrink-0">
-                <button className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all">
+                <button
+                  onClick={() => onViewDetails(business)}
+                  className="px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white rounded-2xl font-semibold hover:shadow-lg transition-all"
+                >
                   View Details
                 </button>
               </div>
@@ -426,4 +545,3 @@ function BusinessListView({ businesses }: { businesses: Business[] }) {
     </div>
   )
 }
-

@@ -5,10 +5,24 @@ import { useRouter } from 'next/navigation'
 import AuthRequired from '@/components/auth/AuthRequired'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
-import { RefreshCw, Check, Users, Search, ChevronDown, Loader2 } from 'lucide-react'
+import { RefreshCw, Check, Users, Search, ChevronDown, Loader2, FileText, Trash2 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 
-type AdminTab = 'submissions' | 'resources' | 'users'
+type AdminTab = 'submissions' | 'resources' | 'users' | 'grant-applications'
+
+interface GrantApplication {
+  id: string
+  grantId: string
+  grantTitle: string
+  grantOrganization: string
+  applicantName: string
+  applicantEmail: string
+  applicantPhone: string
+  organization: string
+  reason: string
+  projectDescription: string
+  submittedAt: string
+}
 
 const ROLES = ['volunteer', 'organizer', 'admin'] as const
 type UserRole = typeof ROLES[number]
@@ -72,6 +86,9 @@ export default function AdminDashboardPage() {
   const [openRoleDropdown, setOpenRoleDropdown] = useState<string | null>(null)
   const [roleChangeError, setRoleChangeError] = useState<string | null>(null)
   const roleDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Grant applications tab state
+  const [grantApplications, setGrantApplications] = useState<GrantApplication[]>([])
 
   const backgroundClasses = useMemo(() => {
     return themeMode === 'light'
@@ -139,6 +156,26 @@ export default function AdminDashboardPage() {
       console.error('Failed to load users', e)
     } finally {
       setUsersLoading(false)
+    }
+  }
+
+  const loadGrantApplications = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('grantApplications') || '[]') as GrantApplication[]
+      setGrantApplications(stored.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()))
+    } catch {
+      setGrantApplications([])
+    }
+  }
+
+  const deleteGrantApplication = (id: string) => {
+    if (!confirm('Delete this application?')) return
+    try {
+      const updated = grantApplications.filter(a => a.id !== id)
+      localStorage.setItem('grantApplications', JSON.stringify(updated))
+      setGrantApplications(updated)
+    } catch {
+      // ignore
     }
   }
 
@@ -335,6 +372,13 @@ export default function AdminDashboardPage() {
     }
   }, [activeTab, isAdminVerified])
 
+  // Load grant applications when tab switches to 'grant-applications'
+  useEffect(() => {
+    if (isAdminVerified && activeTab === 'grant-applications') {
+      loadGrantApplications()
+    }
+  }, [activeTab, isAdminVerified])
+
   // Close role dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -430,14 +474,16 @@ export default function AdminDashboardPage() {
                   Communify Admin
                 </p>
                 <h1 className="text-4xl font-bold tracking-tight">
-                  {activeTab === 'submissions' ? 'Resource Approvals' : activeTab === 'resources' ? 'Published Resources' : 'User Roles'}
+                  {activeTab === 'submissions' ? 'Resource Approvals' : activeTab === 'resources' ? 'Published Resources' : activeTab === 'users' ? 'User Roles' : 'Grant Applications'}
                 </h1>
               <p className={`text-base ${headerTextColor} max-w-2xl`}>
                   {activeTab === 'submissions'
                     ? 'Every submission lands here first. Approve the trustworthy resources so they land in the public directory—or reject them if they need more work.'
                     : activeTab === 'resources'
                     ? 'Manage all published resources in the directory.'
-                    : 'View and change every user\'s role in real time.'}
+                    : activeTab === 'users'
+                    ? 'View and change every user\'s role in real time.'
+                    : 'All grant applications submitted through the Grants page.'}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -445,7 +491,8 @@ export default function AdminDashboardPage() {
                   onClick={() => {
                     if (activeTab === 'submissions') fetchSubmissions()
                     else if (activeTab === 'resources') fetchPublishedResources()
-                    else fetchUsers(userSearch)
+                    else if (activeTab === 'users') fetchUsers(userSearch)
+                    else loadGrantApplications()
                   }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 transition"
                 >
@@ -459,7 +506,7 @@ export default function AdminDashboardPage() {
             <div className={`flex overflow-x-auto scrollbar-none gap-1 p-1 rounded-2xl w-fit ${
               themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'
             }`}>
-              {(['submissions', 'resources', 'users'] as AdminTab[]).map((tab) => (
+              {(['submissions', 'resources', 'users', 'grant-applications'] as AdminTab[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -471,7 +518,12 @@ export default function AdminDashboardPage() {
                         : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
                   }`}
                 >
-                  {tab === 'submissions' ? 'Submissions' : tab === 'resources' ? 'Resources' : 'Users'}
+                  {tab === 'submissions' ? 'Submissions' : tab === 'resources' ? 'Resources' : tab === 'users' ? 'Users' : 'Grant Applications'}
+                  {tab === 'grant-applications' && grantApplications.length > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">
+                      {grantApplications.length}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -830,6 +882,65 @@ export default function AdminDashboardPage() {
                               ))}
                             </div>
                           )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Grant Applications tab ── */}
+            {activeTab === 'grant-applications' && (
+              <div className="space-y-5">
+                {grantApplications.length === 0 ? (
+                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
+                    <FileText size={48} className="mx-auto opacity-30 mb-3" />
+                    <p className="text-lg font-semibold">No grant applications yet</p>
+                    <p className="text-sm opacity-70 mt-1">Applications submitted via the Grants page will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {grantApplications.map((app) => (
+                      <div key={app.id} className={`${cardClasses} rounded-[28px] p-6 space-y-4`}>
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Grant Application</p>
+                            <h3 className="text-xl font-bold">{app.grantTitle}</h3>
+                            <p className="text-sm opacity-70">{app.grantOrganization}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs opacity-60 whitespace-nowrap">
+                              {new Date(app.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <button
+                              onClick={() => deleteGrantApplication(app.id)}
+                              className="p-2 rounded-full text-red-400 hover:bg-red-500/10 transition"
+                              title="Delete application"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                          <div className="space-y-1.5">
+                            <p><span className="opacity-60">Applicant:</span> <strong>{app.applicantName}</strong></p>
+                            <p><span className="opacity-60">Email:</span> {app.applicantEmail}</p>
+                            {app.applicantPhone && <p><span className="opacity-60">Phone:</span> {app.applicantPhone}</p>}
+                            {app.organization && <p><span className="opacity-60">Organization:</span> {app.organization}</p>}
+                          </div>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="opacity-60 text-xs uppercase tracking-wider mb-0.5">Why applying</p>
+                              <p className="leading-relaxed">{app.reason}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="opacity-60 text-xs uppercase tracking-wider mb-0.5">Project / Use Description</p>
+                          <p className="text-sm leading-relaxed">{app.projectDescription}</p>
                         </div>
                       </div>
                     ))}
