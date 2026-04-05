@@ -8,7 +8,7 @@ import { apiFetch } from '@/lib/api/client-fetch'
 import { RefreshCw, Check, Users, Search, ChevronDown, Loader2, FileText, Trash2 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
 
-type AdminTab = 'submissions' | 'resources' | 'users' | 'grant-applications'
+type AdminTab = 'submissions' | 'resources' | 'users' | 'grant-applications' | 'biz-submissions' | 'grant-listings'
 
 interface GrantApplication {
   id: string
@@ -21,6 +21,34 @@ interface GrantApplication {
   organization: string
   reason: string
   projectDescription: string
+  submittedAt: string
+}
+
+interface BizSubmission {
+  id: string
+  businessName: string
+  category: string
+  description: string
+  address: string
+  phone: string
+  email: string
+  website: string
+  hours: string
+  contactName: string
+  submittedAt: string
+}
+
+interface GrantListing {
+  id: string
+  title: string
+  organization: string
+  description: string
+  category: string
+  amount: string
+  eligibility: string
+  requirements: string
+  contactName: string
+  contactEmail: string
   submittedAt: string
 }
 
@@ -89,6 +117,11 @@ export default function AdminDashboardPage() {
 
   // Grant applications tab state
   const [grantApplications, setGrantApplications] = useState<GrantApplication[]>([])
+  const [approvedIds, setApprovedIds] = useState<Set<string>>(new Set())
+
+  // Business & grant listing submissions state
+  const [bizSubmissions, setBizSubmissions] = useState<BizSubmission[]>([])
+  const [grantListings, setGrantListings] = useState<GrantListing[]>([])
 
   const backgroundClasses = useMemo(() => {
     return themeMode === 'light'
@@ -169,14 +202,47 @@ export default function AdminDashboardPage() {
   }
 
   const deleteGrantApplication = (id: string) => {
-    if (!confirm('Delete this application?')) return
     try {
       const updated = grantApplications.filter(a => a.id !== id)
       localStorage.setItem('grantApplications', JSON.stringify(updated))
       setGrantApplications(updated)
-    } catch {
-      // ignore
-    }
+      setApprovedIds(prev => { const s = new Set(prev); s.delete(id); return s })
+    } catch { /* ignore */ }
+  }
+
+  const approveGrantApplication = (id: string) => {
+    setApprovedIds(prev => new Set(prev).add(id))
+    setTimeout(() => deleteGrantApplication(id), 1200)
+  }
+
+  const loadBizSubmissions = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('businessSubmissions') || '[]') as BizSubmission[]
+      setBizSubmissions(stored.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()))
+    } catch { setBizSubmissions([]) }
+  }
+
+  const deleteBizSubmission = (id: string) => {
+    try {
+      const updated = bizSubmissions.filter(s => s.id !== id)
+      localStorage.setItem('businessSubmissions', JSON.stringify(updated))
+      setBizSubmissions(updated)
+    } catch { /* ignore */ }
+  }
+
+  const loadGrantListings = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('grantListingSubmissions') || '[]') as GrantListing[]
+      setGrantListings(stored.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()))
+    } catch { setGrantListings([]) }
+  }
+
+  const deleteGrantListing = (id: string) => {
+    try {
+      const updated = grantListings.filter(s => s.id !== id)
+      localStorage.setItem('grantListingSubmissions', JSON.stringify(updated))
+      setGrantListings(updated)
+    } catch { /* ignore */ }
   }
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
@@ -377,6 +443,12 @@ export default function AdminDashboardPage() {
     if (isAdminVerified && activeTab === 'grant-applications') {
       loadGrantApplications()
     }
+    if (isAdminVerified && activeTab === 'biz-submissions') {
+      loadBizSubmissions()
+    }
+    if (isAdminVerified && activeTab === 'grant-listings') {
+      loadGrantListings()
+    }
   }, [activeTab, isAdminVerified])
 
   // Close role dropdown on outside click
@@ -474,16 +546,25 @@ export default function AdminDashboardPage() {
                   Communify Admin
                 </p>
                 <h1 className="text-4xl font-bold tracking-tight">
-                  {activeTab === 'submissions' ? 'Resource Approvals' : activeTab === 'resources' ? 'Published Resources' : activeTab === 'users' ? 'User Roles' : 'Grant Applications'}
+                  {activeTab === 'submissions' ? 'Resource Approvals'
+                    : activeTab === 'resources' ? 'Published Resources'
+                    : activeTab === 'users' ? 'User Roles'
+                    : activeTab === 'grant-applications' ? 'Grant Applications'
+                    : activeTab === 'biz-submissions' ? 'Business Submissions'
+                    : 'Grant Listing Submissions'}
                 </h1>
               <p className={`text-base ${headerTextColor} max-w-2xl`}>
                   {activeTab === 'submissions'
-                    ? 'Every submission lands here first. Approve the trustworthy resources so they land in the public directory—or reject them if they need more work.'
+                    ? 'Every submission lands here first. Approve resources so they land in the public directory.'
                     : activeTab === 'resources'
                     ? 'Manage all published resources in the directory.'
                     : activeTab === 'users'
                     ? 'View and change every user\'s role in real time.'
-                    : 'All grant applications submitted through the Grants page.'}
+                    : activeTab === 'grant-applications'
+                    ? 'All grant applications submitted through the Grants page.'
+                    : activeTab === 'biz-submissions'
+                    ? 'Business listings submitted for review via the Submit page.'
+                    : 'New grant opportunities submitted for review via the Submit page.'}
                 </p>
               </div>
               <div className="flex items-center gap-3">
@@ -492,7 +573,9 @@ export default function AdminDashboardPage() {
                     if (activeTab === 'submissions') fetchSubmissions()
                     else if (activeTab === 'resources') fetchPublishedResources()
                     else if (activeTab === 'users') fetchUsers(userSearch)
-                    else loadGrantApplications()
+                    else if (activeTab === 'grant-applications') loadGrantApplications()
+                    else if (activeTab === 'biz-submissions') loadBizSubmissions()
+                    else loadGrantListings()
                   }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 transition"
                 >
@@ -503,26 +586,37 @@ export default function AdminDashboardPage() {
             </header>
 
             {/* Tab bar */}
-            <div className={`flex overflow-x-auto scrollbar-none gap-1 p-1 rounded-2xl w-fit ${
+            <div className={`flex overflow-x-auto scrollbar-none gap-1 p-1 rounded-2xl ${
               themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'
             }`}>
-              {(['submissions', 'resources', 'users', 'grant-applications'] as AdminTab[]).map((tab) => (
+              {([
+                { id: 'submissions', label: 'Submissions' },
+                { id: 'resources', label: 'Resources' },
+                { id: 'users', label: 'Users' },
+                { id: 'biz-submissions', label: 'Businesses' },
+                { id: 'grant-listings', label: 'Grant Listings' },
+                { id: 'grant-applications', label: 'Grant Apps' },
+              ] as { id: AdminTab; label: string }[]).map(({ id, label }) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 rounded-xl text-sm font-semibold capitalize transition whitespace-nowrap ${
-                    activeTab === tab
+                  key={id}
+                  onClick={() => setActiveTab(id)}
+                  className={`px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap ${
+                    activeTab === id
                       ? 'bg-white text-[#2C2416] shadow'
                       : themeMode === 'dark'
                         ? 'text-white/70 hover:text-white'
                         : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
                   }`}
                 >
-                  {tab === 'submissions' ? 'Submissions' : tab === 'resources' ? 'Resources' : tab === 'users' ? 'Users' : 'Grant Applications'}
-                  {tab === 'grant-applications' && grantApplications.length > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">
-                      {grantApplications.length}
-                    </span>
+                  {label}
+                  {id === 'grant-applications' && grantApplications.length > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{grantApplications.length}</span>
+                  )}
+                  {id === 'biz-submissions' && bizSubmissions.length > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{bizSubmissions.length}</span>
+                  )}
+                  {id === 'grant-listings' && grantListings.length > 0 && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{grantListings.length}</span>
                   )}
                 </button>
               ))}
@@ -903,24 +997,20 @@ export default function AdminDashboardPage() {
                   <div className="space-y-4">
                     {grantApplications.map((app) => (
                       <div key={app.id} className={`${cardClasses} rounded-[28px] p-6 space-y-4`}>
+                        {approvedIds.has(app.id) && (
+                          <div className="flex items-center gap-2 text-emerald-500 font-semibold text-sm">
+                            <Check size={16} /> Application Accepted
+                          </div>
+                        )}
                         <div className="flex flex-wrap items-start justify-between gap-4">
                           <div>
                             <p className="text-xs uppercase tracking-[0.3em] opacity-60">Grant Application</p>
                             <h3 className="text-xl font-bold">{app.grantTitle}</h3>
                             <p className="text-sm opacity-70">{app.grantOrganization}</p>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <span className="text-xs opacity-60 whitespace-nowrap">
-                              {new Date(app.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </span>
-                            <button
-                              onClick={() => deleteGrantApplication(app.id)}
-                              className="p-2 rounded-full text-red-400 hover:bg-red-500/10 transition"
-                              title="Delete application"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
+                          <span className="text-xs opacity-60 whitespace-nowrap">
+                            {new Date(app.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
                         </div>
 
                         <div className="grid md:grid-cols-2 gap-4 text-sm">
@@ -930,17 +1020,145 @@ export default function AdminDashboardPage() {
                             {app.applicantPhone && <p><span className="opacity-60">Phone:</span> {app.applicantPhone}</p>}
                             {app.organization && <p><span className="opacity-60">Organization:</span> {app.organization}</p>}
                           </div>
-                          <div className="space-y-2">
-                            <div>
-                              <p className="opacity-60 text-xs uppercase tracking-wider mb-0.5">Why applying</p>
-                              <p className="leading-relaxed">{app.reason}</p>
-                            </div>
+                          <div>
+                            <p className="opacity-60 text-xs uppercase tracking-wider mb-0.5">Why applying</p>
+                            <p className="leading-relaxed">{app.reason}</p>
                           </div>
                         </div>
 
                         <div>
                           <p className="opacity-60 text-xs uppercase tracking-wider mb-0.5">Project / Use Description</p>
                           <p className="text-sm leading-relaxed">{app.projectDescription}</p>
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={() => approveGrantApplication(app.id)}
+                            disabled={approvedIds.has(app.id)}
+                            className="px-5 py-2 rounded-full bg-emerald-500/90 text-white text-sm font-semibold disabled:opacity-40 transition"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => deleteGrantApplication(app.id)}
+                            className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Business Submissions tab ── */}
+            {activeTab === 'biz-submissions' && (
+              <div className="space-y-5">
+                {bizSubmissions.length === 0 ? (
+                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
+                    <FileText size={48} className="mx-auto opacity-30 mb-3" />
+                    <p className="text-lg font-semibold">No business submissions yet</p>
+                    <p className="text-sm opacity-70 mt-1">Submissions from the Submit → Business form will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {bizSubmissions.map((biz) => (
+                      <div key={biz.id} className={`${cardClasses} rounded-[28px] p-6 space-y-4`}>
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Business Submission</p>
+                            <h3 className="text-xl font-bold">{biz.businessName}</h3>
+                            <p className="text-sm opacity-70">{biz.category}</p>
+                          </div>
+                          <span className="text-xs opacity-60 whitespace-nowrap">
+                            {new Date(biz.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed opacity-80">{biz.description}</p>
+                        <div className="grid md:grid-cols-2 gap-3 text-sm">
+                          <div className="space-y-1">
+                            {biz.address && <p><span className="opacity-60">Address:</span> {biz.address}</p>}
+                            {biz.phone && <p><span className="opacity-60">Phone:</span> {biz.phone}</p>}
+                            {biz.email && <p><span className="opacity-60">Email:</span> {biz.email}</p>}
+                          </div>
+                          <div className="space-y-1">
+                            <p><span className="opacity-60">Website:</span>{' '}
+                              <a href={biz.website} target="_blank" rel="noreferrer" className="underline text-blue-400">{biz.website}</a>
+                            </p>
+                            {biz.hours && <p><span className="opacity-60">Hours:</span> {biz.hours}</p>}
+                            {biz.contactName && <p><span className="opacity-60">Contact:</span> {biz.contactName}</p>}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={() => deleteBizSubmission(biz.id)}
+                            className="px-5 py-2 rounded-full bg-emerald-500/90 text-white text-sm font-semibold transition"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => deleteBizSubmission(biz.id)}
+                            className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Grant Listing Submissions tab ── */}
+            {activeTab === 'grant-listings' && (
+              <div className="space-y-5">
+                {grantListings.length === 0 ? (
+                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
+                    <FileText size={48} className="mx-auto opacity-30 mb-3" />
+                    <p className="text-lg font-semibold">No grant listings submitted yet</p>
+                    <p className="text-sm opacity-70 mt-1">Submissions from the Submit → Grant form will appear here.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {grantListings.map((gl) => (
+                      <div key={gl.id} className={`${cardClasses} rounded-[28px] p-6 space-y-4`}>
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Grant Listing</p>
+                            <h3 className="text-xl font-bold">{gl.title}</h3>
+                            <p className="text-sm opacity-70">{gl.organization} · {gl.category}</p>
+                          </div>
+                          <span className="text-xs opacity-60 whitespace-nowrap">
+                            {new Date(gl.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed opacity-80">{gl.description}</p>
+                        <div className="grid md:grid-cols-2 gap-3 text-sm">
+                          <div className="space-y-1">
+                            <p><span className="opacity-60">Amount:</span> {gl.amount}</p>
+                            <p><span className="opacity-60">Eligibility:</span> {gl.eligibility}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p><span className="opacity-60">Requirements:</span> {gl.requirements}</p>
+                            {gl.contactEmail && <p><span className="opacity-60">Contact:</span> {gl.contactName} · {gl.contactEmail}</p>}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={() => deleteGrantListing(gl.id)}
+                            className="px-5 py-2 rounded-full bg-emerald-500/90 text-white text-sm font-semibold transition"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => deleteGrantListing(gl.id)}
+                            className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                          >
+                            Remove
+                          </button>
                         </div>
                       </div>
                     ))}

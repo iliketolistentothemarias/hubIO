@@ -14,6 +14,7 @@ import Notifications from '@/components/Notifications'
 export default function Navigation() {
   const [portalReady, setPortalReady] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
+  const [mobileExpanded, setMobileExpanded] = useState<string | null>(null)
   const [scrolled, setScrolled] = useState(false)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
@@ -91,6 +92,7 @@ export default function Navigation() {
   // Close mobile menu on route change
   useEffect(() => {
     setIsOpen(false)
+    setMobileExpanded(null)
   }, [pathname])
 
   useEffect(() => {
@@ -159,11 +161,15 @@ export default function Navigation() {
       { href: '/events', label: 'Events' },
       { href: '/messages', label: 'Messages' },
       { href: '/dashboard', label: 'Dashboard' },
+      { href: '/analytics', label: 'Analytics' },
       {
-        href: '/analytics',
-        label: 'Analytics',
+        label: 'Submit',
+        submenu: [
+          { href: '/submit', label: 'Resource' },
+          { href: '/submit/business', label: 'Business' },
+          { href: '/submit/grant', label: 'Grant' },
+        ]
       },
-      { href: '/submit', label: 'Submit' },
       { href: '/about', label: 'About' },
       { href: '/references', label: 'References' },
     ]
@@ -492,42 +498,70 @@ export default function Navigation() {
                   </button>
                 </div>
 
-                <div className="space-y-2">
-                  {navItems.map((item) => (
-                    <div key={item.href || item.label} className="py-1">
-                      {item.submenu ? (
-                        <div className="space-y-2">
-                          <div className="px-4 py-2 text-xs font-black uppercase tracking-widest text-[#8B6F47] dark:text-[#D4A574] opacity-60">
-                            {item.label}
-                          </div>
-                          {item.submenu.map((subItem) => (
-                            <Link
-                              key={subItem.href}
-                              href={subItem.href}
-                              onClick={() => setIsOpen(false)}
-                              className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all ${pathname === subItem.href
-                                  ? 'bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 text-[#8B6F47] dark:text-[#D4A574]'
-                                  : 'text-[#6B5D47] dark:text-[#B8A584] active:bg-gray-100 dark:active:bg-[#2c2c3e]'
-                                }`}
-                            >
-                              {subItem.label}
-                            </Link>
-                          ))}
-                        </div>
-                      ) : item.href ? (
-                        <Link
-                          href={item.href}
-                          onClick={() => setIsOpen(false)}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all ${pathname === item.href
-                              ? 'bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 text-[#8B6F47] dark:text-[#D4A574]'
-                              : 'text-[#6B5D47] dark:text-[#B8A584] active:bg-gray-100 dark:active:bg-[#2c2c3e]'
+                <div className="space-y-1">
+                  {navItems.map((item) => {
+                    const key = item.href || item.label
+                    const isExpanded = mobileExpanded === key
+                    if (item.submenu) {
+                      const anyActive = item.submenu.some(s => pathname === s.href)
+                      return (
+                        <div key={key}>
+                          <button
+                            onClick={() => setMobileExpanded(isExpanded ? null : key)}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-medium transition-all ${
+                              anyActive
+                                ? 'bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 text-[#8B6F47] dark:text-[#D4A574]'
+                                : 'text-[#6B5D47] dark:text-[#B8A584] active:bg-gray-100 dark:active:bg-[#2c2c3e]'
                             }`}
-                        >
-                          {item.label}
-                        </Link>
-                      ) : null}
-                    </div>
-                  ))}
+                          >
+                            <span>{item.label}</span>
+                            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                          </button>
+                          <AnimatePresence initial={false}>
+                            {isExpanded && (
+                              <motion.div
+                                key="submenu"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="pl-4 pt-1 pb-1 space-y-0.5">
+                                  {item.submenu.map((subItem) => (
+                                    <Link
+                                      key={subItem.href}
+                                      href={subItem.href}
+                                      onClick={() => { setIsOpen(false); setMobileExpanded(null) }}
+                                      className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl text-sm font-medium transition-all ${pathname === subItem.href
+                                        ? 'bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 text-[#8B6F47] dark:text-[#D4A574]'
+                                        : 'text-[#6B5D47] dark:text-[#B8A584] active:bg-gray-100 dark:active:bg-[#2c2c3e]'
+                                      }`}
+                                    >
+                                      {subItem.label}
+                                    </Link>
+                                  ))}
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      )
+                    }
+                    return item.href ? (
+                      <Link
+                        key={key}
+                        href={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-medium transition-all ${pathname === item.href
+                          ? 'bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 text-[#8B6F47] dark:text-[#D4A574]'
+                          : 'text-[#6B5D47] dark:text-[#B8A584] active:bg-gray-100 dark:active:bg-[#2c2c3e]'
+                        }`}
+                      >
+                        {item.label}
+                      </Link>
+                    ) : null
+                  })}
                 </div>
 
                 <div className="pt-6 border-t border-gray-100 dark:border-[#2c2c3e]">
