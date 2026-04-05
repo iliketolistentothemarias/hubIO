@@ -124,7 +124,7 @@ function LoginContent() {
                       <span className="opacity-60">testuser1</span>
                     </li>
                     <li className="flex justify-between">
-                      <span>Volunteer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser2@gmail.com</span></span>
+                      <span>Community Organizer: <span className="text-[#2C2416] dark:text-[#F5F3F0]">testuser2@gmail.com</span></span>
                       <span className="opacity-60">testuser2</span>
                     </li>
                     <li className="flex justify-between font-semibold">
@@ -135,7 +135,7 @@ function LoginContent() {
                 </div>
 
                 <p className="italic text-xs">
-                  The admin panel is located in the top right corner after clicking on the profile name.
+                  The admin panel is in the top-right profile menu. Community Organizers have access to the Organizer Panel from the same menu.
                 </p>
 
                 <div className="pt-3 border-t border-[#E8E0D6] dark:border-white/10 grid grid-cols-2 gap-2">
