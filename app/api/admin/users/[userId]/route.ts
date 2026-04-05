@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireUserFromRequest } from '@/lib/auth/server-request'
 
-// PATCH /api/admin/users/[userId] — change a user's role
+// PATCH /api/admin/users/[userId] — change a user's role (upserts profile if missing)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { userId: string } }
@@ -25,12 +25,42 @@ export async function PATCH(
     }
 
     const admin = createAdminClient()
-    const { data, error } = await admin
+
+    // Check if a public.users profile already exists
+    const { data: existing } = await admin
       .from('users')
-      .update({ role })
+      .select('id')
       .eq('id', params.userId)
-      .select('id, name, email, role')
-      .single()
+      .maybeSingle()
+
+    let data, error
+
+    if (existing) {
+      // Profile exists — plain update
+      ;({ data, error } = await admin
+        .from('users')
+        .update({ role })
+        .eq('id', params.userId)
+        .select('id, name, email, role')
+        .single())
+    } else {
+      // No profile yet (user signed up but trigger wasn't applied) — fetch auth info and upsert
+      const { data: authUser, error: authErr } = await admin.auth.admin.getUserById(params.userId)
+      if (authErr || !authUser?.user) {
+        return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
+      }
+      const au = authUser.user
+      ;({ data, error } = await admin
+        .from('users')
+        .insert({
+          id: au.id,
+          email: au.email || '',
+          name: (au.user_metadata?.name as string) || au.email?.split('@')[0] || 'Unknown',
+          role,
+        })
+        .select('id, name, email, role')
+        .single())
+    }
 
     if (error) throw error
 

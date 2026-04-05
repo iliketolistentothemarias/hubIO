@@ -70,6 +70,7 @@ export default function AdminDashboardPage() {
   const [userSearch, setUserSearch] = useState('')
   const [roleChanging, setRoleChanging] = useState<string | null>(null)
   const [openRoleDropdown, setOpenRoleDropdown] = useState<string | null>(null)
+  const [roleChangeError, setRoleChangeError] = useState<string | null>(null)
   const roleDropdownRef = useRef<HTMLDivElement>(null)
 
   const backgroundClasses = useMemo(() => {
@@ -144,6 +145,7 @@ export default function AdminDashboardPage() {
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     setRoleChanging(userId)
     setOpenRoleDropdown(null)
+    setRoleChangeError(null)
     try {
       const res = await apiFetch(`/api/admin/users/${userId}`, {
         method: 'PATCH',
@@ -153,9 +155,12 @@ export default function AdminDashboardPage() {
       const json = await res.json()
       if (json.success) {
         setAppUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u))
+      } else {
+        setRoleChangeError(json.error || 'Failed to change role')
       }
     } catch (e) {
       console.error('Failed to change role', e)
+      setRoleChangeError('Failed to change role — check your connection')
     } finally {
       setRoleChanging(null)
     }
@@ -728,6 +733,12 @@ export default function AdminDashboardPage() {
             {/* ── Users tab ── */}
             {activeTab === 'users' && (
               <div className="space-y-5">
+                {roleChangeError && (
+                  <div className="p-4 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-600 text-sm flex items-center justify-between gap-3">
+                    <span><strong>Role change failed:</strong> {roleChangeError}</span>
+                    <button onClick={() => setRoleChangeError(null)} className="text-red-400 hover:text-red-600 font-bold text-lg leading-none">×</button>
+                  </div>
+                )}
                 {/* Search */}
                 <div className="relative">
                   <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" />
