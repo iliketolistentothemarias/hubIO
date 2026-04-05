@@ -27,6 +27,9 @@ import LiquidGlass from '@/components/LiquidGlass'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
+
+type CommunityTab = 'chat' | 'members'
+
 export default function ResourceDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -100,7 +103,6 @@ export default function ResourceDetailPage() {
   const [applySuccess, setApplySuccess] = useState(false)
 
   // ── Community (chat + members) ─────────────────────────────────
-  type CommunityTab = 'chat' | 'members'
   const [communityTab, setCommunityTab] = useState<CommunityTab>('chat')
   const [announcements, setAnnouncements] = useState<any[]>([])
   const [chatMsg, setChatMsg] = useState('')
@@ -187,6 +189,9 @@ export default function ResourceDetailPage() {
       .subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [joinStatus, resource?.id])
+
+  // Fetch current user + join status when resource loads
+  useEffect(() => {
     const fetchJoinStatus = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return

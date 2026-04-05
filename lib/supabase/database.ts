@@ -305,15 +305,6 @@ export class SupabaseDatabase {
     return this.mapEventFromSupabase(data)
   }
 
-  // =====================================================================      })
-      .select()
-      .single()
-    
-    if (error) throw error
-    
-    return this.mapEventRegistrationFromSupabase(data)
-  }
-
   async getEventRegistration(eventId: string, userId: string): Promise<EventRegistration | null> {
     const { data, error } = await supabase
       .from('event_registrations')
