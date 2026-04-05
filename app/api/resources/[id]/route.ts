@@ -14,6 +14,7 @@ import { getDatabase } from '@/lib/db/schema'
 import { requireUserFromRequest, requireRoleFromRequest } from '@/lib/auth/server-request'
 import { validateResource } from '@/lib/utils/validation'
 import { ApiResponse, Resource } from '@/lib/types'
+import { createAdminClient } from '@/lib/supabase/server'
 
 const db = getDatabase()
 
@@ -120,6 +121,60 @@ export async function PUT(
       { success: false, error: 'Failed to update resource' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * PATCH /api/resources/[id]
+ *
+ * Update resource settings (visibility, application_question) — requires ownership or admin
+ */
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const user = await requireUserFromRequest(request)
+    const admin = createAdminClient()
+
+    const { data: resource } = await admin
+      .from('resources')
+      .select('submitted_by')
+      .eq('id', params.id)
+      .single()
+
+    if (!resource) {
+      return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 })
+    }
+
+    const isOwner = resource.submitted_by === user.id
+    const isAdmin = user.role === 'admin'
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 })
+    }
+
+    const body = await request.json()
+    const allowed: Record<string, any> = {}
+    if (body.visibility !== undefined) allowed.visibility = body.visibility
+    if (body.application_question !== undefined) allowed.application_question = body.application_question
+
+    if (Object.keys(allowed).length === 0) {
+      return NextResponse.json({ success: false, error: 'No valid fields to update' }, { status: 400 })
+    }
+
+    const { data: updated, error } = await admin
+      .from('resources')
+      .update({ ...allowed, updated_at: new Date().toISOString() })
+      .eq('id', params.id)
+      .select('id, visibility, application_question')
+      .single()
+
+    if (error) throw error
+
+    return NextResponse.json({ success: true, data: updated })
+  } catch (error) {
+    console.error('PATCH /api/resources/[id] error:', error)
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 })
   }
 }
 

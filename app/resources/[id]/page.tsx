@@ -14,17 +14,18 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   MapPin, Phone, Mail, Globe, Clock, Star, Heart, Share2, 
   ArrowLeft, Calendar, Users, Award, Languages, CheckCircle,
-  Navigation, ExternalLink 
+  Navigation, ExternalLink, Lock, Loader2, UserCheck, X
 } from 'lucide-react'
 import { resources as fallbackResources } from '@/data/resources'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import LiquidGlass from '@/components/LiquidGlass'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
+import { apiFetch } from '@/lib/api/client-fetch'
 export default function ResourceDetailPage() {
   const params = useParams()
   const router = useRouter()
@@ -88,6 +89,35 @@ export default function ResourceDetailPage() {
 
   const [relatedResources, setRelatedResources] = useState<any[]>([])
 
+  // ── Join / Apply state ──────────────────────────────────────────
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [joinStatus, setJoinStatus] = useState<null | 'approved' | 'pending' | 'rejected' | 'owner'>(null)
+  const [joinLoading, setJoinLoading] = useState(false)
+  const [showApplyModal, setShowApplyModal] = useState(false)
+  const [applyForm, setApplyForm] = useState({ name: '', email: '', phone: '', skills_answer: '' })
+  const [applyError, setApplyError] = useState('')
+  const [applySuccess, setApplySuccess] = useState(false)
+
+  // Fetch current user + join status when resource loads
+  useEffect(() => {
+    const fetchJoinStatus = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      setCurrentUserId(session.user.id)
+      if (!resource?.id) return
+      try {
+        const res = await apiFetch(`/api/resources/${resource.id}/join`)
+        const json = await res.json()
+        if (json.success) {
+          const { signup, isOwner } = json.data
+          if (isOwner) setJoinStatus('owner')
+          else if (signup) setJoinStatus(signup.status as any)
+        }
+      } catch { /* ignore */ }
+    }
+    fetchJoinStatus()
+  }, [resource?.id])
+
   useEffect(() => {
     if (resource) {
       // Find related resources (same category or shared tags)
@@ -120,6 +150,48 @@ export default function ResourceDetailPage() {
         </div>
       </div>
     )
+  }
+
+  const handleDirectJoin = async () => {
+    if (!resource?.id || joinLoading) return
+    setJoinLoading(true)
+    try {
+      const res = await apiFetch(`/api/resources/${resource.id}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+      const json = await res.json()
+      if (json.success) setJoinStatus('approved')
+      else if (json.currentStatus) setJoinStatus(json.currentStatus as any)
+    } catch (e) { console.error(e) }
+    finally { setJoinLoading(false) }
+  }
+
+  const handleApplySubmit = async () => {
+    if (!resource?.id) return
+    if (!applyForm.name || !applyForm.email || !applyForm.skills_answer) {
+      setApplyError('Name, email, and skills answer are required.')
+      return
+    }
+    setApplyError('')
+    setJoinLoading(true)
+    try {
+      const res = await apiFetch(`/api/resources/${resource.id}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(applyForm),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setJoinStatus('pending')
+        setApplySuccess(true)
+        setTimeout(() => { setShowApplyModal(false); setApplySuccess(false) }, 1500)
+      } else {
+        setApplyError(json.error || 'Failed to submit application.')
+      }
+    } catch (e) { setApplyError('Network error. Please try again.') }
+    finally { setJoinLoading(false) }
   }
 
   const favorite = isFavorite(resource.id)
@@ -275,10 +347,53 @@ export default function ResourceDetailPage() {
             >
               <h3 className="text-xl font-bold text-[#2C2416] dark:text-white mb-6">Quick Actions</h3>
               <div className="space-y-4">
-                <button className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3">
-                  <Mail className="w-5 h-5" />
-                  Contact Organization
-                </button>
+
+                {/* Join / Apply button */}
+                {currentUserId && (
+                  <>
+                    {joinStatus === 'owner' ? (
+                      <Link
+                        href="/organizer"
+                        className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-3.5 rounded-xl md:rounded-2xl font-bold transition-all flex items-center justify-center gap-3"
+                      >
+                        <UserCheck className="w-5 h-5" />
+                        Manage in Organizer Panel
+                      </Link>
+                    ) : joinStatus === 'approved' ? (
+                      <div className="w-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
+                        <CheckCircle className="w-5 h-5" />
+                        You&apos;re a member
+                      </div>
+                    ) : joinStatus === 'pending' ? (
+                      <div className="w-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Application pending
+                      </div>
+                    ) : joinStatus === 'rejected' ? (
+                      <div className="w-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
+                        Application not approved
+                      </div>
+                    ) : resource.visibility === 'private' ? (
+                      <button
+                        onClick={() => setShowApplyModal(true)}
+                        className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-3.5 rounded-xl md:rounded-2xl font-bold hover:shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                      >
+                        <Lock className="w-5 h-5" />
+                        Apply to Join
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleDirectJoin}
+                        disabled={joinLoading}
+                        className="w-full bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#1C1B18] py-3.5 rounded-xl md:rounded-2xl font-bold hover:shadow-lg active:scale-[0.98] disabled:opacity-60 transition-all flex items-center justify-center gap-3"
+                      >
+                        {joinLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Users className="w-5 h-5" />}
+                        Join Resource
+                      </button>
+                    )}
+                  </>
+                )}
+
                 <button className="w-full bg-white dark:bg-[#16141D] text-[#8B6F47] dark:text-[#D4A574] border-2 border-[#8B6F47] dark:border-[#D4A574] py-3.5 md:py-4 rounded-xl md:rounded-2xl font-bold hover:bg-[#8B6F47] hover:text-white dark:hover:bg-[#D4A574] dark:hover:text-[#1C1B18] transition-all flex items-center justify-center gap-3">
                   <Navigation className="w-5 h-5" />
                   Get Directions
@@ -328,6 +443,105 @@ export default function ResourceDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Apply to Join Modal */}
+      <AnimatePresence>
+        {showApplyModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowApplyModal(false) }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md bg-white dark:bg-[#1C1B18] rounded-2xl shadow-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-6"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-bold text-[#2C2416] dark:text-[#F5F3F0]">Apply to Join</h2>
+                <button onClick={() => setShowApplyModal(false)} className="p-1.5 rounded-lg hover:bg-[#F5F3F0] dark:hover:bg-[#2A2824] transition-colors">
+                  <X className="w-4 h-4 text-[#6B5D47]" />
+                </button>
+              </div>
+
+              {applySuccess ? (
+                <div className="text-center py-6">
+                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                  <p className="font-bold text-[#2C2416] dark:text-[#F5F3F0]">Application submitted!</p>
+                  <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mt-1">The organizer will review your application.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] mb-1">Name *</label>
+                    <input
+                      value={applyForm.name}
+                      onChange={(e) => setApplyForm((f) => ({ ...f, name: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                      placeholder="Your full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] mb-1">Email *</label>
+                    <input
+                      type="email"
+                      value={applyForm.email}
+                      onChange={(e) => setApplyForm((f) => ({ ...f, email: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                      placeholder="your@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] mb-1">Phone (optional)</label>
+                    <input
+                      value={applyForm.phone}
+                      onChange={(e) => setApplyForm((f) => ({ ...f, phone: e.target.value }))}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                      placeholder="+1 (555) 000-0000"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] mb-1">
+                      {resource.application_question || 'What relevant skills or experience do you have?'} *
+                    </label>
+                    <textarea
+                      value={applyForm.skills_answer}
+                      onChange={(e) => setApplyForm((f) => ({ ...f, skills_answer: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30 resize-none"
+                      placeholder="Describe your relevant experience..."
+                    />
+                  </div>
+
+                  {applyError && <p className="text-xs text-red-600 dark:text-red-400">{applyError}</p>}
+
+                  <div className="flex gap-3 pt-1">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleApplySubmit}
+                      disabled={joinLoading}
+                      className="flex-1 py-2.5 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] font-semibold text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+                    >
+                      {joinLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      Submit Application
+                    </motion.button>
+                    <button
+                      onClick={() => setShowApplyModal(false)}
+                      className="px-4 py-2.5 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] text-[#6B5D47] dark:text-[#B8A584] font-semibold text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
