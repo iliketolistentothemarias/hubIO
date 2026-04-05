@@ -1,0 +1,9 @@
+{
+  "name": "Communify",
+  "short_name": "Communify",
+  "description": "Community resource platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF9F6",
+  "theme_color": "#8B6F47"
+}
