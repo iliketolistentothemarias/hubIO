@@ -1,12 +1,26 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AuthRequired from '@/components/auth/AuthRequired'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
-import { RefreshCw, Check } from 'lucide-react'
+import { RefreshCw, Check, Users, Search, ChevronDown, Loader2 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+
+type AdminTab = 'submissions' | 'resources' | 'users'
+
+const ROLES = ['volunteer', 'organizer', 'admin'] as const
+type UserRole = typeof ROLES[number]
+
+interface AppUser {
+  id: string
+  name: string
+  email: string
+  role: UserRole
+  created_at: string
+  avatar: string | null
+}
 
 interface PendingSubmission {
   id: string
@@ -48,6 +62,15 @@ export default function AdminDashboardPage() {
   const themeMode = theme === 'dark' ? 'dark' : 'light'
   const [isAdminVerified, setIsAdminVerified] = useState(false)
   const [adminCheckLoading, setAdminCheckLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState<AdminTab>('submissions')
+
+  // Users tab state
+  const [appUsers, setAppUsers] = useState<AppUser[]>([])
+  const [usersLoading, setUsersLoading] = useState(false)
+  const [userSearch, setUserSearch] = useState('')
+  const [roleChanging, setRoleChanging] = useState<string | null>(null)
+  const [openRoleDropdown, setOpenRoleDropdown] = useState<string | null>(null)
+  const roleDropdownRef = useRef<HTMLDivElement>(null)
 
   const backgroundClasses = useMemo(() => {
     return themeMode === 'light'
@@ -102,6 +125,39 @@ export default function AdminDashboardPage() {
       setResourceError(error.message || 'Unable to load resources right now')
     } finally {
       setResourcesLoading(false)
+    }
+  }
+
+  const fetchUsers = async (q = '') => {
+    setUsersLoading(true)
+    try {
+      const res = await apiFetch(`/api/admin/users${q ? `?q=${encodeURIComponent(q)}` : ''}`)
+      const json = await res.json()
+      if (json.success) setAppUsers(json.data || [])
+    } catch (e) {
+      console.error('Failed to load users', e)
+    } finally {
+      setUsersLoading(false)
+    }
+  }
+
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    setRoleChanging(userId)
+    setOpenRoleDropdown(null)
+    try {
+      const res = await apiFetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        setAppUsers((prev) => prev.map((u) => u.id === userId ? { ...u, role: newRole } : u))
+      }
+    } catch (e) {
+      console.error('Failed to change role', e)
+    } finally {
+      setRoleChanging(null)
     }
   }
 
@@ -251,11 +307,39 @@ export default function AdminDashboardPage() {
       )
       .subscribe()
 
+    const usersChannel = supabase
+      .channel('admin-users-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'users' },
+        () => fetchUsers(userSearch)
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(submissionsChannel)
       supabase.removeChannel(resourcesChannel)
+      supabase.removeChannel(usersChannel)
     }
   }, [isAdminVerified])
+
+  // Load users when tab switches to 'users'
+  useEffect(() => {
+    if (isAdminVerified && activeTab === 'users') {
+      fetchUsers(userSearch)
+    }
+  }, [activeTab, isAdminVerified])
+
+  // Close role dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(e.target as Node)) {
+        setOpenRoleDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
   const handleApprove = async (id: string, options?: { featured?: boolean }) => {
     setErrorMessage(null)
@@ -341,19 +425,23 @@ export default function AdminDashboardPage() {
                   Communify Admin
                 </p>
                 <h1 className="text-4xl font-bold tracking-tight">
-                  Resource Approvals
+                  {activeTab === 'submissions' ? 'Resource Approvals' : activeTab === 'resources' ? 'Published Resources' : 'User Roles'}
                 </h1>
               <p className={`text-base ${headerTextColor} max-w-2xl`}>
-                  Every submission lands here first. Approve the trustworthy resources so they land
-                  in the public directory—or reject them if they need more work.
+                  {activeTab === 'submissions'
+                    ? 'Every submission lands here first. Approve the trustworthy resources so they land in the public directory—or reject them if they need more work.'
+                    : activeTab === 'resources'
+                    ? 'Manage all published resources in the directory.'
+                    : 'View and change every user\'s role in real time.'}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm opacity-80">
-                  
-                </span>
                 <button
-                  onClick={fetchSubmissions}
+                  onClick={() => {
+                    if (activeTab === 'submissions') fetchSubmissions()
+                    else if (activeTab === 'resources') fetchPublishedResources()
+                    else fetchUsers(userSearch)
+                  }}
                   className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 transition"
                 >
                   <RefreshCw size={18} />
@@ -362,12 +450,31 @@ export default function AdminDashboardPage() {
               </div>
             </header>
 
+            {/* Tab bar */}
+            <div className="flex overflow-x-auto scrollbar-none gap-1 p-1 rounded-2xl bg-white/10 w-fit">
+              {(['submissions', 'resources', 'users'] as AdminTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-5 py-2 rounded-xl text-sm font-semibold capitalize transition whitespace-nowrap ${
+                    activeTab === tab
+                      ? 'bg-white text-[#2C2416] shadow'
+                      : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  {tab === 'submissions' ? 'Submissions' : tab === 'resources' ? 'Resources' : 'Users'}
+                </button>
+              ))}
+            </div>
+
             {errorMessage && (
               <div className="p-4 rounded-2xl border border-red-500/30 bg-red-500/10 text-red-600">
                 <strong>Error:</strong> {errorMessage}
               </div>
             )}
 
+            {/* ── Submissions tab ── */}
+            {activeTab === 'submissions' && (<>
             {loading ? (
               <div className="grid gap-6">
                 {Array.from({ length: 3 }).map((_, index) => (
@@ -504,8 +611,11 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             )}
+            </>)}
 
-            <section className="space-y-6 pt-6">
+            {/* ── Resources tab ── */}
+            {activeTab === 'resources' && (
+            <section className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
                   <p
@@ -609,6 +719,107 @@ export default function AdminDashboardPage() {
                 </div>
               )}
             </section>
+            )}
+
+            {/* ── Users tab ── */}
+            {activeTab === 'users' && (
+              <div className="space-y-5">
+                {/* Search */}
+                <div className="relative">
+                  <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 opacity-50" />
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => {
+                      setUserSearch(e.target.value)
+                      fetchUsers(e.target.value)
+                    }}
+                    placeholder="Search by name or email…"
+                    className={`w-full pl-10 pr-4 py-3 rounded-2xl border text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/40 ${
+                      themeMode === 'dark'
+                        ? 'bg-white/10 border-white/20 text-white placeholder:text-white/40'
+                        : 'bg-white border-[#E8E0D6] text-[#2C2416] placeholder:text-[#9A8A7A]'
+                    }`}
+                  />
+                </div>
+
+                {usersLoading ? (
+                  <div className="grid gap-3">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className={`${cardClasses} animate-pulse h-16 rounded-2xl`} />
+                    ))}
+                  </div>
+                ) : appUsers.length === 0 ? (
+                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
+                    <Users size={40} className="mx-auto opacity-40 mb-3" />
+                    <p className="text-lg font-semibold">No users found</p>
+                  </div>
+                ) : (
+                  <div ref={roleDropdownRef} className="space-y-3">
+                    {appUsers.map((u) => (
+                      <div
+                        key={u.id}
+                        className={`${cardClasses} rounded-2xl px-5 py-4 flex flex-wrap items-center justify-between gap-3`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          {u.avatar ? (
+                            <img src={u.avatar} alt={u.name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-[#8B6F47]/20 flex items-center justify-center flex-shrink-0 text-sm font-bold text-[#8B6F47]">
+                              {u.name?.charAt(0)?.toUpperCase() || '?'}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <p className="font-semibold truncate">{u.name || '(no name)'}</p>
+                            <p className="text-xs opacity-60 truncate">{u.email}</p>
+                          </div>
+                        </div>
+
+                        {/* Role picker */}
+                        <div className="relative">
+                          <button
+                            onClick={() => setOpenRoleDropdown(openRoleDropdown === u.id ? null : u.id)}
+                            disabled={roleChanging === u.id}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border transition ${
+                              u.role === 'admin'
+                                ? 'border-purple-400/50 text-purple-400 bg-purple-400/10'
+                                : u.role === 'organizer'
+                                ? 'border-emerald-400/50 text-emerald-400 bg-emerald-400/10'
+                                : 'border-white/20 text-white/70 bg-white/5'
+                            } ${roleChanging === u.id ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-90 cursor-pointer'}`}
+                          >
+                            {roleChanging === u.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : null}
+                            <span className="capitalize">{u.role}</span>
+                            <ChevronDown size={14} />
+                          </button>
+                          {openRoleDropdown === u.id && (
+                            <div className={`absolute right-0 mt-1 z-50 rounded-2xl shadow-xl border overflow-hidden min-w-[140px] ${
+                              themeMode === 'dark' ? 'bg-[#1F1B26] border-white/10' : 'bg-white border-[#E8E0D6]'
+                            }`}>
+                              {ROLES.map((r) => (
+                                <button
+                                  key={r}
+                                  onClick={() => handleRoleChange(u.id, r)}
+                                  className={`w-full text-left px-4 py-2.5 text-sm capitalize transition ${
+                                    u.role === r
+                                      ? themeMode === 'dark' ? 'bg-white/10 font-semibold' : 'bg-[#F5F0E8] font-semibold'
+                                      : themeMode === 'dark' ? 'hover:bg-white/5' : 'hover:bg-[#FAF9F6]'
+                                  }`}
+                                >
+                                  {r}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
