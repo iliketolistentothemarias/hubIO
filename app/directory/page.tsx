@@ -102,9 +102,9 @@ function DirectoryContent() {
       )
     }
 
-    // All resources from DataContext are already status='accepted' — no extra filter needed
+    // DataContext only loads verified (published) resources
     return filtered
-  }, [searchQuery, selectedCategory, selectedTags, favoritesOnly, isFavorite])
+  }, [resources, searchQuery, selectedCategory, selectedTags, favoritesOnly, isFavorite])
 
   const toggleTag = (tag: string) => {
     setSelectedTags((prev) =>

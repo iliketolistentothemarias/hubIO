@@ -50,6 +50,7 @@ export async function PATCH(
         submitted_by: submission.submitted_by,
         location: submission.location,
         verified: true,
+        status: 'approved',
         featured: Boolean(payload.featured),
       })
       .select('id')

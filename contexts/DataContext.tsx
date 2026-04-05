@@ -42,7 +42,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       website: r.website || undefined,
       tags: r.tags || [],
       featured: r.featured || false,
-      verified: r.verified || r.status === 'accepted',
+      verified: r.verified || r.status === 'approved',
       rating: r.rating ? Number(r.rating) : undefined,
       reviewCount: r.review_count || 0,
       hours: r.hours || undefined,
@@ -57,10 +57,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const fetchResources = useCallback(async () => {
     try {
+      // Published directory entries are `verified = true`. Do not filter by status='accepted'
+      // — that value does not exist in the DB schema (we use pending/approved/rejected/draft).
       const { data, error } = await supabase
         .from('resources')
         .select('*')
-        .eq('status', 'accepted')
+        .eq('verified', true)
         .order('created_at', { ascending: false })
 
       if (data && !error) {
