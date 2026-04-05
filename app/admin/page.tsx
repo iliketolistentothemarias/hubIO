@@ -7,6 +7,8 @@ import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
 import { RefreshCw, Check, Users, Search, ChevronDown, Loader2, FileText, Trash2 } from 'lucide-react'
 import { useTheme } from '@/contexts/ThemeContext'
+import { mockBusinesses } from '@/data/mockBusinesses'
+import { mockGrants } from '@/data/mockGrants'
 
 type AdminTab = 'submissions' | 'resources' | 'users' | 'grant-applications' | 'biz-submissions' | 'grant-listings' | 'live-businesses' | 'live-grants'
 
@@ -705,7 +707,7 @@ export default function AdminDashboardPage() {
                         activeTab === id ? 'bg-white text-[#2C2416] shadow' : themeMode === 'dark' ? 'text-white/70 hover:text-white' : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
                       }`}>
                       {label}
-                      {badge && badge > 0 && <span className="px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{badge}</span>}
+                      {(badge ?? 0) > 0 && <span className="px-1.5 py-0.5 rounded-full bg-[#8B6F47] text-white text-[10px] font-bold leading-none">{badge}</span>}
                     </button>
                   ))}
                 </div>
@@ -1259,23 +1261,21 @@ export default function AdminDashboardPage() {
             {/* ── Live Businesses tab ── */}
             {activeTab === 'live-businesses' && (
               <div className="space-y-5">
-                {liveBusinesses.length === 0 ? (
-                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
-                    <FileText size={48} className="mx-auto opacity-30 mb-3" />
-                    <p className="text-lg font-semibold">No live businesses yet</p>
-                    <p className="text-sm opacity-70 mt-1">Approve a business submission to publish it on the site.</p>
-                  </div>
-                ) : (
+                {/* Default (built-in) businesses */}
+                <div>
+                  <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                    Default Listings
+                  </p>
                   <div className="space-y-4">
-                    {liveBusinesses.map((biz) => (
+                    {mockBusinesses.map((biz) => (
                       <div key={biz.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
                         <div className="flex flex-wrap items-start justify-between gap-4">
                           <div>
-                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Live on Site</p>
-                            <h3 className="text-xl font-bold">{biz.businessName}</h3>
+                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Built-in Listing</p>
+                            <h3 className="text-xl font-bold">{biz.name}</h3>
                             <p className="text-sm opacity-70">{biz.category}</p>
                           </div>
-                          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500 text-xs font-semibold">Published</span>
+                          <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Default</span>
                         </div>
                         <div className="grid md:grid-cols-2 gap-3 text-sm">
                           <div className="space-y-1">
@@ -1283,60 +1283,130 @@ export default function AdminDashboardPage() {
                             {biz.phone && <p><span className="opacity-60">Phone:</span> {biz.phone}</p>}
                           </div>
                           <div className="space-y-1">
-                            <p><span className="opacity-60">Website:</span>{' '}
-                              <a href={biz.website} target="_blank" rel="noreferrer" className="underline text-blue-400 break-all">{biz.website}</a>
-                            </p>
+                            {biz.website && (
+                              <p><span className="opacity-60">Website:</span>{' '}
+                                <a href={biz.website} target="_blank" rel="noreferrer" className="underline text-blue-400 break-all">{biz.website}</a>
+                              </p>
+                            )}
                             {biz.hours && <p><span className="opacity-60">Hours:</span> {biz.hours}</p>}
                           </div>
                         </div>
-                        <button
-                          onClick={() => removeLiveBusiness(biz.id)}
-                          className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
-                        >
-                          Remove from Site
-                        </button>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+
+                {/* Community-approved businesses */}
+                <div>
+                  <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                    Community Submissions ({liveBusinesses.length})
+                  </p>
+                  {liveBusinesses.length === 0 ? (
+                    <div className={`${cardClasses} rounded-3xl p-8 text-center`}>
+                      <p className="text-sm opacity-60">No community businesses approved yet. Approve a submission to publish it here.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {liveBusinesses.map((biz) => (
+                        <div key={biz.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.3em] opacity-60">Live on Site</p>
+                              <h3 className="text-xl font-bold">{biz.businessName}</h3>
+                              <p className="text-sm opacity-70">{biz.category}</p>
+                            </div>
+                            <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500 text-xs font-semibold">Published</span>
+                          </div>
+                          <div className="grid md:grid-cols-2 gap-3 text-sm">
+                            <div className="space-y-1">
+                              {biz.address && <p><span className="opacity-60">Address:</span> {biz.address}</p>}
+                              {biz.phone && <p><span className="opacity-60">Phone:</span> {biz.phone}</p>}
+                            </div>
+                            <div className="space-y-1">
+                              <p><span className="opacity-60">Website:</span>{' '}
+                                <a href={biz.website} target="_blank" rel="noreferrer" className="underline text-blue-400 break-all">{biz.website}</a>
+                              </p>
+                              {biz.hours && <p><span className="opacity-60">Hours:</span> {biz.hours}</p>}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => removeLiveBusiness(biz.id)}
+                            className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                          >
+                            Remove from Site
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
             {/* ── Live Grants tab ── */}
             {activeTab === 'live-grants' && (
               <div className="space-y-5">
-                {liveGrants.length === 0 ? (
-                  <div className={`${cardClasses} rounded-3xl p-10 text-center`}>
-                    <FileText size={48} className="mx-auto opacity-30 mb-3" />
-                    <p className="text-lg font-semibold">No live grants yet</p>
-                    <p className="text-sm opacity-70 mt-1">Approve a grant listing to publish it on the Grants page.</p>
-                  </div>
-                ) : (
+                {/* Default (built-in) grants */}
+                <div>
+                  <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                    Default Listings
+                  </p>
                   <div className="space-y-4">
-                    {liveGrants.map((gl) => (
+                    {mockGrants.map((gl) => (
                       <div key={gl.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
                         <div className="flex flex-wrap items-start justify-between gap-4">
                           <div>
-                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Live on Site</p>
+                            <p className="text-xs uppercase tracking-[0.3em] opacity-60">Built-in Listing</p>
                             <h3 className="text-xl font-bold">{gl.title}</h3>
                             <p className="text-sm opacity-70">{gl.organization} · {gl.category}</p>
                           </div>
-                          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500 text-xs font-semibold">Published</span>
+                          <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 text-xs font-semibold">Default</span>
                         </div>
                         <div className="grid md:grid-cols-2 gap-3 text-sm">
                           <p><span className="opacity-60">Amount:</span> {gl.amount}</p>
-                          <p><span className="opacity-60">Eligibility:</span> {gl.eligibility}</p>
+                          <p><span className="opacity-60">Eligibility:</span> {gl.eligibility.join(', ')}</p>
                         </div>
-                        <button
-                          onClick={() => removeLiveGrant(gl.id)}
-                          className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
-                        >
-                          Remove from Site
-                        </button>
                       </div>
                     ))}
                   </div>
-                )}
+                </div>
+
+                {/* Community-approved grants */}
+                <div>
+                  <p className={`text-[10px] uppercase tracking-[0.25em] font-bold mb-2 pl-1 ${themeMode === 'dark' ? 'text-white/40' : 'text-[#8B6F47]/60'}`}>
+                    Community Submissions ({liveGrants.length})
+                  </p>
+                  {liveGrants.length === 0 ? (
+                    <div className={`${cardClasses} rounded-3xl p-8 text-center`}>
+                      <p className="text-sm opacity-60">No community grants approved yet. Approve a submission to publish it here.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {liveGrants.map((gl) => (
+                        <div key={gl.id} className={`${cardClasses} rounded-[28px] p-6 space-y-3`}>
+                          <div className="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                              <p className="text-xs uppercase tracking-[0.3em] opacity-60">Live on Site</p>
+                              <h3 className="text-xl font-bold">{gl.title}</h3>
+                              <p className="text-sm opacity-70">{gl.organization} · {gl.category}</p>
+                            </div>
+                            <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-500 text-xs font-semibold">Published</span>
+                          </div>
+                          <div className="grid md:grid-cols-2 gap-3 text-sm">
+                            <p><span className="opacity-60">Amount:</span> {gl.amount}</p>
+                            <p><span className="opacity-60">Eligibility:</span> {gl.eligibility}</p>
+                          </div>
+                          <button
+                            onClick={() => removeLiveGrant(gl.id)}
+                            className="px-5 py-2 rounded-full border border-red-400/50 text-red-400 text-sm font-semibold hover:bg-red-500/10 transition"
+                          >
+                            Remove from Site
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
