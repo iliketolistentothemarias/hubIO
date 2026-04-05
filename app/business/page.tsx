@@ -79,7 +79,7 @@ export default function BusinessPage() {
     })
 
     return filtered
-  }, [selectedCategory, searchQuery, sortBy])
+  }, [allBusinesses, selectedCategory, searchQuery, sortBy])
 
   const tabs = [
     { id: 'all', label: 'All Businesses', icon: Store, count: filteredBusinesses.length },

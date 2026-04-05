@@ -88,7 +88,7 @@ export default function GrantsPage() {
     }
 
     return filtered
-  }, [selectedCategory, selectedStatus])
+  }, [allGrants, selectedCategory, selectedStatus])
 
   const tabs = [
     { id: 'all', label: 'All Grants', icon: FileText, count: filteredGrants.length },
