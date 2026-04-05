@@ -17,6 +17,24 @@ export default function Navigation() {
   const [user, setUser] = useState<any>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleMenuEnter = (label: string) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    setOpenDropdown(label)
+  }
+
+  const handleMenuLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null)
+    }, 120)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+    }
+  }, [])
   const pathname = usePathname()
   const router = useRouter()
   const { theme, toggleTheme } = useTheme()
@@ -178,6 +196,8 @@ export default function Navigation() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15, delay: index * 0.02 }}
                 className="relative"
+                onMouseEnter={item.submenu ? () => handleMenuEnter(item.label) : undefined}
+                onMouseLeave={item.submenu ? handleMenuLeave : undefined}
               >
                 {item.submenu ? (
                   <button
