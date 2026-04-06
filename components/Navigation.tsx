@@ -158,7 +158,6 @@ export default function Navigation() {
           { href: '/grants', label: 'Grants' },
         ]
       },
-      { href: '/events', label: 'Events' },
       { href: '/messages', label: 'Messages' },
       { href: '/dashboard', label: 'Dashboard' },
       { href: '/analytics', label: 'Analytics' },

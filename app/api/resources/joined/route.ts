@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       .from('resources')
       .select('id, name, category, description, visibility, status, submitted_by')
       .eq('submitted_by', user.id)
-      .eq('status', 'accepted')
+      .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(20)
 

@@ -118,3 +118,57 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const { supabase, userId, error } = await getUserId(request)
+
+    if (error || !userId) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    const payload = await request.json().catch(() => ({}))
+    const ids: string[] = Array.isArray(payload.notificationIds)
+      ? payload.notificationIds
+      : []
+
+    if (ids.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'No notifications provided' },
+        { status: 400 }
+      )
+    }
+
+    const { error: deleteError } = await supabase
+      .from('notifications')
+      .delete()
+      .in('id', ids)
+      .eq('user_id', userId)
+
+    if (deleteError) {
+      const msg = deleteError.message || ''
+      if (msg.includes('does not exist') || msg.includes('schema cache')) {
+        return NextResponse.json({ success: true, message: 'No notifications table' })
+      }
+      console.error('Failed to delete notifications:', deleteError)
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete notifications' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Notifications deleted',
+    })
+  } catch (error) {
+    console.error('Notifications DELETE error:', error)
+    return NextResponse.json(
+      { success: false, error: (error as Error).message },
+      { status: 500 }
+    )
+  }
+}
+

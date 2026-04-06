@@ -2,15 +2,22 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, X, CheckCircle, XCircle, Info, MessageSquare } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Bell, X, CheckCircle, XCircle, Info, MessageSquare, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
 import Link from 'next/link'
 
 interface Notification {
   id: string
-  type: 'resource_approved' | 'resource_denied' | 'info' | 'success' | 'error' | 'message'
+  user_id?: string
+  type:
+    | 'resource_approved'
+    | 'resource_denied'
+    | 'info'
+    | 'success'
+    | 'error'
+    | 'message'
+    | 'new_message'
   title: string
   message: string
   read: boolean
@@ -40,40 +47,61 @@ export default function Notifications() {
     let cancelled = false
     let channel: ReturnType<typeof supabase.channel> | null = null
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (cancelled || !session?.user) return
+    const removeChannel = () => {
+      if (channel) {
+        supabase.removeChannel(channel)
+        channel = null
+      }
+    }
 
-      loadNotifications()
+    const subscribeForUser = (userId: string) => {
+      removeChannel()
+      void loadNotifications()
+
+      const userFilter = `user_id=eq.${userId}`
 
       channel = supabase
-        .channel('notifications-changes')
+        .channel(`notifications:${userId}`)
         .on(
           'postgres_changes',
           {
             event: 'INSERT',
             schema: 'public',
             table: 'notifications',
+            filter: userFilter,
           },
           (payload) => {
-            const notif = payload.new as Notification
-            setNotifications((prev) => [notif, ...prev])
-            setUnreadCount((prev) => prev + 1)
+            const row = payload.new as Notification & { user_id?: string }
+            if (row.user_id && row.user_id !== userId) return
 
-            // Browser push notification for message notifications when tab is hidden
+            setNotifications((prev) => {
+              if (prev.some((n) => n.id === row.id)) return prev
+              return [row as Notification, ...prev]
+            })
+            if (!row.read) {
+              setUnreadCount((prev) => prev + 1)
+            }
+
+            const isMsg =
+              row.type === 'message' ||
+              row.type === 'new_message'
             if (
-              notif.type === 'message' &&
+              isMsg &&
               typeof window !== 'undefined' &&
               'Notification' in window &&
               Notification.permission === 'granted' &&
               document.hidden
             ) {
-              const n = new window.Notification(notif.title, {
-                body: notif.message,
+              const n = new window.Notification(row.title, {
+                body: row.message,
                 icon: '/icon-192.png',
                 tag: 'msg-notif',
-                renotify: true,
               })
-              n.onclick = () => { window.focus(); window.location.href = '/messages'; n.close() }
+              n.onclick = () => {
+                window.focus()
+                window.location.href = '/messages'
+                n.close()
+              }
               setTimeout(() => n.close(), 6000)
             }
           }
@@ -84,17 +112,52 @@ export default function Notifications() {
             event: 'UPDATE',
             schema: 'public',
             table: 'notifications',
+            filter: userFilter,
+          },
+          () => {
+            loadNotifications()
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: 'notifications',
+            filter: userFilter,
           },
           () => {
             loadNotifications()
           }
         )
         .subscribe()
+    }
+
+    const applySession = (session: { user: { id: string } } | null) => {
+      if (cancelled) return
+      removeChannel()
+      if (!session?.user) {
+        setNotifications([])
+        setUnreadCount(0)
+        return
+      }
+      subscribeForUser(session.user.id)
+    }
+
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      applySession(session)
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      applySession(session)
     })
 
     return () => {
       cancelled = true
-      if (channel) supabase.removeChannel(channel)
+      removeChannel()
+      subscription.unsubscribe()
     }
   }, [loadNotifications])
 
@@ -116,6 +179,24 @@ export default function Notifications() {
     }
   }
 
+  const deleteNotifications = async (notificationIds: string[]) => {
+    try {
+      const response = await apiFetch('/api/notifications', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notificationIds }),
+      })
+
+      if (response.ok) {
+        loadNotifications()
+      }
+    } catch (error) {
+      console.error('Error deleting notifications:', error)
+    }
+  }
+
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'resource_approved':
@@ -125,6 +206,7 @@ export default function Notifications() {
       case 'error':
         return <XCircle className="w-5 h-5 text-red-500" />
       case 'message':
+      case 'new_message':
         return <MessageSquare className="w-5 h-5 text-purple-500" />
       default:
         return <Info className="w-5 h-5 text-blue-500" />
@@ -134,59 +216,85 @@ export default function Notifications() {
   const unreadNotifications = notifications.filter(n => !n.read)
 
   const NotificationItem = ({ notification }: { notification: Notification }) => {
-    const content = (
-      <div className="flex items-start gap-3">
-        {getNotificationIcon(notification.type)}
-        <div className="flex-1 min-w-0">
-          <h4 className="font-bold text-sm text-[#2C2416] dark:text-[#F5F3F0]">
-            {notification.title}
-          </h4>
-          <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mt-1 line-clamp-2">
-            {notification.message}
-          </p>
-          <p className="text-[10px] text-[#8B6F47] dark:text-[#D4A574] mt-1 font-medium">
-            {new Date(notification.created_at).toLocaleString()}
-          </p>
-        </div>
-        {!notification.read && (
-          <button
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              markAsRead([notification.id])
-            }}
-            className="text-xs text-[#8B6F47] dark:text-[#D4A574] font-bold hover:underline shrink-0"
-          >
-            Mark read
-          </button>
-        )}
+    const isMessage =
+      notification.type === 'message' || notification.type === 'new_message'
+
+    const deleteBtn = (
+      <button
+        type="button"
+        title="Delete notification"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          deleteNotifications([notification.id])
+        }}
+        className="p-1.5 rounded-lg text-[#6B5D47] dark:text-[#B8A584] hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 shrink-0"
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    )
+
+    const markReadBtn = !notification.read ? (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          markAsRead([notification.id])
+        }}
+        className="text-xs text-[#8B6F47] dark:text-[#D4A574] font-bold hover:underline"
+      >
+        Mark read
+      </button>
+    ) : null
+
+    const textBlock = (
+      <div className="flex-1 min-w-0">
+        <h4 className="font-bold text-sm text-[#2C2416] dark:text-[#F5F3F0]">
+          {notification.title}
+        </h4>
+        <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mt-1 line-clamp-2">
+          {notification.message}
+        </p>
+        <p className="text-[10px] text-[#8B6F47] dark:text-[#D4A574] mt-1 font-medium">
+          {new Date(notification.created_at).toLocaleString()}
+        </p>
       </div>
     )
 
-    if (notification.type === 'message') {
+    const rowTint = !notification.read ? 'bg-[#f5ede1] dark:bg-[#3b352c]' : ''
+    const rowHover = 'hover:bg-[#F5F3F0] dark:hover:bg-[#353330]'
+
+    if (isMessage) {
       return (
-        <Link 
-          href="/messages" 
-          onClick={() => {
-            if (!notification.read) markAsRead([notification.id])
-            setIsOpen(false)
-          }}
-          className={`block p-4 hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors ${
-            !notification.read ? 'bg-[#f5ede1] dark:bg-[#3b352c]' : ''
-          }`}
-        >
-          {content}
-        </Link>
+        <div className={`flex items-stretch transition-colors ${rowTint} ${rowHover}`}>
+          <Link
+            href="/messages"
+            className="flex flex-1 min-w-0 items-start gap-3 p-4 pr-2"
+            onClick={() => {
+              if (!notification.read) markAsRead([notification.id])
+              setIsOpen(false)
+            }}
+          >
+            {getNotificationIcon(notification.type)}
+            {textBlock}
+            <div className="flex flex-col items-end gap-1 shrink-0">{markReadBtn}</div>
+          </Link>
+          <div className="flex items-start p-4 pl-0">{deleteBtn}</div>
+        </div>
       )
     }
 
     return (
       <div
-        className={`p-4 transition-colors ${
-          !notification.read ? 'bg-[#f5ede1] dark:bg-[#3b352c]' : ''
-        }`}
+        className={`flex items-start gap-3 p-4 transition-colors ${rowTint} ${rowHover}`}
       >
-        {content}
+        {getNotificationIcon(notification.type)}
+        {textBlock}
+        <div className="flex flex-col items-end gap-1 shrink-0 ml-auto">
+          {markReadBtn}
+          {deleteBtn}
+        </div>
       </div>
     )
   }
