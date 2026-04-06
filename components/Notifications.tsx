@@ -181,16 +181,26 @@ export default function Notifications() {
 
   const deleteNotifications = async (notificationIds: string[]) => {
     try {
+      // POST + action avoids clients/proxies that omit DELETE bodies.
       const response = await apiFetch('/api/notifications', {
-        method: 'DELETE',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ notificationIds }),
+        body: JSON.stringify({
+          action: 'delete',
+          notificationIds,
+        }),
       })
 
-      if (response.ok) {
+      const result = await response.json().catch(() => ({}))
+      if (response.ok && result.success !== false) {
         loadNotifications()
+      } else {
+        console.error(
+          'Delete notifications failed:',
+          result.error || response.statusText || response.status
+        )
       }
     } catch (error) {
       console.error('Error deleting notifications:', error)

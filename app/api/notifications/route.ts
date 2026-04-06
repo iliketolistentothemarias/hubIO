@@ -1,5 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { createServerClient, createAdminClient } from '@/lib/supabase/server'
+
+async function deleteOwnedNotifications(
+  userId: string,
+  userSupabase: SupabaseClient,
+  ids: string[]
+) {
+  const db =
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+      ? createAdminClient()
+      : userSupabase
+
+  return db.from('notifications').delete().in('id', ids).eq('user_id', userId)
+}
 
 async function getUserId(request: NextRequest) {
   const supabase = createServerClient({ headers: request.headers })
@@ -87,6 +101,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // POST delete avoids proxies/clients that drop DELETE request bodies.
+    if (payload.action === 'delete') {
+      const { error: deleteError } = await deleteOwnedNotifications(
+        userId,
+        supabase,
+        ids
+      )
+
+      if (deleteError) {
+        const msg = deleteError.message || ''
+        if (msg.includes('does not exist') || msg.includes('schema cache')) {
+          return NextResponse.json({ success: true, message: 'No notifications table' })
+        }
+        console.error('Failed to delete notifications:', deleteError)
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Failed to delete notifications: ${deleteError.message}`,
+          },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: 'Notifications deleted',
+      })
+    }
+
     const { error: updateError } = await supabase
       .from('notifications')
       .update({ read: true, updated_at: new Date().toISOString() })
@@ -141,11 +184,13 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    const { error: deleteError } = await supabase
-      .from('notifications')
-      .delete()
-      .in('id', ids)
-      .eq('user_id', userId)
+    // Prefer service role so deletes work even if RLS has no DELETE policy yet.
+    // Always scope by user_id from the JWT — never delete other users' rows.
+    const { error: deleteError } = await deleteOwnedNotifications(
+      userId,
+      supabase,
+      ids
+    )
 
     if (deleteError) {
       const msg = deleteError.message || ''
@@ -154,7 +199,7 @@ export async function DELETE(request: NextRequest) {
       }
       console.error('Failed to delete notifications:', deleteError)
       return NextResponse.json(
-        { success: false, error: 'Failed to delete notifications' },
+        { success: false, error: `Failed to delete notifications: ${deleteError.message}` },
         { status: 500 }
       )
     }
