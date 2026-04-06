@@ -81,8 +81,7 @@ export default function Dashboard() {
   }
 
   const quickActions = [
-    { icon: Search, label: 'Find Resources', href: '/directory', color: 'bg-[#8B6F47] dark:bg-[#D4A574]' },
-    { icon: Calendar, label: 'Browse Events', href: '/events', color: 'bg-[#8B6F47] dark:bg-[#D4A574]' },
+    { icon: Search, label: 'Browse Resources', href: '/directory', color: 'bg-[#8B6F47] dark:bg-[#D4A574]' },
   ]
 
   const cardBase =
@@ -102,7 +101,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4 mb-12">
+        <div className="max-w-md mb-12">
           {quickActions.map((action, index) => {
             const Icon = action.icon
             return (
@@ -201,41 +200,6 @@ export default function Dashboard() {
               ))}
             </div>
           )}
-        </div>
-
-        {/* Quick Links */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <Link href="/directory" prefetch={true}>
-            <div className={`${cardBase} cursor-pointer hover:bg-gray-50 dark:hover:bg-primary-900/10`}>
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  <h3 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2">
-                    Explore Resources
-                  </h3>
-                  <p className="text-[#6B5D47] dark:text-[#B8A584]">
-                    Discover community organizations and services
-                  </p>
-                </div>
-                <ArrowRight className="w-6 h-6 text-[#8B6F47] dark:text-[#D4A574]" />
-              </div>
-            </div>
-          </Link>
-
-          <Link href="/events" prefetch={true}>
-            <div className={`${cardBase} cursor-pointer hover:bg-gray-50 dark:hover:bg-primary-900/10`}>
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  <h3 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2">
-                    Browse Events
-                  </h3>
-                  <p className="text-[#6B5D47] dark:text-[#B8A584]">
-                    Participate in local community gatherings and activities
-                  </p>
-                </div>
-                <ArrowRight className="w-6 h-6 text-[#8B6F47] dark:text-[#D4A574]" />
-              </div>
-            </div>
-          </Link>
         </div>
       </div>
     </div>
