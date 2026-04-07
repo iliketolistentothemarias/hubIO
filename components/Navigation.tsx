@@ -182,10 +182,10 @@ export default function Navigation() {
         }`}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
-        <div className="relative flex items-center justify-between min-h-[4.5rem] md:min-h-[5.25rem] py-2.5 md:py-3 w-full box-border">
-          {/* Logo — z-10 so it stays above the absolutely centered nav layer */}
-          <div className="relative z-20 flex items-center flex-shrink-0">
-            <Link href="/" className="flex items-center gap-2 group w-fit py-0.5">
+        <div className="flex min-h-[4.5rem] md:min-h-[5.25rem] w-full box-border items-center justify-between gap-2 py-2.5 md:py-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-4 lg:gap-x-6">
+          {/* Logo — own column; never shares space with nav links */}
+          <div className="flex shrink-0 items-center">
+            <Link href="/" className="flex items-center gap-2 group w-fit py-0.5 pr-1">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.6 }}
@@ -199,11 +199,12 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Desktop nav: centered in the bar so it never shrinks into the logo or utilities */}
-          <div
-            className="hidden md:flex absolute left-1/2 top-1/2 -translate-y-1/2 translate-x-[calc(-50%-5rem)] lg:translate-x-[calc(-50%-4rem)] xl:translate-x-[calc(-50%-3rem)] z-[15] items-center justify-center pointer-events-none max-w-[min(100vw-36rem,48rem)] lg:max-w-[min(100vw-34rem,52rem)]"
-          >
-            <div className="flex items-center gap-3 lg:gap-4 xl:gap-5 pointer-events-auto overflow-x-auto max-w-full py-1 pr-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" ref={dropdownRef}>
+          {/* Desktop nav: middle column only — cannot overlap logo or utilities */}
+          <div className="hidden min-w-0 md:flex md:justify-center md:px-2">
+            <div
+              className="flex max-w-full shrink-0 items-center gap-2 overflow-x-auto py-1 lg:gap-3 xl:gap-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              ref={dropdownRef}
+            >
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href || item.label}
@@ -309,12 +310,12 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* Right Side - Utilities */}
-          <div className="relative z-10 hidden md:flex items-center gap-3 justify-end shrink-0 pl-4">
+          {/* Right — own column; clear separation from last nav link */}
+          <div className="hidden shrink-0 items-center justify-end gap-2 md:flex md:gap-3 md:pl-3 lg:pl-4">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
-              className="relative p-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className="relative shrink-0 p-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
             >
               <Star className="w-5 h-5" />
               {favorites.length > 0 && (
