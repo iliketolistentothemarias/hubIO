@@ -101,12 +101,12 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="max-w-md mb-12">
+        <div className="w-full mb-12">
           {quickActions.map((action, index) => {
             const Icon = action.icon
             return (
-              <Link key={index} href={action.href} prefetch={true}>
-                <div className={`${cardBase} cursor-pointer hover:-translate-y-1 min-h-[80px] flex flex-col items-center justify-center`}>
+              <Link key={index} href={action.href} prefetch={true} className="block w-full">
+                <div className={`${cardBase} cursor-pointer hover:-translate-y-1 min-h-[80px] flex flex-col items-center justify-center w-full`}>
                   <div className={`inline-flex p-3 rounded-lg ${action.color} mb-3`}>
                     <Icon className="w-6 h-6 text-white dark:text-[#1C1B18]" />
                   </div>

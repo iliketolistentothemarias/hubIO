@@ -101,7 +101,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: members,
-      meta: { isOwner: isOwner || isAdmin, resourceName: resource.name },
+      meta: { isOwner, resourceName: resource.name },
     })
   } catch (error) {
     console.error('GET /api/resources/[id]/members error:', error)
