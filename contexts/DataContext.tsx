@@ -40,6 +40,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       phone: r.phone || '',
       email: r.email || '',
       website: r.website || undefined,
+      image: r.image || r.logo_url || undefined,
       tags: r.tags || [],
       featured: r.featured || false,
       verified: r.verified || r.status === 'approved',

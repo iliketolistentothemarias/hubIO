@@ -27,6 +27,7 @@ import LiquidGlass from '@/components/LiquidGlass'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
+import ResourceHeroLogo from '@/components/ResourceHeroLogo'
 
 type CommunityTab = 'chat' | 'members'
 
@@ -339,6 +340,8 @@ export default function ResourceDetailPage() {
   }
 
   const favorite = isFavorite(resource.id)
+  const logoUrlOverride =
+    resource.image ?? (resource as { logo_url?: string }).logo_url
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#0B0A0F] pt-20 md:pt-24 pb-20">
@@ -370,11 +373,11 @@ export default function ResourceDetailPage() {
                 <div className="flex flex-col md:flex-row gap-6 md:gap-10">
                   {/* Hero Image/Icon Section */}
                   <div className="w-full md:w-40 shrink-0">
-                    <div className="aspect-square w-24 h-24 md:w-40 md:h-40 mx-auto rounded-2xl md:rounded-3xl bg-gradient-to-br from-[#8B6F47] to-[#D4A574] 
-                                  flex items-center justify-center shadow-2xl relative group overflow-hidden">
-                      <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                      <Heart className="w-10 h-10 md:w-16 md:h-16 text-white" />
-                    </div>
+                    <ResourceHeroLogo
+                      name={resource.name}
+                      website={resource.website}
+                      image={logoUrlOverride}
+                    />
                   </div>
 
                   {/* Core Details */}
