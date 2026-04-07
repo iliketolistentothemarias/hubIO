@@ -14,6 +14,9 @@ type Props = {
   variant?: 'hero' | 'compact'
 }
 
+/** Tiny favicons / generic globe icons are usually ≤64px intrinsic; reject so we show tan + heart instead. */
+const MAX_INTRINSIC_BAD_LOGO = 64
+
 /**
  * Shows organization logo from `image`, else Clearbit/Google favicon from `website`, else heart placeholder.
  */
@@ -60,6 +63,15 @@ export default function ResourceHeroLogo({
 
   const boxClass = `${sizeClass} relative group overflow-hidden ${className}`.trim()
 
+  const advanceToNextSource = () => setIndex((i) => i + 1)
+
+  const handleImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+    if (w > 0 && h > 0 && Math.max(w, h) <= MAX_INTRINSIC_BAD_LOGO) {
+      advanceToNextSource()
+    }
+  }
+
   if (!showImage) {
     return (
       <div
@@ -92,7 +104,8 @@ export default function ResourceHeroLogo({
         decoding="async"
         fetchPriority={variant === 'hero' ? 'high' : 'low'}
         referrerPolicy="no-referrer"
-        onError={() => setIndex((i) => i + 1)}
+        onLoad={handleImgLoad}
+        onError={advanceToNextSource}
       />
     </div>
   )
