@@ -233,7 +233,7 @@ nav[class*="fixed"][class*="z-"] {
   }
   
   .section-padding {
-    @apply pt-14 pb-16 md:pt-20 md:pb-24 px-4 sm:px-6 lg:px-8;
+    @apply pt-12 pb-16 md:pt-16 md:pb-24 px-4 sm:px-6 lg:px-8;
   }
   
   .container-custom {
