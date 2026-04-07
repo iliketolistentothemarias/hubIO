@@ -181,28 +181,28 @@ export default function Navigation() {
           : 'bg-transparent'
         }`}
     >
-      <div className="container-custom px-4 sm:px-6 lg:px-8">
-        <div className="flex min-h-[4.5rem] md:min-h-[5.25rem] w-full box-border items-center justify-between gap-2 py-2.5 md:py-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-4 lg:gap-x-6">
-          {/* Logo — own column; never shares space with nav links */}
-          <div className="flex shrink-0 items-center">
-            <Link href="/" className="flex items-center gap-2 group w-fit py-0.5 pr-1">
+      <div className="mx-auto w-full max-w-[100rem] px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+        <div className="flex min-h-[4.5rem] md:min-h-[5.25rem] w-full box-border items-center justify-between gap-2 py-2.5 md:py-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-2 lg:gap-x-4">
+          {/* Logo — nudged toward viewport left */}
+          <div className="flex shrink-0 items-center md:-ml-1 lg:-ml-2">
+            <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group w-fit py-0.5 pr-0.5 md:pr-1">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.6 }}
                 className="flex shrink-0"
               >
-                <Heart className="w-8 h-8 text-[#8B6F47] dark:text-[#D4A574]" />
+                <Heart className="h-7 w-7 text-[#8B6F47] dark:text-[#D4A574] md:h-8 md:w-8" />
               </motion.div>
-              <span className="text-2xl font-display font-bold leading-normal text-[#2C2416] dark:text-[#F5F3F0] whitespace-nowrap">
+              <span className="font-display text-xl font-bold leading-tight text-[#2C2416] dark:text-[#F5F3F0] whitespace-nowrap md:text-2xl">
                 Communify
               </span>
             </Link>
           </div>
 
-          {/* Desktop nav: middle column only — cannot overlap logo or utilities */}
-          <div className="hidden min-w-0 md:flex md:justify-center md:px-2">
+          {/* Desktop nav — no horizontal scroll; compact type + gaps so one row fits */}
+          <div className="hidden min-w-0 md:flex md:justify-center md:px-1 lg:px-2">
             <div
-              className="flex max-w-full shrink-0 items-center gap-2 overflow-x-auto py-1 lg:gap-3 xl:gap-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+              className="flex max-w-full flex-nowrap items-center justify-center gap-1.5 py-1 lg:gap-2 xl:gap-2.5"
               ref={dropdownRef}
             >
             {navItems.map((item, index) => (
@@ -218,13 +218,13 @@ export default function Navigation() {
                   <button
                     onMouseEnter={() => handleMenuEnter(item.label)}
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                    className={`relative font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1 ${item.submenu.some(sub => pathname === sub.href)
+                    className={`relative flex items-center gap-0.5 text-xs font-medium whitespace-nowrap transition-all duration-200 lg:text-sm xl:text-base ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
                   >
                     <motion.span
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={{ scale: 1.05 }}
                       transition={{ type: 'spring', stiffness: 400 }}
                     >
                       {item.label}
@@ -233,20 +233,20 @@ export default function Navigation() {
                       animate={{ rotate: openDropdown === item.label ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <ChevronDown className="w-4 h-4" />
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0 lg:h-4 lg:w-4" />
                     </motion.div>
                   </button>
                 ) : item.href ? (
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className={`relative font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1 ${pathname === item.href
+                    className={`relative flex items-center gap-0.5 text-xs font-medium whitespace-nowrap transition-all duration-200 lg:text-sm xl:text-base ${pathname === item.href
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
                   >
                     <motion.span
-                      whileHover={{ scale: 1.1 }}
+                      whileHover={{ scale: 1.05 }}
                       transition={{ type: 'spring', stiffness: 400 }}
                     >
                       {item.label}
@@ -254,7 +254,7 @@ export default function Navigation() {
                     {pathname === item.href && (
                       <motion.div
                         layoutId="navbar-indicator"
-                        className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#8B6F47] dark:bg-[#D4A574]"
+                        className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-[#8B6F47] dark:bg-[#D4A574]"
                         initial={false}
                       />
                     )}
@@ -310,14 +310,14 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* Right — own column; clear separation from last nav link */}
-          <div className="hidden shrink-0 items-center justify-end gap-2 md:flex md:gap-3 md:pl-3 lg:pl-4">
+          {/* Right — nudged toward viewport edge */}
+          <div className="hidden shrink-0 items-center justify-end gap-1.5 md:flex md:gap-2 md:pl-2 lg:gap-2.5 lg:pl-3 md:-mr-1 lg:-mr-2">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
-              className="relative shrink-0 p-2 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className="relative shrink-0 p-1.5 text-gray-700 dark:text-gray-300 hover:text-primary-600 dark:hover:text-primary-400 transition-colors md:p-2"
             >
-              <Star className="w-5 h-5" />
+              <Star className="h-4 w-4 md:h-5 md:w-5" />
               {favorites.length > 0 && (
                 <motion.span
                   initial={{ scale: 0 }}
@@ -334,9 +334,7 @@ export default function Navigation() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={toggleTheme}
-              className="p-2.5 rounded-lg bg-white dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584] 
-                         hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-all duration-200
-                         shadow-sm hover:shadow-md border border-[#E8E0D6] dark:border-[#4A4844]"
+              className="rounded-lg border border-[#E8E0D6] bg-white p-2 text-[#6B5D47] shadow-sm transition-all duration-200 hover:bg-[#F5F3F0] hover:shadow-md dark:border-[#4A4844] dark:bg-[#2A2824] dark:text-[#B8A584] dark:hover:bg-[#353330] md:p-2.5"
               aria-label="Toggle theme"
             >
               <motion.div
@@ -344,9 +342,9 @@ export default function Navigation() {
                 transition={{ duration: 0.3 }}
               >
                 {theme === 'dark' ? (
-                  <Sun className="w-5 h-5" />
+                  <Sun className="h-4 w-4 md:h-5 md:w-5" />
                 ) : (
-                  <Moon className="w-5 h-5" />
+                  <Moon className="h-4 w-4 md:h-5 md:w-5" />
                 )}
               </motion.div>
             </motion.button>
@@ -426,7 +424,7 @@ export default function Navigation() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 rounded-lg text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-all duration-200 font-medium"
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-[#6B5D47] transition-all duration-200 hover:bg-[#F5F3F0] dark:text-[#B8A584] dark:hover:bg-[#353330] md:px-3.5 lg:px-4 lg:text-base"
                   >
                     Login
                   </motion.button>
@@ -435,7 +433,7 @@ export default function Navigation() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium whitespace-nowrap flex items-center justify-center"
+                    className="flex items-center justify-center rounded-lg bg-[#8B6F47] px-3 py-2 text-sm font-medium whitespace-nowrap text-white shadow-sm transition-all duration-200 hover:bg-[#6B5D47] hover:shadow-md dark:bg-[#D4A574] dark:hover:bg-[#B8A584] md:px-3.5 lg:px-4 lg:text-base"
                   >
                     <span className="whitespace-nowrap">Sign Up</span>
                   </motion.button>
