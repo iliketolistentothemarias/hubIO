@@ -8,6 +8,7 @@ nav[class*="fixed"][class*="z-"] {
   transform: translateZ(0);
   isolation: isolate;
   will-change: transform;
+  overflow: visible;
 }
 
 /* Wrap at word boundaries only — avoid mid-word hyphens so full words stay readable */

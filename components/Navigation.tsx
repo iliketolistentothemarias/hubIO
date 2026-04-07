@@ -176,23 +176,24 @@ export default function Navigation() {
   return (
     <>
     <nav
-      className={`fixed top-0 left-0 right-0 z-[50002] transition-all duration-200 ${scrolled
+      className={`fixed top-0 left-0 right-0 z-[50002] overflow-visible transition-all duration-200 [padding-top:max(10px,env(safe-area-inset-top,0px))] ${scrolled
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
           : 'bg-transparent'
         }`}
     >
       <div className="container-custom px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between md:justify-center gap-4 md:gap-6 h-16 md:h-20 mx-auto w-full">
+        <div className="flex items-center justify-between md:justify-center gap-4 md:gap-6 min-h-[4.5rem] md:min-h-[5.25rem] py-2.5 md:py-3 mx-auto w-full box-border">
           {/* Logo */}
           <div className="md:pr-8 flex items-center flex-shrink-0">
-            <Link href="/" className="flex items-center gap-2 group w-fit">
+            <Link href="/" className="flex items-center gap-2 group w-fit py-0.5">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
                 transition={{ duration: 0.6 }}
+                className="flex shrink-0"
               >
                 <Heart className="w-8 h-8 text-[#8B6F47] dark:text-[#D4A574]" />
               </motion.div>
-              <span className="text-2xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0]">
+              <span className="text-2xl font-display font-bold leading-normal text-[#2C2416] dark:text-[#F5F3F0]">
                 Communify
               </span>
             </Link>
@@ -484,7 +485,7 @@ export default function Navigation() {
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="md:hidden fixed top-16 right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain"
+                  className="md:hidden fixed right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain [top:calc(4.5rem+max(10px,env(safe-area-inset-top,0px)))]"
                 >
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between">
