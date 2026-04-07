@@ -445,6 +445,7 @@ function DirectoryContent() {
       {compareMode && comparingIds.length > 0 && (
         <ResourceComparison
           selectedIds={comparingIds}
+          resources={resources}
           onClose={() => {
             setCompareMode(false)
             setComparingIds([])

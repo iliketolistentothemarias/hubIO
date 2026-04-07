@@ -4,16 +4,24 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, GitCompare, Check, XCircle, BarChart3 } from 'lucide-react'
 import { Resource } from '@/lib/types'
-import { resources } from '@/data/resources'
+import { resources as fallbackResources } from '@/data/resources'
 
 interface ResourceComparisonProps {
   selectedIds: string[]
+  /** Live directory pool (Supabase + seed); falls back to static seed if omitted */
+  resources?: Resource[]
   onClose: () => void
   onRemove: (id: string) => void
 }
 
-export default function ResourceComparison({ selectedIds, onClose, onRemove }: ResourceComparisonProps) {
-  const selectedResources = resources.filter((r) => selectedIds.includes(r.id))
+export default function ResourceComparison({
+  selectedIds,
+  resources: pool,
+  onClose,
+  onRemove,
+}: ResourceComparisonProps) {
+  const resourcePool = pool && pool.length > 0 ? pool : fallbackResources
+  const selectedResources = resourcePool.filter((r) => selectedIds.includes(r.id))
 
   const comparisonFields = [
     { label: 'Name', field: 'name' },

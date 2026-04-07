@@ -6,6 +6,8 @@ import { MapPin, Phone, Mail, Globe, Star, Heart, Share2, BarChart3, Clock, User
 import { Resource } from '@/lib/types'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import Link from 'next/link'
+import ResourceHeroLogo from '@/components/ResourceHeroLogo'
+import { websiteHref } from '@/lib/utils/resource-logo'
 
 interface ResourceCardProps {
   resource: Resource
@@ -26,14 +28,14 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
         await navigator.share({
           title: resource.name,
           text: resource.description,
-          url: `${window.location.origin}/directory?q=${encodeURIComponent(resource.name)}`,
+          url: `${window.location.origin}/resources/${resource.id}`,
         })
       } catch (err) {
         // User cancelled or error
       }
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(`${window.location.origin}/directory?q=${encodeURIComponent(resource.name)}`)
+      navigator.clipboard.writeText(`${window.location.origin}/resources/${resource.id}`)
     }
   }
 
@@ -99,7 +101,33 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
       </div>
 
       {/* Content */}
-      <div className={`relative z-0 p-6 ${viewMode === 'list' ? 'flex-1' : ''}`}>
+      <div
+        className={`relative z-0 flex min-w-0 ${
+          viewMode === 'list' ? 'flex-row gap-4 p-4 md:p-6 flex-1 items-start' : 'flex-col p-6 flex-1'
+        }`}
+      >
+        {viewMode === 'list' && (
+          <div className="shrink-0 pt-0.5">
+            <ResourceHeroLogo
+              name={resource.name}
+              website={resource.website}
+              image={resource.image}
+              variant="compact"
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+        {viewMode === 'grid' && (
+          <div className="flex justify-center mb-4">
+            <ResourceHeroLogo
+              name={resource.name}
+              website={resource.website}
+              image={resource.image}
+              variant="compact"
+              className="!mx-auto"
+            />
+          </div>
+        )}
         {/* Rating */}
         {resource.rating && (
           <div className="flex items-center gap-2 mb-3">
@@ -200,7 +228,7 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
           </Link>
           {resource.website && (
             <a
-              href={resource.website}
+              href={websiteHref(resource.website)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium px-3"
@@ -223,6 +251,7 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
               {comparing ? 'Comparing' : 'Compare'}
             </button>
           )}
+        </div>
         </div>
       </div>
     </motion.div>

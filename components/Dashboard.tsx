@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Search, Calendar, Users, ArrowRight, Lock, Globe, Loader2, BookOpen } from 'lucide-react'
+import { Search, Calendar, Users, ArrowRight, Lock, Globe, Loader2, BookOpen, Heart } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { supabase } from '@/lib/supabase/client'
@@ -191,7 +191,7 @@ export default function Dashboard() {
                           </span>
                         )}
                         <span className="text-xs text-[#6B5D47]/60 dark:text-[#B8A584]/60 flex items-center gap-1">
-                          <Users className="w-3 h-3" /> Community →
+                          <Heart className="w-3 h-3" /> Resource
                         </span>
                       </div>
                     </div>

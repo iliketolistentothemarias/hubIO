@@ -1,10 +1,12 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Heart, MapPin, Phone, Mail, Globe, ArrowRight, Users, Calendar, Star, Clock, Languages, Award } from 'lucide-react'
+import { Heart, MapPin, Phone, Mail, Globe, ArrowRight, Star, Clock, Languages, Award } from 'lucide-react'
 import Link from 'next/link'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { useData } from '@/contexts/DataContext'
+import ResourceHeroLogo from '@/components/ResourceHeroLogo'
+import { websiteHref } from '@/lib/utils/resource-logo'
 
 export default function HighlightsPage() {
   const { resources, isLoading } = useData()
@@ -119,30 +121,14 @@ function FeaturedResourceCard({ resource, index, isFavorite, onToggleFavorite }:
       className={`flex flex-col ${isEven ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 items-center`}
     >
       {/* Image/Icon Section */}
-      <div className="w-full lg:w-1/3">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          className="relative aspect-square rounded-[3rem] bg-gradient-to-br from-[#8B6F47] to-[#D4A574] flex items-center justify-center 
-                     overflow-hidden shadow-2xl group"
-        >
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{
-              duration: 10,
-              repeat: Infinity,
-              repeatType: 'reverse',
-            }}
-            className="absolute inset-0 bg-black/10 opacity-20"
+      <div className="w-full lg:w-1/3 max-w-md mx-auto lg:mx-0">
+        <motion.div whileHover={{ scale: 1.02 }} className="relative aspect-square w-full max-w-sm mx-auto">
+          <ResourceHeroLogo
+            name={resource.name}
+            website={resource.website}
+            image={resource.image}
+            className="!w-full !h-full !max-w-none !mx-0 rounded-[3rem] !shadow-2xl"
           />
-          <Heart className="w-32 h-32 text-white relative z-10 opacity-20" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-white/20 backdrop-blur-md rounded-full p-8 shadow-2xl border border-white/20">
-              <Users className="w-16 h-16 text-white" />
-            </div>
-          </div>
         </motion.div>
       </div>
 
@@ -220,7 +206,7 @@ function FeaturedResourceCard({ resource, index, isFavorite, onToggleFavorite }:
                     <div className="p-2 rounded-lg bg-[#FAF9F6] dark:bg-[#16141D] border border-[#E8E0D6]/50 shrink-0">
                       <Globe className="w-4 h-4 text-[#8B6F47]" />
                     </div>
-                    <a href={resource.website} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-[#8B6F47] transition-colors truncate">Visit Website</a>
+                    <a href={websiteHref(resource.website)} target="_blank" rel="noopener noreferrer" className="text-sm font-medium hover:text-[#8B6F47] transition-colors truncate">Visit Website</a>
                   </div>
                 )}
               </div>

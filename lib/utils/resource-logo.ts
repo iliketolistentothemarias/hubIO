@@ -14,6 +14,15 @@ export function hostnameFromWebsite(website: unknown): string | null {
   }
 }
 
+/** Use in <a href> so values without a scheme still open correctly */
+export function websiteHref(website: string | null | undefined): string {
+  if (website == null || typeof website !== 'string') return '#'
+  const t = website.trim()
+  if (!t) return '#'
+  if (/^https?:\/\//i.test(t)) return t
+  return `https://${t}`
+}
+
 export function resourceLogoUrlCandidates(image: unknown, website: unknown): string[] {
   const urls: string[] = []
   if (typeof image === 'string' && image.trim()) {

@@ -233,7 +233,7 @@ export default function AdvancedSearch({ initialQuery = '', onQueryChange, resou
                     transition={{ delay: index * 0.05 }}
                   >
                     <Link
-                      href={`/directory?q=${encodeURIComponent(result.name)}`}
+                      href={`/resources/${result.id}`}
                       onClick={() => handleSelectResult(result)}
                       className="block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
                     >

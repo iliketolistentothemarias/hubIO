@@ -13,6 +13,7 @@ import { Resource } from '@/lib/types'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { renderToStaticMarkup } from 'react-dom/server'
+import Link from 'next/link'
 
 // Mapping categories to Lucide icons
 const categoryIcons: Record<string, any> = {
@@ -244,12 +245,12 @@ export default function InteractiveMap({ resources, onResourceClick }: Interacti
                       <MapPin size={10} /> {selectedResource.address}
                     </span>
                   </div>
-                  <button 
-                    onClick={() => window.location.href = `/directory?id=${selectedResource.id}`}
-                    className="text-xs font-bold text-white bg-[#8B6F47] dark:bg-[#D4A574] px-4 py-2 rounded-xl hover:opacity-90 transition-all shadow-md"
+                  <Link
+                    href={`/resources/${selectedResource.id}`}
+                    className="inline-block text-xs font-bold text-white bg-[#8B6F47] dark:bg-[#D4A574] px-4 py-2 rounded-xl hover:opacity-90 transition-all shadow-md text-center"
                   >
                     View Full Details
-                  </button>
+                  </Link>
                 </div>
                 <button
                   onClick={() => setSelectedResource(null)}

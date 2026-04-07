@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Store, Star, MapPin, Phone, Globe, Clock, Award, TrendingUp, 
-  Filter, Search, Grid, List, CheckCircle, DollarSign, X, Mail
+  Filter, Search, Grid, List, CheckCircle, DollarSign, X, Mail, Heart,
 } from 'lucide-react'
 import TabNavigation from '@/components/TabNavigation'
 import LiquidGlass from '@/components/LiquidGlass'
@@ -450,8 +450,8 @@ function BusinessListView({ businesses, onViewDetails }: { businesses: Business[
           <LiquidGlass intensity="light">
             <div className="p-6 flex flex-col md:flex-row gap-6">
               <div className="flex-shrink-0">
-                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-primary-400 to-secondary-400 flex items-center justify-center">
-                  <Store className="w-16 h-16 text-white" />
+                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-[#8B6F47] to-[#D4A574] flex items-center justify-center shadow-lg">
+                  <Heart className="w-16 h-16 text-white" strokeWidth={1.5} />
                 </div>
               </div>
               <div className="flex-1">

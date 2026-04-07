@@ -10,12 +10,20 @@ type Props = {
   /** Direct logo URL from DB or seed data (optional) */
   image?: string | null
   className?: string
+  /** Smaller tile for directory list rows */
+  variant?: 'hero' | 'compact'
 }
 
 /**
  * Shows organization logo from `image`, else Clearbit/Google favicon from `website`, else heart placeholder.
  */
-export default function ResourceHeroLogo({ name, website, image, className = '' }: Props) {
+export default function ResourceHeroLogo({
+  name,
+  website,
+  image,
+  className = '',
+  variant = 'hero',
+}: Props) {
   const urls = useMemo(() => resourceLogoUrlCandidates(image, website), [image, website])
   const [index, setIndex] = useState(0)
 
@@ -26,9 +34,17 @@ export default function ResourceHeroLogo({ name, website, image, className = '' 
   const src = urls[index]
   const showImage = src != null && index < urls.length
 
-  const boxClass =
-    'aspect-square w-24 h-24 md:w-40 md:h-40 mx-auto rounded-2xl md:rounded-3xl shadow-2xl relative group overflow-hidden ' +
-    className
+  const sizeClass =
+    variant === 'compact'
+      ? 'aspect-square w-16 h-16 sm:w-20 sm:h-20 mx-0 rounded-xl shadow-lg'
+      : 'aspect-square w-24 h-24 md:w-40 md:h-40 mx-auto rounded-2xl md:rounded-3xl shadow-2xl'
+
+  const heartClass =
+    variant === 'compact' ? 'w-7 h-7 sm:w-9 sm:h-9 text-white' : 'w-10 h-10 md:w-16 md:h-16 text-white'
+
+  const imgPad = variant === 'compact' ? 'p-1 sm:p-1.5' : 'p-2 md:p-3'
+
+  const boxClass = `${sizeClass} relative group overflow-hidden ${className}`.trim()
 
   if (!showImage) {
     return (
@@ -37,7 +53,7 @@ export default function ResourceHeroLogo({ name, website, image, className = '' 
         aria-hidden
       >
         <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <Heart className="w-10 h-10 md:w-16 md:h-16 text-white" />
+        <Heart className={heartClass} />
       </div>
     )
   }
@@ -51,7 +67,7 @@ export default function ResourceHeroLogo({ name, website, image, className = '' 
       <img
         src={src}
         alt={`${name} logo`}
-        className="w-full h-full object-contain p-2 md:p-3"
+        className={`w-full h-full object-contain ${imgPad}`}
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"

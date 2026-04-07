@@ -28,6 +28,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
 import ResourceHeroLogo from '@/components/ResourceHeroLogo'
+import { websiteHref } from '@/lib/utils/resource-logo'
 
 type CommunityTab = 'chat' | 'members'
 
@@ -450,7 +451,7 @@ export default function ResourceDetailPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#8B6F47]/60 mb-1">Website</p>
-                        <a href={resource.website} target="_blank" rel="noopener noreferrer" 
+                        <a href={websiteHref(resource.website)} target="_blank" rel="noopener noreferrer" 
                            className="text-[#8B6F47] hover:underline font-medium break-words block text-sm md:text-base [overflow-wrap:anywhere]">
                           {resource.website.replace(/^https?:\/\//, '')}
                         </a>
