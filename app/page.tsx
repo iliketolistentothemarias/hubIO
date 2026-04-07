@@ -37,10 +37,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] dark:bg-[#1C1B18]">
-      {/* Hero Section - Minimal Design */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden 
-                          bg-[#FAF9F6] dark:bg-[#1C1B18]">
-        <motion.div style={{ opacity: opacity || 1 }} className="container-custom section-padding relative z-10">
+      {/* Hero Section — top-aligned so logo sits clearly below fixed nav (extra pt = breathing room under bar) */}
+      <section
+        className="relative flex min-h-screen flex-col items-center justify-start overflow-hidden bg-[#FAF9F6] dark:bg-[#1C1B18]
+          pt-[calc(env(safe-area-inset-top,0px)+6.75rem)]
+          sm:pt-[calc(env(safe-area-inset-top,0px)+7.5rem)]
+          md:pt-[calc(env(safe-area-inset-top,0px)+8.75rem)]
+          lg:pt-[calc(env(safe-area-inset-top,0px)+9.5rem)]"
+      >
+        <motion.div
+          style={{ opacity: opacity || 1 }}
+          className="container-custom relative z-10 w-full px-4 pb-16 sm:px-6 md:pb-24 lg:px-8"
+        >
           <div className="text-center max-w-4xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
