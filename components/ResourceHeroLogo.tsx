@@ -39,7 +39,7 @@ export default function ResourceHeroLogo({
   const srcSet = useMemo(() => {
     if (!host || !src) return undefined
     if (src.includes('logo.clearbit.com')) {
-      return `https://logo.clearbit.com/${host}?size=128 1x, https://logo.clearbit.com/${host}?size=256 2x`
+      return `https://logo.clearbit.com/${host}?size=256 1x, https://logo.clearbit.com/${host}?size=512 2x`
     }
     if (src.includes('google.com/s2/favicons')) {
       const d = encodeURIComponent(host)
@@ -50,13 +50,13 @@ export default function ResourceHeroLogo({
 
   const sizeClass =
     variant === 'compact'
-      ? 'aspect-square w-16 h-16 sm:w-20 sm:h-20 mx-0 rounded-xl shadow-lg'
-      : 'aspect-square w-24 h-24 md:w-40 md:h-40 mx-auto rounded-2xl md:rounded-3xl shadow-2xl'
+      ? 'aspect-square w-[4.75rem] h-[4.75rem] sm:w-20 sm:h-20 mx-0 rounded-xl shadow-lg'
+      : 'aspect-square w-28 h-28 sm:w-32 sm:h-32 md:w-44 md:h-44 mx-auto rounded-2xl md:rounded-3xl shadow-2xl'
 
   const heartClass =
-    variant === 'compact' ? 'w-7 h-7 sm:w-9 sm:h-9 text-white' : 'w-10 h-10 md:w-16 md:h-16 text-white'
+    variant === 'compact' ? 'w-7 h-7 sm:w-9 sm:h-9 text-white' : 'w-11 h-11 sm:w-12 sm:h-12 md:w-[4.25rem] md:h-[4.25rem] text-white'
 
-  const imgPad = variant === 'compact' ? 'p-1 sm:p-1.5' : 'p-1.5 md:p-2.5'
+  const imgPad = variant === 'compact' ? 'p-0.5 sm:p-1' : 'p-1 md:p-2'
 
   const boxClass = `${sizeClass} relative group overflow-hidden ${className}`.trim()
 
@@ -81,7 +81,11 @@ export default function ResourceHeroLogo({
       <img
         src={src}
         srcSet={srcSet}
-        sizes={variant === 'compact' ? '(max-width: 640px) 64px, 80px' : '(max-width: 768px) 96px, 160px'}
+        sizes={
+          variant === 'compact'
+            ? '(max-width: 640px) 76px, 80px'
+            : '(max-width: 640px) 112px, (max-width: 768px) 128px, 176px'
+        }
         alt={`${name} logo`}
         className={`h-full w-full object-contain antialiased [image-rendering:auto] [backface-visibility:hidden] ${imgPad}`}
         loading={variant === 'hero' ? 'eager' : 'lazy'}
