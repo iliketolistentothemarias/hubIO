@@ -176,15 +176,15 @@ export default function Navigation() {
   return (
     <>
     <nav
-      className={`fixed top-0 left-0 right-0 z-[50002] overflow-visible transition-all duration-200 [padding-top:max(1.25rem,calc(env(safe-area-inset-top,0px)+10px))] ${scrolled
+      className={`fixed top-0 left-0 right-0 z-[50002] overflow-visible transition-all duration-200 [padding-top:max(10px,env(safe-area-inset-top,0px))] ${scrolled
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
           : 'bg-transparent'
         }`}
     >
-      <div className="container-custom px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between md:justify-center gap-4 md:gap-6 min-h-[4.5rem] md:min-h-[5.25rem] py-2.5 md:py-3 mx-auto w-full box-border">
+      <div className="mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6">
+        <div className="flex items-center justify-between md:justify-center gap-2 md:gap-3 min-h-[4.5rem] md:min-h-[5.25rem] py-2.5 md:py-3 w-full box-border">
           {/* Logo */}
-          <div className="md:pr-8 flex items-center flex-shrink-0">
+          <div className="md:pr-3 flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center gap-2 group w-fit py-0.5">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -200,7 +200,7 @@ export default function Navigation() {
           </div>
 
           {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex items-center gap-6 justify-center" ref={dropdownRef}>
+          <div className="hidden md:flex items-center gap-2 lg:gap-3 justify-center min-w-0 shrink" ref={dropdownRef}>
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href || item.label}
@@ -306,7 +306,7 @@ export default function Navigation() {
           </div>
 
           {/* Right Side - Utilities */}
-          <div className="hidden md:flex items-center gap-4 justify-end pl-8">
+          <div className="hidden md:flex items-center gap-1.5 lg:gap-2 justify-end shrink-0 pl-2 md:pl-3">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
@@ -430,7 +430,7 @@ export default function Navigation() {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-5 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium whitespace-nowrap flex items-center justify-center min-w-[190px]"
+                    className="px-4 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md font-medium whitespace-nowrap flex items-center justify-center"
                   >
                     <span className="whitespace-nowrap">Sign Up</span>
                   </motion.button>
@@ -485,7 +485,7 @@ export default function Navigation() {
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="md:hidden fixed right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain [top:calc(4.5rem+max(1.25rem,calc(env(safe-area-inset-top,0px)+10px)))]"
+                  className="md:hidden fixed right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain [top:calc(4.5rem+max(10px,env(safe-area-inset-top,0px)))]"
                 >
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between">
