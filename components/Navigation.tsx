@@ -179,13 +179,13 @@ export default function Navigation() {
   return (
     <>
     <nav
-      className={`fixed top-0 left-0 right-0 z-[50002] overflow-visible transition-all duration-200 [padding-top:max(10px,env(safe-area-inset-top,0px))] ${scrolled
+      className={`fixed top-0 left-0 right-0 z-[50002] overflow-visible transition-all duration-200 [padding-top:max(8px,env(safe-area-inset-top,0px))] ${scrolled
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
           : 'bg-transparent'
         }`}
     >
       <div className="mx-auto w-full max-w-[100rem] px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
-        <div className="flex min-h-[4.5rem] md:min-h-[5.25rem] w-full box-border items-center justify-between gap-2 py-2.5 md:py-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-2 lg:gap-x-3.5">
+        <div className="flex min-h-[4.25rem] md:min-h-[5rem] w-full box-border items-center justify-between gap-2 py-2 md:py-2.5 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-2 lg:gap-x-3.5">
           {/* Logo — nudged toward viewport left */}
           <div className="flex shrink-0 items-center md:-ml-1 lg:-ml-2">
             <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group w-fit py-0.5 pr-0.5 md:pr-1">
@@ -491,7 +491,7 @@ export default function Navigation() {
                   animate={{ x: 0 }}
                   exit={{ x: '100%' }}
                   transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                  className="md:hidden fixed right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain [top:calc(4.5rem+max(10px,env(safe-area-inset-top,0px)))]"
+                  className="md:hidden fixed right-0 bottom-0 w-[280px] max-w-[85vw] bg-white dark:bg-[#1a1a1a] z-[50001] shadow-2xl overflow-y-auto overscroll-contain [top:calc(4.25rem+max(8px,env(safe-area-inset-top,0px)))]"
                 >
               <div className="p-6 space-y-8">
                 <div className="flex items-center justify-between">
