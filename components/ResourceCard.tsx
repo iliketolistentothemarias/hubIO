@@ -132,12 +132,12 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
         </span>
 
         {/* Title */}
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors break-all">
+        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors break-words [overflow-wrap:anywhere]">
           {resource.name}
         </h3>
 
         {/* Description */}
-        <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2 break-all">
+        <p className="text-gray-600 dark:text-gray-400 mb-4 break-words [overflow-wrap:anywhere]">
           {resource.description}
         </p>
 
@@ -151,7 +151,7 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
           )}
           <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
             <MapPin className="w-4 h-4 text-primary-600 dark:text-primary-400 mt-0.5 flex-shrink-0" />
-            <span className="break-all">{resource.address}</span>
+            <span className="break-words [overflow-wrap:anywhere]">{resource.address}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
             <Phone className="w-4 h-4 text-primary-600 dark:text-primary-400 flex-shrink-0" />

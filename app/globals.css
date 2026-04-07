@@ -10,15 +10,14 @@ nav[class*="fixed"][class*="z-"] {
   will-change: transform;
 }
 
-/* Mobile hyphenation — breaks long words at syllable boundaries with a hyphen */
+/* Wrap at word boundaries only — avoid mid-word hyphens so full words stay readable */
 @media (max-width: 768px) {
   h1, h2, h3, h4, h5, h6, p, span, a, li, td, th, label, button {
-    hyphens: auto;
-    -webkit-hyphens: auto;
-    word-break: break-word;
-    overflow-wrap: break-word;
+    hyphens: none;
+    -webkit-hyphens: none;
+    word-break: normal;
+    overflow-wrap: anywhere;
   }
-  /* Don't hyphenate short UI labels, badges, buttons with icons */
   .no-hyphens, [class*="rounded-full"], code, pre {
     hyphens: none;
     -webkit-hyphens: none;
@@ -115,6 +114,16 @@ nav[class*="fixed"][class*="z-"] {
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent browser text zoom quirks on desktop */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
   }
   
   body {

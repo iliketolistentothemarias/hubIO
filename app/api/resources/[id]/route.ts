@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getDatabase } from '@/lib/db/schema'
-import { requireUserFromRequest, requireRoleFromRequest } from '@/lib/auth/server-request'
+import { requireUserFromRequest } from '@/lib/auth/server-request'
 import { validateResource } from '@/lib/utils/validation'
 import { ApiResponse, Resource } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
@@ -124,10 +124,21 @@ export async function PUT(
   }
 }
 
+function splitStringList(value: unknown): string[] | undefined {
+  if (value === undefined) return undefined
+  if (Array.isArray(value)) {
+    return value.map((s) => String(s).trim()).filter(Boolean)
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map((s) => s.trim()).filter(Boolean)
+  }
+  return undefined
+}
+
 /**
  * PATCH /api/resources/[id]
  *
- * Update resource settings (visibility, application_question) — requires ownership or admin
+ * Owner or admin: visibility, application_question, and core listing fields (name, location, etc.)
  */
 export async function PATCH(
   request: NextRequest,
@@ -155,18 +166,99 @@ export async function PATCH(
 
     const body = await request.json()
     const allowed: Record<string, any> = {}
-    if (body.visibility !== undefined) allowed.visibility = body.visibility
-    if (body.application_question !== undefined) allowed.application_question = body.application_question
+
+    const str = (v: unknown) => (typeof v === 'string' ? v.trim() : v)
+
+    if (body.name !== undefined) {
+      const n = str(body.name) as string
+      if (!n) return NextResponse.json({ success: false, error: 'name cannot be empty' }, { status: 400 })
+      allowed.name = n
+    }
+    if (body.category !== undefined) {
+      const c = str(body.category) as string
+      if (!c) return NextResponse.json({ success: false, error: 'category cannot be empty' }, { status: 400 })
+      allowed.category = c
+    }
+    if (body.description !== undefined) {
+      const d = str(body.description) as string
+      if (!d) return NextResponse.json({ success: false, error: 'description cannot be empty' }, { status: 400 })
+      allowed.description = d
+    }
+    if (body.address !== undefined) {
+      const a = str(body.address) as string
+      if (!a) return NextResponse.json({ success: false, error: 'address cannot be empty' }, { status: 400 })
+      allowed.address = a
+    }
+    if (body.phone !== undefined) {
+      const p = str(body.phone) as string
+      if (!p) return NextResponse.json({ success: false, error: 'phone cannot be empty' }, { status: 400 })
+      allowed.phone = p
+    }
+    if (body.email !== undefined) {
+      const e = str(body.email) as string
+      if (!e) return NextResponse.json({ success: false, error: 'email cannot be empty' }, { status: 400 })
+      allowed.email = e
+    }
+    if (body.website !== undefined) {
+      const w = str(body.website) as string
+      allowed.website = w || null
+    }
+    if (body.hours !== undefined) {
+      const h = str(body.hours)
+      allowed.hours = h === '' ? null : h
+    }
+    if (body.visibility !== undefined) {
+      if (!['public', 'private'].includes(body.visibility)) {
+        return NextResponse.json({ success: false, error: 'visibility must be public or private' }, { status: 400 })
+      }
+      allowed.visibility = body.visibility
+    }
+    if (body.application_question !== undefined) {
+      const q = str(body.application_question) as string
+      allowed.application_question = q === '' ? null : q
+    }
+
+    const tags = splitStringList(body.tags)
+    if (tags !== undefined) allowed.tags = tags
+    const services = splitStringList(body.services)
+    if (services !== undefined) allowed.services = services
+    const languages = splitStringList(body.languages)
+    if (languages !== undefined) allowed.languages = languages
+    const accessibility = splitStringList(body.accessibility)
+    if (accessibility !== undefined) allowed.accessibility = accessibility
+
+    if (body.location !== undefined) {
+      if (body.location === null) {
+        allowed.location = null
+      } else if (typeof body.location === 'object') {
+        allowed.location = body.location
+      } else if (typeof body.location === 'string') {
+        const raw = body.location.trim()
+        if (!raw) allowed.location = null
+        else {
+          try {
+            allowed.location = JSON.parse(raw)
+          } catch {
+            return NextResponse.json(
+              { success: false, error: 'location must be valid JSON or an object' },
+              { status: 400 }
+            )
+          }
+        }
+      }
+    }
 
     if (Object.keys(allowed).length === 0) {
       return NextResponse.json({ success: false, error: 'No valid fields to update' }, { status: 400 })
     }
 
+    allowed.updated_at = new Date().toISOString()
+
     const { data: updated, error } = await admin
       .from('resources')
-      .update({ ...allowed, updated_at: new Date().toISOString() })
+      .update(allowed)
       .eq('id', params.id)
-      .select('id, visibility, application_question')
+      .select('*')
       .single()
 
     if (error) throw error
@@ -180,27 +272,42 @@ export async function PATCH(
 
 /**
  * DELETE /api/resources/[id]
- * 
- * Delete resource (requires admin role)
+ *
+ * Submitting organizer or admin — removes the resource from Supabase (cascades signups, etc.)
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRoleFromRequest(request, 'admin')
-    
-    const resource = db.getResource(params.id)
+    const user = await requireUserFromRequest(request)
+    const admin = createAdminClient()
 
-    if (!resource) {
-      return NextResponse.json(
-        { success: false, error: 'Resource not found' },
-        { status: 404 }
-      )
+    const { data: resource, error: fetchErr } = await admin
+      .from('resources')
+      .select('id, submitted_by, name')
+      .eq('id', params.id)
+      .single()
+
+    if (fetchErr || !resource) {
+      return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 })
     }
 
-    // In production, would actually delete from database
-    // For demo, we'll just return success
+    const isOwner = resource.submitted_by === user.id
+    const isAdmin = user.role === 'admin'
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 })
+    }
+
+    const { error: delErr } = await admin.from('resources').delete().eq('id', params.id)
+
+    if (delErr) {
+      console.error('DELETE resource error:', delErr)
+      return NextResponse.json(
+        { success: false, error: delErr.message || 'Failed to delete resource' },
+        { status: 500 }
+      )
+    }
 
     const response: ApiResponse<null> = {
       success: true,
@@ -210,12 +317,9 @@ export async function DELETE(
     return NextResponse.json(response)
   } catch (error: any) {
     console.error('Error deleting resource:', error)
-    
-    if (error.message?.includes('required')) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      )
+
+    if (error.message === 'Authentication required') {
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 })
     }
 
     return NextResponse.json(

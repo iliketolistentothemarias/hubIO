@@ -42,7 +42,7 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8B6F47" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         {process.env.NODE_ENV === 'development' && (
           <meta httpEquiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
         )}

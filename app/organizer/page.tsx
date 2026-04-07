@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, Check, X, Loader2, ChevronLeft, Globe, Lock, Plus,
   Save, Settings, Users, MessageSquare, Send, MoreVertical,
-  UserMinus, VolumeX, Volume2, ShieldOff,
+  UserMinus, VolumeX, Volume2, ShieldOff, Trash2, AlertTriangle,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
@@ -23,6 +23,32 @@ interface OrgResource {
   visibility: 'public' | 'private'
   application_question: string | null
   submitted_by: string
+  address?: string
+  phone?: string
+  email?: string
+  website?: string | null
+  hours?: string | null
+  tags?: string[] | null
+  services?: string[] | null
+  languages?: string[] | null
+  accessibility?: string[] | null
+  location?: Record<string, unknown> | null
+}
+
+type DetailsFormState = {
+  name: string
+  category: string
+  description: string
+  address: string
+  phone: string
+  email: string
+  website: string
+  hours: string
+  tags: string
+  services: string
+  languages: string
+  accessibility: string
+  locationJson: string
 }
 
 interface Application {
@@ -80,8 +106,24 @@ export default function OrganizerPage() {
     visibility: 'public',
     application_question: '',
   })
+  const [detailsForm, setDetailsForm] = useState<DetailsFormState>({
+    name: '',
+    category: '',
+    description: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    hours: '',
+    tags: '',
+    services: '',
+    languages: '',
+    accessibility: '',
+    locationJson: '',
+  })
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   // Applications (members tab)
   const [applications, setApplications] = useState<Application[]>([])
@@ -198,16 +240,40 @@ export default function OrganizerPage() {
     return () => document.removeEventListener('visibilitychange', onVisible)
   }, [userId, checking, loadResources])
 
-  const openResource = (res: OrgResource) => {
+  const openResource = async (res: OrgResource) => {
     setSelectedResource(res)
-    setSettingsForm({
-      visibility: res.visibility || 'public',
-      application_question: res.application_question || '',
-    })
     setSaveMsg('')
     setManageTab('settings')
     setApplications([])
     setAnnouncements([])
+
+    const { data: full } = await supabase.from('resources').select('*').eq('id', res.id).maybeSingle()
+    const row = { ...res, ...(full || {}) } as OrgResource
+    setSelectedResource(row)
+
+    setSettingsForm({
+      visibility: row.visibility || 'public',
+      application_question: row.application_question || '',
+    })
+
+    const joinList = (v: string[] | null | undefined) =>
+      Array.isArray(v) ? v.join(', ') : ''
+
+    setDetailsForm({
+      name: row.name || '',
+      category: row.category || '',
+      description: row.description || '',
+      address: row.address || '',
+      phone: row.phone || '',
+      email: row.email || '',
+      website: row.website || '',
+      hours: row.hours || '',
+      tags: joinList(row.tags),
+      services: joinList(row.services),
+      languages: joinList(row.languages),
+      accessibility: joinList(row.accessibility),
+      locationJson: row.location ? JSON.stringify(row.location, null, 2) : '',
+    })
   }
 
   const handleBack = () => {
@@ -221,27 +287,80 @@ export default function OrganizerPage() {
 
   // ─── Settings ──────────────────────────────────────────────────────────────
 
-  const handleSaveSettings = async () => {
+  const handleSaveResource = async () => {
     if (!selectedResource) return
     setSaving(true)
     setSaveMsg('')
     try {
+      const rawLoc = detailsForm.locationJson.trim()
+      const body: Record<string, unknown> = {
+        name: detailsForm.name.trim(),
+        category: detailsForm.category.trim(),
+        description: detailsForm.description.trim(),
+        address: detailsForm.address.trim(),
+        phone: detailsForm.phone.trim(),
+        email: detailsForm.email.trim(),
+        website: detailsForm.website.trim() || null,
+        hours: detailsForm.hours.trim() || null,
+        tags: detailsForm.tags,
+        services: detailsForm.services,
+        languages: detailsForm.languages,
+        accessibility: detailsForm.accessibility,
+        visibility: settingsForm.visibility,
+        application_question:
+          settingsForm.visibility === 'private' ? settingsForm.application_question.trim() || null : null,
+      }
+
+      if (rawLoc) {
+        try {
+          body.location = JSON.parse(rawLoc) as Record<string, unknown>
+        } catch {
+          setSaveMsg('Location must be valid JSON (or clear the field).')
+          setSaving(false)
+          return
+        }
+      }
+
       const res = await apiFetch(`/api/resources/${selectedResource.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settingsForm),
+        body: JSON.stringify(body),
       })
       const json = await res.json()
       if (!json.success) throw new Error(json.error)
-      // Update local lists
-      setSelectedResource((prev) => prev ? { ...prev, ...settingsForm } : prev)
-      setResources((prev) => prev.map((r) => r.id === selectedResource.id ? { ...r, ...settingsForm } : r))
+
+      const updated = json.data as OrgResource
+      setSelectedResource((prev) => (prev ? { ...prev, ...updated } : prev))
+      setResources((prev) =>
+        prev.map((r) => (r.id === selectedResource.id ? { ...r, ...updated } : r))
+      )
       setSaveMsg('Saved!')
-      setTimeout(() => setSaveMsg(''), 2000)
+      setTimeout(() => setSaveMsg(''), 2500)
     } catch (e) {
       setSaveMsg('Failed to save: ' + (e as Error).message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDeleteResource = async () => {
+    if (!selectedResource) return
+    const ok = window.confirm(
+      `Delete "${selectedResource.name}" permanently? This cannot be undone.`
+    )
+    if (!ok) return
+    setDeleting(true)
+    setSaveMsg('')
+    try {
+      const res = await apiFetch(`/api/resources/${selectedResource.id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error || 'Delete failed')
+      setResources((prev) => prev.filter((r) => r.id !== selectedResource.id))
+      handleBack()
+    } catch (e) {
+      setSaveMsg('Delete failed: ' + (e as Error).message)
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -510,7 +629,7 @@ export default function OrganizerPage() {
                   {resources.map((res) => (
                     <motion.button
                       key={res.id}
-                      onClick={() => openResource(res)}
+                      onClick={() => void openResource(res)}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       whileHover={{ y: -3, scale: 1.02 }}
@@ -530,8 +649,8 @@ export default function OrganizerPage() {
                           <MoreVertical className="w-3.5 h-3.5 text-[#8B6F47] dark:text-[#D4A574]" />
                         </span>
                       </div>
-                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1 line-clamp-2">{res.name}</h3>
-                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] mb-2 line-clamp-2">{res.description}</p>
+                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words text-left">{res.name}</h3>
+                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] mb-2 break-words text-left">{res.description}</p>
                       <p className="text-xs text-[#6B5D47] dark:text-[#B8A584]">{res.category}</p>
                     </motion.button>
                   ))}
@@ -559,8 +678,8 @@ export default function OrganizerPage() {
                 </Link>
               </div>
 
-              <h2 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1">{selectedResource.name}</h2>
-              <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mb-5">{selectedResource.category}</p>
+              <h2 className="text-xl font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words [overflow-wrap:anywhere]">{selectedResource.name}</h2>
+              <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] mb-5 break-words">{selectedResource.category}</p>
 
               {/* Sub-tabs */}
               <div className="flex gap-0.5 border-b border-[#E8E0D6] dark:border-[#3A3830] mb-6 overflow-x-auto scrollbar-none -mx-1 px-1">
@@ -584,27 +703,146 @@ export default function OrganizerPage() {
 
                 {/* Settings Tab */}
                 {manageTab === 'settings' && (
-                  <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                    <div className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-6 space-y-5">
-                      <h3 className="text-base font-bold text-[#2C2416] dark:text-[#F5F3F0]">Visibility &amp; Access</h3>
+                  <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                    <div className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-6 space-y-4">
+                      <h3 className="text-base font-bold text-[#2C2416] dark:text-[#F5F3F0] break-words">Resource information</h3>
+                      <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] break-words">
+                        Update how your resource appears in the directory (address, contact, services, map data as JSON).
+                      </p>
 
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Name</label>
+                          <input
+                            value={detailsForm.name}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, name: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Category</label>
+                          <input
+                            value={detailsForm.category}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, category: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Phone</label>
+                          <input
+                            value={detailsForm.phone}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, phone: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Description</label>
+                          <textarea
+                            rows={4}
+                            value={detailsForm.description}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, description: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30 resize-y min-h-[100px]"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Street address</label>
+                          <input
+                            value={detailsForm.address}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, address: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Email</label>
+                          <input
+                            type="email"
+                            value={detailsForm.email}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, email: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Website</label>
+                          <input
+                            value={detailsForm.website}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, website: e.target.value }))}
+                            placeholder="https://"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Hours</label>
+                          <input
+                            value={detailsForm.hours}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, hours: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Tags (comma-separated)</label>
+                          <input
+                            value={detailsForm.tags}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, tags: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Services (comma-separated)</label>
+                          <input
+                            value={detailsForm.services}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, services: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Languages (comma-separated)</label>
+                          <input
+                            value={detailsForm.languages}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, languages: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">Accessibility (comma-separated)</label>
+                          <input
+                            value={detailsForm.accessibility}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, accessibility: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">
+                            Location (JSON for maps — optional)
+                          </label>
+                          <textarea
+                            rows={3}
+                            value={detailsForm.locationJson}
+                            onChange={(e) => setDetailsForm((f) => ({ ...f, locationJson: e.target.value }))}
+                            placeholder='{"lat":40.44,"lng":-79.99}'
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm font-mono focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30 resize-y"
+                          />
+                        </div>
+                      </div>
+
+                      <h3 className="text-base font-bold text-[#2C2416] dark:text-[#F5F3F0] pt-2 break-words">Visibility &amp; access</h3>
                       <div>
-                        <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-2">
+                        <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-2 break-words">
                           Who can join this resource?
                         </label>
-                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                           {(['public', 'private'] as const).map((v) => (
                             <button
                               key={v}
+                              type="button"
                               onClick={() => setSettingsForm((f) => ({ ...f, visibility: v }))}
-                              className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition-all touch-manipulation ${
+                              className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition-all touch-manipulation text-left break-words ${
                                 settingsForm.visibility === v
                                   ? 'border-[#8B6F47] bg-[#8B6F47]/10 text-[#8B6F47] dark:border-[#D4A574] dark:bg-[#D4A574]/10 dark:text-[#D4A574]'
                                   : 'border-[#E8E0D6] dark:border-[#3A3830] text-[#6B5D47] dark:text-[#B8A584] hover:border-[#8B6F47]/50'
                               }`}
                             >
-                              {v === 'public' ? <Globe className="w-4 h-4 flex-shrink-0" /> : <Lock className="w-4 h-4 flex-shrink-0" />}
-                              {v === 'public' ? 'Public — anyone can join' : 'Private — I approve members'}
+                              {v === 'public' ? <Globe className="w-4 h-4 shrink-0" /> : <Lock className="w-4 h-4 shrink-0" />}
+                              <span className="break-words">{v === 'public' ? 'Public — anyone can join' : 'Private — I approve members'}</span>
                             </button>
                           ))}
                         </div>
@@ -612,7 +850,7 @@ export default function OrganizerPage() {
 
                       {settingsForm.visibility === 'private' && (
                         <div>
-                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">
                             Application question <span className="text-[#8B6F47] text-xs">(shown to applicants)</span>
                           </label>
                           <input
@@ -624,22 +862,52 @@ export default function OrganizerPage() {
                         </div>
                       )}
 
-                      <div className="flex items-center gap-3 pt-2">
+                      <div className="flex flex-wrap items-center gap-3 pt-2">
                         <motion.button
+                          type="button"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={handleSaveSettings}
+                          onClick={handleSaveResource}
                           disabled={saving}
                           className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] font-semibold text-sm disabled:opacity-50 transition-all"
                         >
                           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                          Save Settings
+                          Save changes
                         </motion.button>
                         {saveMsg && (
-                          <span className={`text-sm font-semibold ${saveMsg.startsWith('Failed') ? 'text-red-600' : 'text-green-600 dark:text-green-400'}`}>
+                          <span
+                            className={`text-sm font-semibold break-words max-w-full ${
+                              saveMsg.startsWith('Saved!')
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}
+                          >
                             {saveMsg}
                           </span>
                         )}
+                      </div>
+                    </div>
+
+                    <div className="bg-red-50 dark:bg-red-950/30 rounded-2xl border border-red-200 dark:border-red-900/50 p-6">
+                      <div className="flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base font-bold text-red-900 dark:text-red-200 break-words">Delete resource</h3>
+                          <p className="text-sm text-red-800/90 dark:text-red-300/90 mt-1 break-words">
+                            Permanently remove this listing, all members, and chat history tied to it.
+                          </p>
+                          <motion.button
+                            type="button"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={handleDeleteResource}
+                            disabled={deleting}
+                            className="mt-4 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-600 text-white text-sm font-semibold disabled:opacity-50"
+                          >
+                            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            Delete this resource
+                          </motion.button>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

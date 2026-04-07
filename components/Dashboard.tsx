@@ -178,8 +178,8 @@ export default function Dashboard() {
                           {res.visibility}
                         </span>
                       </div>
-                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2 line-clamp-2">{res.name}</h3>
-                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] line-clamp-2 mb-3">{res.description}</p>
+                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-2 break-words [overflow-wrap:anywhere]">{res.name}</h3>
+                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] mb-3 break-words [overflow-wrap:anywhere]">{res.description}</p>
                       <div className="flex items-center gap-2">
                         {res.is_owner ? (
                           <span className="text-xs px-2 py-0.5 rounded-full bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574] font-semibold">

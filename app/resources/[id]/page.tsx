@@ -19,7 +19,7 @@ import {
   MapPin, Phone, Mail, Globe, Clock, Star, Heart, Share2, 
   ArrowLeft, Calendar, Users, Award, Languages, CheckCircle,
   ExternalLink, Lock, Loader2, UserCheck, X,
-  MessageSquare, Send, VolumeX, Volume2,
+  MessageSquare, Send, VolumeX, Volume2, UserMinus,
 } from 'lucide-react'
 import { resources as fallbackResources } from '@/data/resources'
 import { useFavorites } from '@/contexts/FavoritesContext'
@@ -95,8 +95,9 @@ export default function ResourceDetailPage() {
 
   // ── Join / Apply state ──────────────────────────────────────────
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [joinStatus, setJoinStatus] = useState<null | 'approved' | 'pending' | 'rejected' | 'owner'>(null)
+  const [joinStatus, setJoinStatus] = useState<null | 'approved' | 'pending' | 'rejected' | 'owner' | 'cancelled'>(null)
   const [joinLoading, setJoinLoading] = useState(false)
+  const [leaveLoading, setLeaveLoading] = useState(false)
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [applyForm, setApplyForm] = useState({ name: '', email: '', phone: '', skills_answer: '' })
   const [applyError, setApplyError] = useState('')
@@ -291,6 +292,26 @@ export default function ResourceDetailPage() {
     finally { setJoinLoading(false) }
   }
 
+  const handleLeaveResource = async () => {
+    if (!resource?.id || leaveLoading) return
+    const msg =
+      joinStatus === 'pending'
+        ? 'Withdraw your application? You can apply again later.'
+        : 'Leave this resource? You will lose access to member chat until you join again.'
+    if (!window.confirm(msg)) return
+    setLeaveLoading(true)
+    try {
+      const res = await apiFetch(`/api/resources/${resource.id}/join`, { method: 'DELETE' })
+      const json = await res.json()
+      if (json.success) setJoinStatus('cancelled')
+      else window.alert(json.error || 'Could not update membership.')
+    } catch {
+      window.alert('Network error. Please try again.')
+    } finally {
+      setLeaveLoading(false)
+    }
+  }
+
   const handleApplySubmit = async () => {
     if (!resource?.id) return
     if (!applyForm.name || !applyForm.email || !applyForm.skills_answer) {
@@ -375,12 +396,12 @@ export default function ResourceDetailPage() {
                       )}
                     </div>
 
-                    <h1 className="text-3xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-white mb-6 leading-tight break-all">
+                    <h1 className="text-3xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-white mb-6 leading-tight break-words [overflow-wrap:anywhere]">
                       {resource.name}
                     </h1>
 
                     <div className="prose prose-lg dark:prose-invert max-w-none">
-                      <p className="text-[#6B5D47] dark:text-[#B8A584] leading-relaxed break-all whitespace-pre-wrap text-sm md:text-base">
+                      <p className="text-[#6B5D47] dark:text-[#B8A584] leading-relaxed break-words whitespace-pre-wrap text-sm md:text-base [overflow-wrap:anywhere]">
                         {resource.description}
                       </p>
                     </div>
@@ -395,7 +416,7 @@ export default function ResourceDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#8B6F47]/60 mb-1">Location</p>
-                      <p className="text-[#2C2416] dark:text-white font-medium break-all text-sm md:text-base">{resource.address || 'Location on map only'}</p>
+                      <p className="text-[#2C2416] dark:text-white font-medium break-words text-sm md:text-base [overflow-wrap:anywhere]">{resource.address || 'Location on map only'}</p>
                     </div>
                   </div>
 
@@ -415,7 +436,7 @@ export default function ResourceDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#8B6F47]/60 mb-1">Email</p>
-                      <p className="text-[#2C2416] dark:text-white font-medium truncate text-sm md:text-base">{resource.email}</p>
+                      <p className="text-[#2C2416] dark:text-white font-medium break-words text-sm md:text-base [overflow-wrap:anywhere]">{resource.email}</p>
                     </div>
                   </div>
 
@@ -427,7 +448,7 @@ export default function ResourceDetailPage() {
                       <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#8B6F47]/60 mb-1">Website</p>
                         <a href={resource.website} target="_blank" rel="noopener noreferrer" 
-                           className="text-[#8B6F47] hover:underline font-medium truncate block text-sm md:text-base">
+                           className="text-[#8B6F47] hover:underline font-medium break-words block text-sm md:text-base [overflow-wrap:anywhere]">
                           {resource.website.replace(/^https?:\/\//, '')}
                         </a>
                       </div>
@@ -483,14 +504,36 @@ export default function ResourceDetailPage() {
                         Manage in Organizer Panel
                       </Link>
                     ) : joinStatus === 'approved' ? (
-                      <div className="w-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
-                        <CheckCircle className="w-5 h-5" />
-                        You&apos;re a member
+                      <div className="space-y-3">
+                        <div className="w-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm text-center break-words px-3">
+                          <CheckCircle className="w-5 h-5 shrink-0" />
+                          <span>You&apos;re a member</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleLeaveResource}
+                          disabled={leaveLoading}
+                          className="w-full py-3 rounded-xl md:rounded-2xl font-semibold text-sm border-2 border-[#E8E0D6] dark:border-[#3A3830] text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#2A2824] transition-all flex items-center justify-center gap-2 disabled:opacity-60 break-words"
+                        >
+                          {leaveLoading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <UserMinus className="w-4 h-4 shrink-0" />}
+                          Leave resource
+                        </button>
                       </div>
                     ) : joinStatus === 'pending' ? (
-                      <div className="w-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Application pending
+                      <div className="space-y-3">
+                        <div className="w-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm text-center break-words px-3">
+                          <Loader2 className="w-5 h-5 animate-spin shrink-0" />
+                          <span>Application pending</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleLeaveResource}
+                          disabled={leaveLoading}
+                          className="w-full py-3 rounded-xl md:rounded-2xl font-semibold text-sm border-2 border-[#E8E0D6] dark:border-[#3A3830] text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#2A2824] transition-all flex items-center justify-center gap-2 disabled:opacity-60 break-words"
+                        >
+                          {leaveLoading ? <Loader2 className="w-4 h-4 animate-spin shrink-0" /> : <UserMinus className="w-4 h-4 shrink-0" />}
+                          Withdraw application
+                        </button>
                       </div>
                     ) : joinStatus === 'rejected' || joinStatus === 'cancelled' ? (
                       // Allow re-applying after rejection/removal
@@ -575,7 +618,7 @@ export default function ResourceDetailPage() {
                       href={`/resources/${related.id}`}
                       className="group block p-4 rounded-xl md:rounded-2xl bg-[#FAF9F6] dark:bg-[#16141D] border border-transparent hover:border-[#8B6F47]/20 transition-all hover:shadow-md"
                     >
-                      <div className="font-bold text-sm md:text-base text-[#2C2416] dark:text-white group-hover:text-[#8B6F47] transition-colors line-clamp-1">{related.name}</div>
+                      <div className="font-bold text-sm md:text-base text-[#2C2416] dark:text-white group-hover:text-[#8B6F47] transition-colors break-words [overflow-wrap:anywhere]">{related.name}</div>
                       <div className="text-[10px] text-[#6B5D47] dark:text-[#B8A584] mt-1 uppercase tracking-widest font-black opacity-60">{related.category}</div>
                     </Link>
                   ))}
@@ -636,7 +679,7 @@ export default function ResourceDetailPage() {
                           </div>
                           <div className={`max-w-xs lg:max-w-md flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
                             {!isMe && <p className="text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] px-1">{msg.users?.name || 'Member'}</p>}
-                            <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-[#8B6F47] text-white rounded-tr-sm' : 'bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] rounded-tl-sm'}`}>
+                            <div className={`px-3 py-2 rounded-2xl text-sm break-words [overflow-wrap:anywhere] ${isMe ? 'bg-[#8B6F47] text-white rounded-tr-sm' : 'bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] rounded-tl-sm'}`}>
                               {msg.content}
                             </div>
                             <p className="text-[10px] text-[#6B5D47]/50 px-1">

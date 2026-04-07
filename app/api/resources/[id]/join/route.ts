@@ -147,3 +147,66 @@ export async function GET(
     return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 })
   }
 }
+
+// DELETE /api/resources/[id]/join — leave resource (cancel signup) as a member or applicant
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const user = await requireUserFromRequest(request)
+    const admin = createAdminClient()
+    const resourceId = params.id
+
+    const { data: member } = await admin
+      .from('resource_members')
+      .select('role')
+      .eq('resource_id', resourceId)
+      .eq('user_id', user.id)
+      .eq('invitation_status', 'accepted')
+      .maybeSingle()
+
+    if (member && ['owner', 'manager', 'moderator'].includes(member.role)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            'Organizers and moderators cannot leave this way — delete the resource from the Organizer Panel or transfer management first.',
+        },
+        { status: 400 }
+      )
+    }
+
+    const { data: signup } = await admin
+      .from('resource_signups')
+      .select('id, status')
+      .eq('resource_id', resourceId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!signup || !['approved', 'pending'].includes(signup.status)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You have no active membership or pending application to leave.',
+        },
+        { status: 400 }
+      )
+    }
+
+    const { error } = await admin
+      .from('resource_signups')
+      .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+      .eq('id', signup.id)
+
+    if (error) throw error
+
+    return NextResponse.json({
+      success: true,
+      message: 'You have left this resource.',
+    })
+  } catch (error) {
+    console.error('DELETE /api/resources/[id]/join error:', error)
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 })
+  }
+}
