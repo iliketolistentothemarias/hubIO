@@ -1,0 +1,15 @@
+---
+description: After editing project files, commit and push to origin
+alwaysApply: true
+---
+
+# Git: commit and push after changes
+
+When you modify tracked project code, config, or assets (not ephemeral or local-only files), finish the task by:
+
+1. **`git status`** — confirm what changed.
+2. **`git add`** the relevant paths (or `git add -A` only if the whole change set should ship).
+3. **`git commit -m "..."`** with a short, accurate message.
+4. **`git push origin HEAD:main`** — this repo uses local branch `master` tracking `origin/main`; use this push form if plain `git push` fails due to branch name mismatch.
+
+Do this in the same session as the edits unless the user explicitly asks not to commit/push. If there is nothing to commit, skip push.
