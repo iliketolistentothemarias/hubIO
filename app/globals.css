@@ -118,8 +118,6 @@ nav[class*="fixed"][class*="z-"] {
     /* Prevent browser text zoom quirks on desktop */
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
-    /* Renders like 100% browser zoom × 0.9 — leave your browser at default zoom */
-    zoom: 0.9;
   }
 
   @media (min-width: 1024px) {
