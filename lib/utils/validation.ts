@@ -120,6 +120,65 @@ export function validateResource(data: any): ValidationResult {
 }
 
 /**
+ * Validate organizer updates to a published resource (Supabase snake_case body).
+ * Address may be empty (matches optional address on submit).
+ */
+export function validateResourceListingUpdate(data: any): ValidationResult {
+  const errors: FormErrors = {}
+
+  if (!data.name || String(data.name).trim() === '') {
+    errors.name = 'Organization name is required'
+  }
+
+  if (!data.category || String(data.category).trim() === '') {
+    errors.category = 'Category is required'
+  }
+
+  if (!data.description || String(data.description).trim() === '') {
+    errors.description = 'Description is required'
+  } else if (String(data.description).trim().length < 50) {
+    errors.description = 'Description must be at least 50 characters'
+  }
+
+  if (data.address !== undefined && data.address !== null && typeof data.address !== 'string') {
+    errors.address = 'Address must be text'
+  }
+
+  if (!data.phone) {
+    errors.phone = 'Phone number is required'
+  } else if (!isValidPhone(String(data.phone))) {
+    errors.phone = 'Please enter a valid phone number'
+  }
+
+  if (!data.email) {
+    errors.email = 'Email is required'
+  } else if (!isValidEmail(String(data.email))) {
+    errors.email = 'Please enter a valid email address'
+  }
+
+  const website = data.website
+  if (website != null && String(website).trim() !== '' && !isValidUrl(String(website))) {
+    errors.website = 'Please enter a valid website URL'
+  }
+
+  if (data.location != null && data.location !== '') {
+    const loc = data.location
+    if (typeof loc !== 'object' || Array.isArray(loc)) {
+      errors.location = 'Location must be an object with lat and lng'
+    } else if (loc.lat == null || loc.lng == null) {
+      errors.location = 'Location must include lat and lng'
+    } else if (typeof loc.lat !== 'number' || typeof loc.lng !== 'number') {
+      errors.location = 'Location coordinates must be numbers'
+    }
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  }
+}
+
+/**
  * Validate Fundraising Campaign
  * 
  * @param data - Campaign data to validate
