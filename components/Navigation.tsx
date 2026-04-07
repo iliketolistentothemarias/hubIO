@@ -221,7 +221,7 @@ export default function Navigation() {
                   <button
                     onMouseEnter={() => handleMenuEnter(item.label)}
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                    className={`relative flex items-center gap-0.5 rounded-md px-0.5 py-1.5 text-xs font-medium tracking-tight whitespace-nowrap transition-all duration-200 md:px-1 md:text-sm hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${item.submenu.some(sub => pathname === sub.href)
+                    className={`relative flex items-center gap-0.5 rounded-md px-0.5 py-1.5 text-sm font-medium tracking-tight whitespace-nowrap transition-all duration-200 md:px-1.5 md:py-2 lg:text-base hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -236,14 +236,14 @@ export default function Navigation() {
                       animate={{ rotate: openDropdown === item.label ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <ChevronDown className="h-3.5 w-3.5 shrink-0 lg:h-4 lg:w-4" />
+                      <ChevronDown className="h-4 w-4 shrink-0 lg:h-[1.125rem] lg:w-[1.125rem]" />
                     </motion.div>
                   </button>
                 ) : item.href ? (
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className={`relative flex items-center gap-0.5 rounded-md px-0.5 py-1.5 text-xs font-medium tracking-tight whitespace-nowrap transition-all duration-200 md:px-1 md:text-sm hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${pathname === item.href
+                    className={`relative flex items-center gap-0.5 rounded-md px-0.5 py-1.5 text-sm font-medium tracking-tight whitespace-nowrap transition-all duration-200 md:px-1.5 md:py-2 lg:text-base hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${pathname === item.href
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -360,11 +360,10 @@ export default function Navigation() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#8B6F47] dark:bg-[#D4A574] text-white 
-                           hover:bg-[#6B5D47] dark:hover:bg-[#B8A584] transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="flex min-w-0 max-w-[11rem] items-center gap-2 rounded-lg bg-[#8B6F47] px-3 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#6B5D47] hover:shadow-md dark:bg-[#D4A574] dark:hover:bg-[#B8A584] sm:max-w-[13rem] lg:max-w-[15rem] lg:px-4 lg:text-base"
                 >
-                  <User className="w-4 h-4" />
-                  <span className="font-medium truncate">{displayName || user.email}</span>
+                  <User className="h-4 w-4 shrink-0 lg:h-5 lg:w-5" />
+                  <span className="min-w-0 flex-1 truncate text-left">{displayName || user.email}</span>
                 </motion.button>
 
                 <AnimatePresence>
