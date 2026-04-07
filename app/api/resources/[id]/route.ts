@@ -11,8 +11,8 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getDatabase } from '@/lib/db/schema'
-import { requireUserFromRequest, requireRoleFromRequest } from '@/lib/auth/server-request'
-import { validateResource } from '@/lib/utils/validation'
+import { requireUserFromRequest } from '@/lib/auth/server-request'
+import { validateResource, validateResourceListingUpdate } from '@/lib/utils/validation'
 import { ApiResponse, Resource } from '@/lib/types'
 import { createAdminClient } from '@/lib/supabase/server'
 
@@ -139,7 +139,7 @@ export async function PATCH(
 
     const { data: resource } = await admin
       .from('resources')
-      .select('submitted_by')
+      .select('*')
       .eq('id', params.id)
       .single()
 
@@ -154,9 +154,46 @@ export async function PATCH(
     }
 
     const body = await request.json()
+
+    const listingKeys = [
+      'name',
+      'category',
+      'description',
+      'address',
+      'phone',
+      'email',
+      'website',
+      'tags',
+      'hours',
+      'services',
+      'languages',
+      'accessibility',
+      'capacity',
+      'location',
+    ] as const
+
+    const wantsListingUpdate = listingKeys.some((k) => body[k] !== undefined)
+
     const allowed: Record<string, any> = {}
     if (body.visibility !== undefined) allowed.visibility = body.visibility
     if (body.application_question !== undefined) allowed.application_question = body.application_question
+
+    if (wantsListingUpdate) {
+      const listingPayload: Record<string, any> = {}
+      for (const k of listingKeys) {
+        if (body[k] !== undefined) listingPayload[k] = body[k]
+      }
+      const mergedForValidation = { ...resource, ...listingPayload }
+      const validation = validateResourceListingUpdate(mergedForValidation)
+      if (!validation.valid) {
+        return NextResponse.json(
+          { success: false, error: 'Validation failed', errors: validation.errors },
+          { status: 400 }
+        )
+      }
+      Object.assign(allowed, listingPayload)
+      if (allowed.website === '') allowed.website = null
+    }
 
     if (Object.keys(allowed).length === 0) {
       return NextResponse.json({ success: false, error: 'No valid fields to update' }, { status: 400 })
@@ -166,7 +203,7 @@ export async function PATCH(
       .from('resources')
       .update({ ...allowed, updated_at: new Date().toISOString() })
       .eq('id', params.id)
-      .select('id, visibility, application_question')
+      .select('*')
       .single()
 
     if (error) throw error
@@ -180,27 +217,35 @@ export async function PATCH(
 
 /**
  * DELETE /api/resources/[id]
- * 
- * Delete resource (requires admin role)
+ *
+ * Delete resource: submitter (organizer) or admin — Supabase (RLS allows submitter + admin).
  */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRoleFromRequest(request, 'admin')
-    
-    const resource = db.getResource(params.id)
+    const user = await requireUserFromRequest(request)
+    const admin = createAdminClient()
 
-    if (!resource) {
-      return NextResponse.json(
-        { success: false, error: 'Resource not found' },
-        { status: 404 }
-      )
+    const { data: row } = await admin
+      .from('resources')
+      .select('id, submitted_by')
+      .eq('id', params.id)
+      .maybeSingle()
+
+    if (!row) {
+      return NextResponse.json({ success: false, error: 'Resource not found' }, { status: 404 })
     }
 
-    // In production, would actually delete from database
-    // For demo, we'll just return success
+    const isOwner = row.submitted_by === user.id
+    const isAdmin = user.role === 'admin'
+    if (!isOwner && !isAdmin) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 })
+    }
+
+    const { error } = await admin.from('resources').delete().eq('id', params.id)
+    if (error) throw error
 
     const response: ApiResponse<null> = {
       success: true,
@@ -210,16 +255,13 @@ export async function DELETE(
     return NextResponse.json(response)
   } catch (error: any) {
     console.error('Error deleting resource:', error)
-    
-    if (error.message?.includes('required')) {
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 401 }
-      )
+
+    if (error.message === 'Authentication required') {
+      return NextResponse.json({ success: false, error: error.message }, { status: 401 })
     }
 
     return NextResponse.json(
-      { success: false, error: 'Failed to delete resource' },
+      { success: false, error: error.message || 'Failed to delete resource' },
       { status: 500 }
     )
   }

@@ -95,7 +95,7 @@ export default function ResourceDetailPage() {
 
   // ── Join / Apply state ──────────────────────────────────────────
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-  const [joinStatus, setJoinStatus] = useState<null | 'approved' | 'pending' | 'rejected' | 'owner'>(null)
+  const [joinStatus, setJoinStatus] = useState<null | 'approved' | 'pending' | 'rejected' | 'cancelled' | 'owner'>(null)
   const [joinLoading, setJoinLoading] = useState(false)
   const [showApplyModal, setShowApplyModal] = useState(false)
   const [applyForm, setApplyForm] = useState({ name: '', email: '', phone: '', skills_answer: '' })
@@ -247,7 +247,7 @@ export default function ResourceDetailPage() {
       const related = allResources
         .filter(r => r.id !== resource.id && (
           r.category === resource.category ||
-          (r.tags && r.tags.some(tag => resource.tags?.includes(tag)))
+          (r.tags && r.tags.some((tag: string) => resource.tags?.includes(tag)))
         ))
         .slice(0, 3)
       setRelatedResources(related)
@@ -289,6 +289,25 @@ export default function ResourceDetailPage() {
       else if (json.currentStatus) setJoinStatus(json.currentStatus as any)
     } catch (e) { console.error(e) }
     finally { setJoinLoading(false) }
+  }
+
+  const handleLeaveResource = async () => {
+    if (!resource?.id || joinLoading) return
+    if (!window.confirm('Leave this resource? You can join again later if it is public, or re-apply if it is private.')) return
+    setJoinLoading(true)
+    try {
+      const res = await apiFetch(`/api/resources/${resource.id}/leave`, { method: 'POST' })
+      const json = await res.json()
+      if (json.success) {
+        setJoinStatus('cancelled')
+        setAnnouncements([])
+        setCommunityMembers([])
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setJoinLoading(false)
+    }
   }
 
   const handleApplySubmit = async () => {
@@ -375,12 +394,12 @@ export default function ResourceDetailPage() {
                       )}
                     </div>
 
-                    <h1 className="text-3xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-white mb-6 leading-tight break-all">
+                    <h1 className="text-3xl md:text-5xl font-display font-bold text-[#2C2416] dark:text-white mb-6 leading-tight break-words">
                       {resource.name}
                     </h1>
 
                     <div className="prose prose-lg dark:prose-invert max-w-none">
-                      <p className="text-[#6B5D47] dark:text-[#B8A584] leading-relaxed break-all whitespace-pre-wrap text-sm md:text-base">
+                      <p className="text-[#6B5D47] dark:text-[#B8A584] leading-relaxed break-words whitespace-pre-wrap text-sm md:text-base">
                         {resource.description}
                       </p>
                     </div>
@@ -395,7 +414,7 @@ export default function ResourceDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#8B6F47]/60 mb-1">Location</p>
-                      <p className="text-[#2C2416] dark:text-white font-medium break-all text-sm md:text-base">{resource.address || 'Location on map only'}</p>
+                      <p className="text-[#2C2416] dark:text-white font-medium break-words text-sm md:text-base">{resource.address || 'Location on map only'}</p>
                     </div>
                   </div>
 
@@ -415,7 +434,7 @@ export default function ResourceDetailPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-[10px] font-black uppercase tracking-widest text-[#8B6F47]/60 mb-1">Email</p>
-                      <p className="text-[#2C2416] dark:text-white font-medium truncate text-sm md:text-base">{resource.email}</p>
+                      <p className="text-[#2C2416] dark:text-white font-medium break-words text-sm md:text-base">{resource.email}</p>
                     </div>
                   </div>
 
@@ -427,7 +446,7 @@ export default function ResourceDetailPage() {
                       <div className="min-w-0">
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#8B6F47]/60 mb-1">Website</p>
                         <a href={resource.website} target="_blank" rel="noopener noreferrer" 
-                           className="text-[#8B6F47] hover:underline font-medium truncate block text-sm md:text-base">
+                           className="text-[#8B6F47] hover:underline font-medium break-words block text-sm md:text-base">
                           {resource.website.replace(/^https?:\/\//, '')}
                         </a>
                       </div>
@@ -483,9 +502,20 @@ export default function ResourceDetailPage() {
                         Manage in Organizer Panel
                       </Link>
                     ) : joinStatus === 'approved' ? (
-                      <div className="w-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
-                        <CheckCircle className="w-5 h-5" />
-                        You&apos;re a member
+                      <div className="space-y-3">
+                        <div className="w-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
+                          <CheckCircle className="w-5 h-5" />
+                          You&apos;re a member
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleLeaveResource}
+                          disabled={joinLoading}
+                          className="w-full py-3 rounded-xl md:rounded-2xl font-semibold text-sm border-2 border-[#E8E0D6] dark:border-[#3A3830] text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#FAF9F6] dark:hover:bg-[#2A2824] transition-colors disabled:opacity-60"
+                        >
+                          {joinLoading ? <Loader2 className="w-4 h-4 animate-spin inline mr-2" /> : null}
+                          Leave resource
+                        </button>
                       </div>
                     ) : joinStatus === 'pending' ? (
                       <div className="w-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 py-3.5 rounded-xl md:rounded-2xl font-bold flex items-center justify-center gap-3 text-sm">
@@ -575,7 +605,7 @@ export default function ResourceDetailPage() {
                       href={`/resources/${related.id}`}
                       className="group block p-4 rounded-xl md:rounded-2xl bg-[#FAF9F6] dark:bg-[#16141D] border border-transparent hover:border-[#8B6F47]/20 transition-all hover:shadow-md"
                     >
-                      <div className="font-bold text-sm md:text-base text-[#2C2416] dark:text-white group-hover:text-[#8B6F47] transition-colors line-clamp-1">{related.name}</div>
+                      <div className="font-bold text-sm md:text-base text-[#2C2416] dark:text-white group-hover:text-[#8B6F47] transition-colors break-words">{related.name}</div>
                       <div className="text-[10px] text-[#6B5D47] dark:text-[#B8A584] mt-1 uppercase tracking-widest font-black opacity-60">{related.category}</div>
                     </Link>
                   ))}
@@ -634,9 +664,9 @@ export default function ResourceDetailPage() {
                           <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white ${isMe ? 'bg-[#8B6F47]' : 'bg-[#6B5D47]'}`}>
                             {(msg.users?.name || 'U')[0].toUpperCase()}
                           </div>
-                          <div className={`max-w-xs lg:max-w-md flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
-                            {!isMe && <p className="text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] px-1">{msg.users?.name || 'Member'}</p>}
-                            <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? 'bg-[#8B6F47] text-white rounded-tr-sm' : 'bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] rounded-tl-sm'}`}>
+                          <div className={`max-w-[min(100%,36rem)] min-w-0 flex flex-col gap-0.5 ${isMe ? 'items-end' : 'items-start'}`}>
+                            {!isMe && <p className="text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] px-1 break-words max-w-full">{msg.users?.name || 'Member'}</p>}
+                            <div className={`px-3 py-2 rounded-2xl text-sm break-words max-w-full ${isMe ? 'bg-[#8B6F47] text-white rounded-tr-sm' : 'bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] rounded-tl-sm'}`}>
                               {msg.content}
                             </div>
                             <p className="text-[10px] text-[#6B5D47]/50 px-1">

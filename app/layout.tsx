@@ -31,6 +31,11 @@ export const metadata: Metadata = {
   keywords: 'community resources, local services, non-profits, support services, community events',
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -42,7 +47,6 @@ export default function RootLayout({
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#8B6F47" />
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         {process.env.NODE_ENV === 'development' && (
           <meta httpEquiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
         )}
