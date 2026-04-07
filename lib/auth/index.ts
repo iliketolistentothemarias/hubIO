@@ -7,6 +7,7 @@
 
 import { User, UserRole, Badge } from '@/lib/types'
 import { supabase } from '@/lib/supabase/client'
+import { oauthProfileImageUrl } from '@/lib/utils/auth-avatar'
 /**
  * Authentication Provider Types
  */
@@ -212,13 +213,16 @@ export class AuthService {
         else provider = 'email'
       }
 
+      const dbAvatar =
+        typeof userProfile.avatar === 'string' ? userProfile.avatar.trim() : ''
+
       // Convert database user to app User type
       const user: User = {
         id: userProfile.id,
         email: userProfile.email,
         name: userProfile.name,
         role: userProfile.role as UserRole,
-        avatar: userProfile.avatar,
+        avatar: dbAvatar || oauthProfileImageUrl(session.user.user_metadata) || undefined,
         karma: userProfile.karma || 0,
         badges,
         preferences: {

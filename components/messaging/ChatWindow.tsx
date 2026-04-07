@@ -10,6 +10,7 @@ import {
 import { messagingService, Message, Conversation, TypingIndicator } from '@/lib/messaging/MessagingService'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
+import UserAvatarImage from '@/components/UserAvatarImage'
 // Lightweight date helpers (avoid extra dependencies)
 const isToday = (date: Date) => {
   const today = new Date()
@@ -388,7 +389,7 @@ export default function ChatWindow({
           type: string
           created_at: string
           updated_at?: string
-          sender?: { id: string; name?: string; avatar?: string }
+          sender?: { id: string; name?: string; avatar?: string | null }
         }
       }
       if (!res.ok || !json.success || !json.data) {
@@ -561,18 +562,13 @@ export default function ChatWindow({
           )}
 
           {/* Avatar */}
-          {otherUser?.avatar ? (
-            <img
-              src={otherUser.avatar}
-              alt={otherUser.name}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 
-                          flex items-center justify-center text-white font-semibold">
-              {otherUser?.name?.charAt(0).toUpperCase() || '?'}
-            </div>
-          )}
+          <UserAvatarImage
+            src={otherUser?.avatar}
+            name={otherUser?.name || '?'}
+            className="h-10 w-10"
+            textClassName="text-sm"
+            gradientClassName="bg-gradient-to-br from-primary-400 to-primary-600"
+          />
 
           {/* User info */}
           <div>
@@ -755,10 +751,13 @@ export default function ChatWindow({
                   >
                     {/* Avatar */}
                     {!isOwn && !isGrouped && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 
-                                    flex items-center justify-center text-white text-sm font-semibold flex-shrink-0">
-                        {message.sender?.name?.charAt(0).toUpperCase() || '?'}
-                      </div>
+                      <UserAvatarImage
+                        src={message.sender?.avatar}
+                        name={message.sender?.name || '?'}
+                        className="h-8 w-8 flex-shrink-0"
+                        textClassName="text-sm"
+                        gradientClassName="bg-gradient-to-br from-primary-400 to-primary-600"
+                      />
                     )}
                     {!isOwn && isGrouped && <div className="w-8" />}
 

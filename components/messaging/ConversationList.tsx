@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, MoreVertical, Archive, Pin, Volume2, VolumeX, Trash2, User } from 'lucide-react'
 import { messagingService, Conversation, Message } from '@/lib/messaging/MessagingService'
 import { supabase } from '@/lib/supabase/client'
+import UserAvatarImage from '@/components/UserAvatarImage'
 
 const formatTimeAgo = (timestamp: string) => {
   const date = new Date(timestamp)
@@ -371,18 +372,12 @@ export default function ConversationList({
                 >
                   {/* Avatar */}
                   <div className="relative flex-shrink-0">
-                    {getConversationAvatar(conversation) ? (
-                      <img
-                        src={getConversationAvatar(conversation)}
-                        alt={getConversationName(conversation)}
-                        className="w-12 h-12 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#D4A574] to-[#8B6F47] 
-                                    flex items-center justify-center text-white font-semibold text-lg">
-                        {getConversationName(conversation).charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <UserAvatarImage
+                      src={getConversationAvatar(conversation)}
+                      name={getConversationName(conversation)}
+                      className="h-12 w-12"
+                      textClassName="text-lg"
+                    />
                     {/* Online indicator */}
                     <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-[#0B0A0F]"></div>
                   </div>

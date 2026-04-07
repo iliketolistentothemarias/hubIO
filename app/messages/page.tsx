@@ -8,6 +8,7 @@ import ChatWindow from '@/components/messaging/ChatWindow'
 import { messagingService, Conversation } from '@/lib/messaging/MessagingService'
 import { supabase } from '@/lib/supabase/client'
 import AuthRequired from '@/components/auth/AuthRequired'
+import UserAvatarImage from '@/components/UserAvatarImage'
 
 function MessagesContent() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
@@ -244,18 +245,12 @@ function MessagesContent() {
                         onClick={() => handleStartConversation(user.id)}
                         className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-[#f5ede1] dark:hover:bg-[#2c2c3e] transition-colors"
                       >
-                        {user.avatar ? (
-                          <img
-                            src={user.avatar}
-                            alt={user.name}
-                            className="w-10 h-10 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#D4A574] to-[#8B6F47] 
-                                        flex items-center justify-center text-white font-semibold">
-                            {(user.name || 'U').charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <UserAvatarImage
+                          src={user.avatar}
+                          name={user.name || 'User'}
+                          className="h-10 w-10"
+                          textClassName="text-sm"
+                        />
                         <div className="flex-1 text-left">
                           <p className="font-semibold text-[#2C2416] dark:text-[#F5F3F0]">{user.name || 'Anonymous'}</p>
                           <p className="text-sm text-[#6B5D47] dark:text-[#B8A584]">{user.email}</p>

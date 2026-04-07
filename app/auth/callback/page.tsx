@@ -10,6 +10,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
+import { oauthProfileImageUrl } from '@/lib/utils/auth-avatar'
 
 function AuthCallbackContent() {
   const router = useRouter()
@@ -70,6 +71,7 @@ function AuthCallbackContent() {
     }
 
     const ensureUserProfile = async (userId: string, user: any) => {
+      const avatarUrl = oauthProfileImageUrl(user.user_metadata)
       // Check if user profile exists
       const { data: userProfile, error: profileError } = await supabase
         .from('users')
@@ -94,6 +96,7 @@ function AuthCallbackContent() {
             volunteer_hours: 0,
             funds_raised: 0,
             events_count: 0,
+            avatar: avatarUrl ?? null,
             created_at: new Date().toISOString(),
             last_active_at: new Date().toISOString(),
           })
@@ -104,11 +107,15 @@ function AuthCallbackContent() {
           console.error('Failed to ensure user profile:', insertError)
         }
       } else {
-        // Update last_active_at
-        await supabase
-          .from('users')
-          .update({ last_active_at: new Date().toISOString() })
-          .eq('id', userId)
+        const updates: Record<string, string> = {
+          last_active_at: new Date().toISOString(),
+        }
+        const existing =
+          typeof userProfile.avatar === 'string' ? userProfile.avatar.trim() : ''
+        if (avatarUrl && (!existing || existing !== avatarUrl)) {
+          updates.avatar = avatarUrl
+        }
+        await supabase.from('users').update(updates).eq('id', userId)
       }
     }
 

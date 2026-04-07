@@ -10,6 +10,7 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { supabase } from '@/lib/supabase/client'
 import Notifications from '@/components/Notifications'
+import { oauthProfileImageUrl } from '@/lib/utils/auth-avatar'
 
 export default function Navigation() {
   const [portalReady, setPortalReady] = useState(false)
@@ -114,7 +115,9 @@ export default function Navigation() {
         email: data.user.email || '',
         name: profileData?.name || (data.user.user_metadata?.name as string) || data.user.email?.split('@')[0] || 'Member',
         role: profileData?.role || data.user.user_metadata?.role || 'volunteer',
-        avatar: profileData?.avatar || data.user.user_metadata?.avatar_url,
+        avatar:
+          (typeof profileData?.avatar === 'string' && profileData.avatar.trim()) ||
+          oauthProfileImageUrl(data.user.user_metadata),
       })
     }
 
