@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Heart } from 'lucide-react'
 import { hostnameFromWebsite, resourceLogoUrlCandidates } from '@/lib/utils/resource-logo'
+import {
+  bitmapLooksLikePixelSmileyOnWhite,
+  shouldSkipDefaultAvatarUrl,
+} from '@/lib/utils/resource-default-avatar'
 
 type Props = {
   name: string
@@ -27,12 +31,18 @@ export default function ResourceHeroLogo({
   className = '',
   variant = 'hero',
 }: Props) {
-  const urls = useMemo(() => resourceLogoUrlCandidates(image, website), [image, website])
+  const urls = useMemo(
+    () => resourceLogoUrlCandidates(image, website).filter((u) => !shouldSkipDefaultAvatarUrl(u)),
+    [image, website]
+  )
   const [index, setIndex] = useState(0)
+  /** Last candidate loaded but was a generic pixel smiley — yellow + white heart instead of tan */
+  const [yellowSmileyFallback, setYellowSmileyFallback] = useState(false)
   const host = useMemo(() => hostnameFromWebsite(website), [website])
 
   useEffect(() => {
     setIndex(0)
+    setYellowSmileyFallback(false)
   }, [name, image, website])
 
   const src = urls[index]
@@ -63,13 +73,40 @@ export default function ResourceHeroLogo({
 
   const boxClass = `${sizeClass} relative group overflow-hidden ${className}`.trim()
 
-  const advanceToNextSource = () => setIndex((i) => i + 1)
+  const advanceToNextSource = () => {
+    setYellowSmileyFallback(false)
+    setIndex((i) => i + 1)
+  }
 
   const handleImgLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+    const el = e.currentTarget
+    const { naturalWidth: w, naturalHeight: h } = el
+    const last = index >= urls.length - 1
+
     if (w > 0 && h > 0 && Math.max(w, h) <= MAX_INTRINSIC_BAD_LOGO) {
       advanceToNextSource()
+      return
     }
+
+    if (bitmapLooksLikePixelSmileyOnWhite(el)) {
+      if (!last) advanceToNextSource()
+      else setYellowSmileyFallback(true)
+      return
+    }
+
+    setYellowSmileyFallback(false)
+  }
+
+  if (yellowSmileyFallback) {
+    return (
+      <div
+        className={`${boxClass} flex items-center justify-center bg-gradient-to-br from-amber-300 to-yellow-500 dark:from-amber-400 dark:to-yellow-600`}
+        aria-hidden
+      >
+        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Heart className={`${heartClass} text-white drop-shadow-sm`} />
+      </div>
+    )
   }
 
   if (!showImage) {
