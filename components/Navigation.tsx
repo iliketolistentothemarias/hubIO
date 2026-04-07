@@ -184,7 +184,7 @@ export default function Navigation() {
       <div className="container-custom px-4 sm:px-6 lg:px-8">
         <div className="relative flex items-center justify-between min-h-[4.5rem] md:min-h-[5.25rem] py-2.5 md:py-3 w-full box-border">
           {/* Logo — z-10 so it stays above the absolutely centered nav layer */}
-          <div className="relative z-10 flex items-center flex-shrink-0">
+          <div className="relative z-20 flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center gap-2 group w-fit py-0.5">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -201,9 +201,9 @@ export default function Navigation() {
 
           {/* Desktop nav: centered in the bar so it never shrinks into the logo or utilities */}
           <div
-            className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] items-center justify-center pointer-events-none max-w-[min(100vw-22rem,56rem)]"
+            className="hidden md:flex absolute left-1/2 top-1/2 -translate-y-1/2 translate-x-[calc(-50%-5rem)] lg:translate-x-[calc(-50%-4rem)] xl:translate-x-[calc(-50%-3rem)] z-[15] items-center justify-center pointer-events-none max-w-[min(100vw-36rem,48rem)] lg:max-w-[min(100vw-34rem,52rem)]"
           >
-            <div className="flex items-center gap-3 lg:gap-4 xl:gap-5 pointer-events-auto overflow-x-auto max-w-full py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" ref={dropdownRef}>
+            <div className="flex items-center gap-3 lg:gap-4 xl:gap-5 pointer-events-auto overflow-x-auto max-w-full py-1 pr-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" ref={dropdownRef}>
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href || item.label}
