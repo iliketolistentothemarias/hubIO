@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, Check, X, Loader2, ChevronLeft, Globe, Lock, Plus,
   Save, Settings, Users, MessageSquare, Send, MoreVertical,
-  UserMinus, VolumeX, Volume2, ShieldOff,
+  UserMinus, VolumeX, Volume2, ShieldOff, Trash2,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { apiFetch } from '@/lib/api/client-fetch'
@@ -19,6 +19,13 @@ interface OrgResource {
   name: string
   category: string
   description: string
+  address: string | null
+  phone: string
+  email: string
+  website: string | null
+  tags: string[] | null
+  hours: string | null
+  location: { lat: number; lng: number } | null
   created_at: string
   visibility: 'public' | 'private'
   application_question: string | null
@@ -80,8 +87,25 @@ export default function OrganizerPage() {
     visibility: 'public',
     application_question: '',
   })
+  const [listingForm, setListingForm] = useState({
+    name: '',
+    category: '',
+    description: '',
+    address: '',
+    phone: '',
+    email: '',
+    website: '',
+    tags: '',
+    hours: '',
+    lat: '',
+    lng: '',
+    clearMapPin: false,
+  })
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState('')
+  const [listingSaving, setListingSaving] = useState(false)
+  const [listingMsg, setListingMsg] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   // Applications (members tab)
   const [applications, setApplications] = useState<Application[]>([])
@@ -124,7 +148,9 @@ export default function OrganizerPage() {
     try {
       const { data } = await supabase
         .from('resources')
-        .select('id, name, category, description, created_at, visibility, application_question, submitted_by')
+        .select(
+          'id, name, category, description, address, phone, email, website, tags, hours, location, created_at, visibility, application_question, submitted_by'
+        )
         .eq('submitted_by', userId)
         .order('created_at', { ascending: false })
       setResources((data || []) as OrgResource[])
@@ -204,6 +230,24 @@ export default function OrganizerPage() {
       visibility: res.visibility || 'public',
       application_question: res.application_question || '',
     })
+    const loc = res.location && typeof res.location === 'object' && 'lat' in res.location
+      ? res.location as { lat: number; lng: number }
+      : null
+    setListingForm({
+      name: res.name || '',
+      category: res.category || '',
+      description: res.description || '',
+      address: res.address || '',
+      phone: res.phone || '',
+      email: res.email || '',
+      website: res.website || '',
+      tags: Array.isArray(res.tags) ? res.tags.join(', ') : '',
+      hours: res.hours || '',
+      lat: loc ? String(loc.lat) : '',
+      lng: loc ? String(loc.lng) : '',
+      clearMapPin: false,
+    })
+    setListingMsg('')
     setSaveMsg('')
     setManageTab('settings')
     setApplications([])
@@ -220,6 +264,109 @@ export default function OrganizerPage() {
   }
 
   // ─── Settings ──────────────────────────────────────────────────────────────
+
+  const handleSaveListing = async () => {
+    if (!selectedResource) return
+    setListingSaving(true)
+    setListingMsg('')
+    try {
+      const tagsArr = listingForm.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+
+      const body: Record<string, unknown> = {
+        name: listingForm.name.trim(),
+        category: listingForm.category.trim(),
+        description: listingForm.description.trim(),
+        address: listingForm.address.trim(),
+        phone: listingForm.phone.trim(),
+        email: listingForm.email.trim(),
+        website: listingForm.website.trim() || null,
+        tags: tagsArr,
+        hours: listingForm.hours.trim() || null,
+      }
+
+      if (listingForm.clearMapPin) {
+        body.location = null
+      } else {
+        const lat = listingForm.lat.trim()
+        const lng = listingForm.lng.trim()
+        if (lat !== '' || lng !== '') {
+          const latN = parseFloat(lat)
+          const lngN = parseFloat(lng)
+          if (Number.isFinite(latN) && Number.isFinite(lngN)) {
+            body.location = { lat: latN, lng: lngN }
+          } else {
+            setListingMsg('Latitude and longitude must be valid numbers (or leave both blank).')
+            setListingSaving(false)
+            return
+          }
+        }
+      }
+
+      const res = await apiFetch(`/api/resources/${selectedResource.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const json = await res.json()
+      if (!json.success) {
+        const errDetail = json.errors ? ' ' + JSON.stringify(json.errors) : ''
+        throw new Error((json.error || 'Update failed') + errDetail)
+      }
+      const u = json.data
+      const updated: OrgResource = {
+        ...selectedResource,
+        name: u.name,
+        category: u.category,
+        description: u.description,
+        address: u.address,
+        phone: u.phone,
+        email: u.email,
+        website: u.website,
+        tags: u.tags,
+        hours: u.hours,
+        location: u.location,
+      }
+      setSelectedResource(updated)
+      setResources((prev) => prev.map((r) => (r.id === selectedResource.id ? updated : r)))
+      if (u.location && typeof u.location === 'object') {
+        setListingForm((f) => ({
+          ...f,
+          lat: String(u.location.lat),
+          lng: String(u.location.lng),
+          clearMapPin: false,
+        }))
+      } else {
+        setListingForm((f) => ({ ...f, lat: '', lng: '', clearMapPin: false }))
+      }
+      setListingMsg('Listing saved!')
+      setTimeout(() => setListingMsg(''), 2500)
+    } catch (e) {
+      setListingMsg('Failed: ' + (e as Error).message)
+    } finally {
+      setListingSaving(false)
+    }
+  }
+
+  const handleDeleteResource = async () => {
+    if (!selectedResource) return
+    if (!window.confirm(`Delete "${selectedResource.name}" permanently? This cannot be undone.`)) return
+    setDeleting(true)
+    setListingMsg('')
+    try {
+      const res = await apiFetch(`/api/resources/${selectedResource.id}`, { method: 'DELETE' })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.error || 'Delete failed')
+      setResources((prev) => prev.filter((r) => r.id !== selectedResource.id))
+      handleBack()
+    } catch (e) {
+      setListingMsg('Delete failed: ' + (e as Error).message)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const handleSaveSettings = async () => {
     if (!selectedResource) return
@@ -530,8 +677,8 @@ export default function OrganizerPage() {
                           <MoreVertical className="w-3.5 h-3.5 text-[#8B6F47] dark:text-[#D4A574]" />
                         </span>
                       </div>
-                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1 line-clamp-2">{res.name}</h3>
-                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] mb-2 line-clamp-2">{res.description}</p>
+                      <h3 className="font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-1 break-words">{res.name}</h3>
+                      <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] mb-2 break-words line-clamp-3">{res.description}</p>
                       <p className="text-xs text-[#6B5D47] dark:text-[#B8A584]">{res.category}</p>
                     </motion.button>
                   ))}
@@ -584,7 +731,145 @@ export default function OrganizerPage() {
 
                 {/* Settings Tab */}
                 {manageTab === 'settings' && (
-                  <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                  <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                    <div className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-6 space-y-5">
+                      <h3 className="text-base font-bold text-[#2C2416] dark:text-[#F5F3F0]">Listing details</h3>
+                      <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] -mt-2">
+                        Update what the public sees — name, location, contact, and description.
+                      </p>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Name</label>
+                          <input
+                            value={listingForm.name}
+                            onChange={(e) => setListingForm((f) => ({ ...f, name: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Category</label>
+                          <input
+                            value={listingForm.category}
+                            onChange={(e) => setListingForm((f) => ({ ...f, category: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Phone</label>
+                          <input
+                            value={listingForm.phone}
+                            onChange={(e) => setListingForm((f) => ({ ...f, phone: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Email</label>
+                          <input
+                            type="email"
+                            value={listingForm.email}
+                            onChange={(e) => setListingForm((f) => ({ ...f, email: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Website (optional)</label>
+                          <input
+                            value={listingForm.website}
+                            onChange={(e) => setListingForm((f) => ({ ...f, website: e.target.value }))}
+                            placeholder="https://"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Address</label>
+                          <input
+                            value={listingForm.address}
+                            onChange={(e) => setListingForm((f) => ({ ...f, address: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Map latitude</label>
+                          <input
+                            value={listingForm.lat}
+                            onChange={(e) => setListingForm((f) => ({ ...f, lat: e.target.value, clearMapPin: false }))}
+                            placeholder="e.g. 40.35"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Map longitude</label>
+                          <input
+                            value={listingForm.lng}
+                            onChange={(e) => setListingForm((f) => ({ ...f, lng: e.target.value, clearMapPin: false }))}
+                            placeholder="e.g. -80.15"
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <label className="sm:col-span-2 flex items-center gap-2 text-sm text-[#2C2416] dark:text-[#F5F3F0] cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={listingForm.clearMapPin}
+                            onChange={(e) =>
+                              setListingForm((f) => ({ ...f, clearMapPin: e.target.checked }))
+                            }
+                            className="rounded border-[#E8E0D6] dark:border-[#3A3830]"
+                          />
+                          Remove map pin (clear stored coordinates)
+                        </label>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Tags (comma-separated)</label>
+                          <input
+                            value={listingForm.tags}
+                            onChange={(e) => setListingForm((f) => ({ ...f, tags: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Hours (optional)</label>
+                          <input
+                            value={listingForm.hours}
+                            onChange={(e) => setListingForm((f) => ({ ...f, hours: e.target.value }))}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30"
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0] mb-1">Description (min. 50 characters)</label>
+                          <textarea
+                            value={listingForm.description}
+                            onChange={(e) => setListingForm((f) => ({ ...f, description: e.target.value }))}
+                            rows={5}
+                            className="w-full px-3 py-2 rounded-xl border border-[#E8E0D6] dark:border-[#3A3830] bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] text-sm focus:outline-none focus:ring-2 focus:ring-[#8B6F47]/30 resize-y min-h-[120px]"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 pt-2">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleSaveListing}
+                          disabled={listingSaving}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#6B5D47] dark:bg-[#B8A584] text-white dark:text-[#0B0A0F] font-semibold text-sm disabled:opacity-50 transition-all"
+                        >
+                          {listingSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          Save listing
+                        </motion.button>
+                        {listingMsg && (
+                          <span
+                            className={`text-sm font-semibold break-words max-w-full ${
+                              listingMsg.startsWith('Failed') || listingMsg.startsWith('Delete')
+                                ? 'text-red-600 dark:text-red-400'
+                                : 'text-green-600 dark:text-green-400'
+                            }`}
+                          >
+                            {listingMsg}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-[#E8E0D6] dark:border-[#3A3830] p-6 space-y-5">
                       <h3 className="text-base font-bold text-[#2C2416] dark:text-[#F5F3F0]">Visibility &amp; Access</h3>
 
@@ -641,6 +926,23 @@ export default function OrganizerPage() {
                           </span>
                         )}
                       </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-[#1C1B18] rounded-2xl border border-red-200 dark:border-red-900/40 p-6 space-y-3">
+                      <h3 className="text-base font-bold text-red-700 dark:text-red-400">Delete resource</h3>
+                      <p className="text-sm text-[#6B5D47] dark:text-[#B8A584]">
+                        Permanently remove this listing from Communify. Members will lose access to this resource page.
+                      </p>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={handleDeleteResource}
+                        disabled={deleting}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-sm disabled:opacity-50 transition-all"
+                      >
+                        {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        Delete this resource
+                      </motion.button>
                     </div>
                   </motion.div>
                 )}
@@ -757,7 +1059,7 @@ export default function OrganizerPage() {
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <p className="font-bold text-[#2C2416] dark:text-[#F5F3F0] text-sm truncate">{member.name}</p>
+                                <p className="font-bold text-[#2C2416] dark:text-[#F5F3F0] text-sm break-words">{member.name}</p>
                                 {member.is_owner && (
                                   <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#8B6F47]/10 text-[#8B6F47] dark:text-[#D4A574]">
                                     {member.role}
@@ -769,7 +1071,7 @@ export default function OrganizerPage() {
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] truncate">{member.email}</p>
+                              <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] break-words">{member.email}</p>
                               <p className="text-[10px] text-[#6B5D47]/60 dark:text-[#B8A584]/60 mt-0.5">
                                 Joined {new Date(member.joined_at).toLocaleDateString()}
                               </p>
@@ -838,9 +1140,9 @@ export default function OrganizerPage() {
                             <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold text-white ${isMe ? 'bg-[#8B6F47]' : 'bg-[#6B5D47]'}`}>
                               {(msg.users?.name || 'U')[0].toUpperCase()}
                             </div>
-                            <div className={`max-w-xs lg:max-w-md ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
-                              {!isMe && <p className="text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] px-1">{msg.users?.name || 'Unknown'}</p>}
-                              <div className={`px-3 py-2 rounded-2xl text-sm ${
+                            <div className={`max-w-[min(100%,36rem)] min-w-0 ${isMe ? 'items-end' : 'items-start'} flex flex-col gap-0.5`}>
+                              {!isMe && <p className="text-xs font-semibold text-[#6B5D47] dark:text-[#B8A584] px-1 break-words max-w-full">{msg.users?.name || 'Unknown'}</p>}
+                              <div className={`px-3 py-2 rounded-2xl text-sm break-words max-w-full ${
                                 isMe
                                   ? 'bg-[#8B6F47] dark:bg-[#D4A574] text-white dark:text-[#0B0A0F] rounded-br-sm'
                                   : 'bg-[#F5F3F0] dark:bg-[#2A2824] text-[#2C2416] dark:text-[#F5F3F0] rounded-bl-sm'
