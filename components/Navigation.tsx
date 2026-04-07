@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, X, Heart, Moon, Sun, Star, ChevronDown, User, LogOut } from 'lucide-react'
+import { Menu, X, Heart, Moon, Sun, Star, ChevronDown, LogOut } from 'lucide-react'
+import UserAvatarImage from '@/components/UserAvatarImage'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
@@ -21,6 +22,7 @@ export default function Navigation() {
   const [user, setUser] = useState<any>(null)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const userMenuRef = useRef<HTMLDivElement>(null)
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleMenuEnter = (label: string) => {
@@ -72,15 +74,22 @@ export default function Navigation() {
     }
   }, [isOpen])
 
-  // Close dropdown on click-outside or Escape
+  // Close nav dropdown / account menu on click-outside or Escape
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      const t = e.target as Node
+      if (dropdownRef.current && !dropdownRef.current.contains(t)) {
         setOpenDropdown(null)
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(t)) {
+        setUserMenuOpen(false)
       }
     }
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpenDropdown(null)
+      if (e.key === 'Escape') {
+        setOpenDropdown(null)
+        setUserMenuOpen(false)
+      }
     }
     document.addEventListener('mousedown', handleClickOutside)
     document.addEventListener('keydown', handleEscape)
@@ -355,35 +364,56 @@ export default function Navigation() {
 
             {/* Auth Buttons */}
             {user ? (
-              <div className="relative">
+              <div className="relative" ref={userMenuRef}>
                 <motion.button
+                  type="button"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex min-w-0 max-w-[11rem] items-center gap-2 rounded-lg bg-[#8B6F47] px-3 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:bg-[#6B5D47] hover:shadow-md dark:bg-[#D4A574] dark:hover:bg-[#B8A584] sm:max-w-[13rem] lg:max-w-[15rem] lg:px-4 lg:text-base"
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="menu"
+                  aria-label={`Account menu for ${displayName || user.email}`}
+                  className="rounded-full p-0.5 ring-2 ring-[#E8E0D6] dark:ring-[#4A4844] shadow-sm transition-all duration-200 hover:ring-[#8B6F47]/50 dark:hover:ring-[#D4A574]/50 focus:outline-none focus-visible:ring-[#8B6F47] dark:focus-visible:ring-[#D4A574]"
                 >
-                  <User className="h-4 w-4 shrink-0 lg:h-5 lg:w-5" />
-                  <span className="min-w-0 flex-1 truncate text-left">{displayName || user.email}</span>
+                  <UserAvatarImage
+                    src={user.avatar}
+                    name={displayName || user.email || 'Account'}
+                    className="h-9 w-9 md:h-10 md:w-10"
+                    textClassName="text-sm md:text-base"
+                  />
                 </motion.button>
 
                 <AnimatePresence>
                   {userMenuOpen && (
                     <motion.div
+                      role="menu"
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
-                      className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-[#2A2824] rounded-lg shadow-lg border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
+                      className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[#2A2824] rounded-lg shadow-lg border border-[#E8E0D6] dark:border-[#4A4844] overflow-hidden"
                     >
-                      <div className="p-3 border-b border-[#E8E0D6] dark:border-[#4A4844]">
-                        <p className="text-sm font-medium text-[#2C2416] dark:text-[#F5F3F0]">{displayName || user.email}</p>
-                        <p className="text-xs text-[#6B5D47] dark:text-[#B8A584]">{user.email}</p>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#f5ede1] text-[#6B5D47] dark:bg-[#3b352c] dark:text-[#D4A574]">
-                          {user.role === 'organizer' ? 'Community Organizer' : user.role === 'admin' ? 'Admin' : 'Volunteer'}
-                        </span>
+                      <div className="p-3 border-b border-[#E8E0D6] dark:border-[#4A4844] space-y-2">
+                        <p className="text-sm font-semibold text-[#2C2416] dark:text-[#F5F3F0] leading-snug">
+                          {displayName || user.email}
+                        </p>
+                        <p className="text-xs text-[#6B5D47] dark:text-[#B8A584] break-all">{user.email}</p>
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6B5D47]/80 dark:text-[#B8A584]/80 mb-1">
+                            Role
+                          </p>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#f5ede1] text-[#6B5D47] dark:bg-[#3b352c] dark:text-[#D4A574]">
+                            {user.role === 'organizer'
+                              ? 'Community Organizer'
+                              : user.role === 'admin'
+                                ? 'Admin'
+                                : 'Volunteer'}
+                          </span>
+                        </div>
                       </div>
                       {user.role === 'admin' && (
                         <Link
                           href="/admin"
+                          role="menuitem"
                           onClick={() => setUserMenuOpen(false)}
                           className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
                         >
@@ -393,6 +423,7 @@ export default function Navigation() {
                       {(user.role === 'organizer' || user.role === 'admin') && (
                         <Link
                           href="/organizer"
+                          role="menuitem"
                           onClick={() => setUserMenuOpen(false)}
                           className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
                         >
@@ -401,12 +432,15 @@ export default function Navigation() {
                       )}
                       <Link
                         href="/submit"
+                        role="menuitem"
                         onClick={() => setUserMenuOpen(false)}
                         className="block px-4 py-3 text-sm text-[#6B5D47] dark:text-[#B8A584] hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-colors"
                       >
                         Submit Resource
                       </Link>
                       <button
+                        type="button"
+                        role="menuitem"
                         onClick={() => {
                           setUserMenuOpen(false)
                           handleLogout()
@@ -588,12 +622,29 @@ export default function Navigation() {
                 <div className="pt-6 border-t border-gray-100 dark:border-[#2c2c3e]">
                   {user ? (
                     <div className="space-y-4">
-                      <div className="px-4">
-                        <p className="font-bold text-[#2C2416] dark:text-[#F5F3F0]">{displayName || user.email}</p>
-                        <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] truncate">{user.email}</p>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#f5ede1] text-[#6B5D47] dark:bg-[#3b352c] dark:text-[#D4A574] mt-1">
-                          {user.role === 'organizer' ? 'Community Organizer' : user.role === 'admin' ? 'Admin' : 'Volunteer'}
-                        </span>
+                      <div className="px-4 flex gap-3">
+                        <UserAvatarImage
+                          src={user.avatar}
+                          name={displayName || user.email || 'Account'}
+                          className="h-12 w-12 shrink-0"
+                          textClassName="text-lg"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-[#2C2416] dark:text-[#F5F3F0] leading-snug">
+                            {displayName || user.email}
+                          </p>
+                          <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] truncate">{user.email}</p>
+                          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#6B5D47]/80 dark:text-[#B8A584]/80 mt-2 mb-0.5">
+                            Role
+                          </p>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[#f5ede1] text-[#6B5D47] dark:bg-[#3b352c] dark:text-[#D4A574]">
+                            {user.role === 'organizer'
+                              ? 'Community Organizer'
+                              : user.role === 'admin'
+                                ? 'Admin'
+                                : 'Volunteer'}
+                          </span>
+                        </div>
                       </div>
                       {user.role === 'admin' && (
                         <Link
@@ -613,6 +664,13 @@ export default function Navigation() {
                           Organizer Panel
                         </Link>
                       )}
+                      <Link
+                        href="/submit"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-2xl font-medium text-[#6B5D47] dark:text-[#B8A584]"
+                      >
+                        Submit Resource
+                      </Link>
                       <button
                         onClick={() => {
                           setIsOpen(false)
