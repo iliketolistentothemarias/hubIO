@@ -181,10 +181,10 @@ export default function Navigation() {
           : 'bg-transparent'
         }`}
     >
-      <div className="mx-auto w-full max-w-6xl px-3 sm:px-5 lg:px-6">
-        <div className="flex items-center justify-between md:justify-center gap-2 md:gap-3 min-h-[4.5rem] md:min-h-[5.25rem] py-2.5 md:py-3 w-full box-border">
-          {/* Logo */}
-          <div className="md:pr-3 flex items-center flex-shrink-0">
+      <div className="container-custom px-4 sm:px-6 lg:px-8">
+        <div className="relative flex items-center justify-between min-h-[4.5rem] md:min-h-[5.25rem] py-2.5 md:py-3 w-full box-border">
+          {/* Logo — z-10 so it stays above the absolutely centered nav layer */}
+          <div className="relative z-10 flex items-center flex-shrink-0">
             <Link href="/" className="flex items-center gap-2 group w-fit py-0.5">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -193,28 +193,31 @@ export default function Navigation() {
               >
                 <Heart className="w-8 h-8 text-[#8B6F47] dark:text-[#D4A574]" />
               </motion.div>
-              <span className="text-2xl font-display font-bold leading-normal text-[#2C2416] dark:text-[#F5F3F0]">
+              <span className="text-2xl font-display font-bold leading-normal text-[#2C2416] dark:text-[#F5F3F0] whitespace-nowrap">
                 Communify
               </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex items-center gap-2 lg:gap-3 justify-center min-w-0 shrink" ref={dropdownRef}>
+          {/* Desktop nav: centered in the bar so it never shrinks into the logo or utilities */}
+          <div
+            className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[1] items-center justify-center pointer-events-none max-w-[min(100vw-22rem,56rem)]"
+          >
+            <div className="flex items-center gap-3 lg:gap-4 xl:gap-5 pointer-events-auto overflow-x-auto max-w-full py-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden" ref={dropdownRef}>
             {navItems.map((item, index) => (
               <motion.div
                 key={item.href || item.label}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.15, delay: index * 0.02 }}
-                className="relative"
+                className="relative shrink-0"
                 onMouseLeave={item.submenu ? handleMenuLeave : undefined}
               >
                 {item.submenu ? (
                   <button
                     onMouseEnter={() => handleMenuEnter(item.label)}
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${item.submenu.some(sub => pathname === sub.href)
+                    className={`relative font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1 ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -236,7 +239,7 @@ export default function Navigation() {
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className={`relative font-medium transition-all duration-200 flex items-center gap-1 ${pathname === item.href
+                    className={`relative font-medium whitespace-nowrap transition-all duration-200 flex items-center gap-1 ${pathname === item.href
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -303,10 +306,11 @@ export default function Navigation() {
                 </AnimatePresence>
               </motion.div>
             ))}
+            </div>
           </div>
 
           {/* Right Side - Utilities */}
-          <div className="hidden md:flex items-center gap-1.5 lg:gap-2 justify-end shrink-0 pl-2 md:pl-3">
+          <div className="relative z-10 hidden md:flex items-center gap-3 justify-end shrink-0 pl-4">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
