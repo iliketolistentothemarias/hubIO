@@ -30,9 +30,19 @@ export function resourceLogoUrlCandidates(image: unknown, website: unknown): str
   }
   const host = hostnameFromWebsite(website)
   if (host) {
-    urls.push(`https://logo.clearbit.com/${host}`)
+    const enc = encodeURIComponent(host)
+    // Clearbit: large primary URL; ResourceHeroLogo adds srcSet 128/256 for DPR
+    urls.push(`https://logo.clearbit.com/${host}?size=256`)
+    // Unavatar aggregates favicons / logos; often sharper than a single favicon
+    urls.push(`https://unavatar.io/${host}`)
+    // Google s2: sz=256 is supported in practice for crisper icons than 16–32px favicons
+    urls.push(`https://www.google.com/s2/favicons?domain=${enc}&sz=256`)
+    urls.push(`https://www.google.com/s2/favicons?domain=${enc}&sz=128`)
+    // Site-hosted icons are often high-res when they exist
+    urls.push(`https://${host}/apple-touch-icon.png`)
+    urls.push(`https://${host}/apple-touch-icon-precomposed.png`)
+    urls.push(`https://${host}/favicon.ico`)
     urls.push(`https://icons.duckduckgo.com/ip3/${host}.ico`)
-    urls.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(host)}&sz=128`)
   }
   return urls
 }

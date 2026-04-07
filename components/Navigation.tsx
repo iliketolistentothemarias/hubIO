@@ -182,7 +182,7 @@ export default function Navigation() {
         }`}
     >
       <div className="mx-auto w-full max-w-[100rem] px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
-        <div className="flex min-h-[4.5rem] md:min-h-[5.25rem] w-full box-border items-center justify-between gap-2 py-2.5 md:py-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-2 lg:gap-x-4">
+        <div className="flex min-h-[4.5rem] md:min-h-[5.25rem] w-full box-border items-center justify-between gap-2 py-2.5 md:py-3 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-3 lg:gap-x-8">
           {/* Logo — nudged toward viewport left */}
           <div className="flex shrink-0 items-center md:-ml-1 lg:-ml-2">
             <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group w-fit py-0.5 pr-0.5 md:pr-1">
@@ -200,9 +200,9 @@ export default function Navigation() {
           </div>
 
           {/* Desktop nav — no horizontal scroll; compact type + gaps so one row fits */}
-          <div className="hidden min-w-0 md:flex md:justify-center md:px-1 lg:px-2">
+          <div className="hidden min-w-0 w-full md:flex md:justify-center md:px-2 lg:px-5">
             <div
-              className="flex max-w-full flex-nowrap items-center justify-center gap-1.5 py-1 lg:gap-2 xl:gap-2.5"
+              className="flex w-full max-w-full min-w-0 flex-nowrap items-center justify-center gap-3 py-1 md:gap-4 lg:gap-5 xl:gap-6 2xl:gap-8"
               ref={dropdownRef}
             >
             {navItems.map((item, index) => (
@@ -218,7 +218,7 @@ export default function Navigation() {
                   <button
                     onMouseEnter={() => handleMenuEnter(item.label)}
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                    className={`relative flex items-center gap-0.5 text-xs font-medium whitespace-nowrap transition-all duration-200 lg:text-sm xl:text-base ${item.submenu.some(sub => pathname === sub.href)
+                    className={`relative flex items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all duration-200 md:px-3 lg:px-3.5 xl:px-4 lg:text-sm xl:text-base hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -240,7 +240,7 @@ export default function Navigation() {
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className={`relative flex items-center gap-0.5 text-xs font-medium whitespace-nowrap transition-all duration-200 lg:text-sm xl:text-base ${pathname === item.href
+                    className={`relative flex items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all duration-200 md:px-3 lg:px-3.5 xl:px-4 lg:text-sm xl:text-base hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${pathname === item.href
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -254,7 +254,7 @@ export default function Navigation() {
                     {pathname === item.href && (
                       <motion.div
                         layoutId="navbar-indicator"
-                        className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-[#8B6F47] dark:bg-[#D4A574]"
+                        className="absolute bottom-0 left-2.5 right-2.5 h-0.5 rounded-full bg-[#8B6F47] dark:bg-[#D4A574] md:left-3 md:right-3 lg:left-3.5 lg:right-3.5 xl:left-4 xl:right-4"
                         initial={false}
                       />
                     )}

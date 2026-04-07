@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Heart } from 'lucide-react'
-import { resourceLogoUrlCandidates } from '@/lib/utils/resource-logo'
+import { hostnameFromWebsite, resourceLogoUrlCandidates } from '@/lib/utils/resource-logo'
 
 type Props = {
   name: string
@@ -26,6 +26,7 @@ export default function ResourceHeroLogo({
 }: Props) {
   const urls = useMemo(() => resourceLogoUrlCandidates(image, website), [image, website])
   const [index, setIndex] = useState(0)
+  const host = useMemo(() => hostnameFromWebsite(website), [website])
 
   useEffect(() => {
     setIndex(0)
@@ -33,6 +34,19 @@ export default function ResourceHeroLogo({
 
   const src = urls[index]
   const showImage = src != null && index < urls.length
+
+  /** Retina-friendly srcSet for providers that serve fixed bitmaps */
+  const srcSet = useMemo(() => {
+    if (!host || !src) return undefined
+    if (src.includes('logo.clearbit.com')) {
+      return `https://logo.clearbit.com/${host}?size=128 1x, https://logo.clearbit.com/${host}?size=256 2x`
+    }
+    if (src.includes('google.com/s2/favicons')) {
+      const d = encodeURIComponent(host)
+      return `https://www.google.com/s2/favicons?domain=${d}&sz=128 1x, https://www.google.com/s2/favicons?domain=${d}&sz=256 2x`
+    }
+    return undefined
+  }, [src, host])
 
   const sizeClass =
     variant === 'compact'
@@ -42,7 +56,7 @@ export default function ResourceHeroLogo({
   const heartClass =
     variant === 'compact' ? 'w-7 h-7 sm:w-9 sm:h-9 text-white' : 'w-10 h-10 md:w-16 md:h-16 text-white'
 
-  const imgPad = variant === 'compact' ? 'p-1 sm:p-1.5' : 'p-2 md:p-3'
+  const imgPad = variant === 'compact' ? 'p-1 sm:p-1.5' : 'p-1.5 md:p-2.5'
 
   const boxClass = `${sizeClass} relative group overflow-hidden ${className}`.trim()
 
@@ -66,10 +80,13 @@ export default function ResourceHeroLogo({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={src}
+        srcSet={srcSet}
+        sizes={variant === 'compact' ? '(max-width: 640px) 64px, 80px' : '(max-width: 768px) 96px, 160px'}
         alt={`${name} logo`}
-        className={`w-full h-full object-contain ${imgPad}`}
-        loading="lazy"
+        className={`h-full w-full object-contain antialiased [image-rendering:auto] [backface-visibility:hidden] ${imgPad}`}
+        loading={variant === 'hero' ? 'eager' : 'lazy'}
         decoding="async"
+        fetchPriority={variant === 'hero' ? 'high' : 'low'}
         referrerPolicy="no-referrer"
         onError={() => setIndex((i) => i + 1)}
       />
