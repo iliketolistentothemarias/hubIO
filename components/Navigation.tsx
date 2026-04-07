@@ -185,7 +185,7 @@ export default function Navigation() {
         }`}
     >
       <div className="mx-auto w-full max-w-[100rem] px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
-        <div className="flex min-h-[3.5rem] md:min-h-[4.25rem] w-full box-border items-center justify-between gap-2 py-0.5 md:py-1 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-1.5 lg:gap-x-3">
+        <div className="flex min-h-[3.5rem] md:min-h-[4.25rem] w-full box-border items-center justify-between gap-2 py-0.5 md:py-1 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-1 lg:gap-x-2">
           {/* Logo — nudged toward viewport left */}
           <div className="flex shrink-0 items-center md:-ml-1 lg:-ml-2">
             <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group w-fit py-0.5 pr-0.5 md:pr-1">
@@ -202,10 +202,10 @@ export default function Navigation() {
             </Link>
           </div>
 
-          {/* Desktop nav — no horizontal scroll; compact type + gaps so one row fits */}
-          <div className="hidden min-w-0 w-full md:flex md:justify-center md:px-0.5 lg:px-1">
+          {/* Desktop nav — zero column-gap; tight px so labels sit close (padding was eating most “space”) */}
+          <div className="hidden min-w-0 w-full md:flex md:justify-center md:px-0">
             <div
-              className="flex w-auto max-w-full min-w-0 flex-nowrap items-center justify-center gap-0.5 py-1 md:gap-1 lg:gap-1.5 xl:gap-2"
+              className="flex w-auto max-w-full min-w-0 flex-nowrap items-center justify-center !gap-0 py-1 [column-gap:0] [row-gap:0]"
               ref={dropdownRef}
             >
             {navItems.map((item, index) => (
@@ -221,7 +221,7 @@ export default function Navigation() {
                   <button
                     onMouseEnter={() => handleMenuEnter(item.label)}
                     onClick={() => setOpenDropdown(openDropdown === item.label ? null : item.label)}
-                    className={`relative flex items-center gap-0.5 rounded-lg px-0.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all duration-200 md:px-1 lg:px-1.5 lg:text-sm xl:text-base hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${item.submenu.some(sub => pathname === sub.href)
+                    className={`relative flex items-center gap-0.5 rounded-md px-0.5 py-1.5 text-xs font-medium tracking-tight whitespace-nowrap transition-all duration-200 md:px-1 md:text-sm hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${item.submenu.some(sub => pathname === sub.href)
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -243,7 +243,7 @@ export default function Navigation() {
                   <Link
                     href={item.href}
                     prefetch={true}
-                    className={`relative flex items-center gap-0.5 rounded-lg px-0.5 py-1.5 text-xs font-medium whitespace-nowrap transition-all duration-200 md:px-1 lg:px-1.5 lg:text-sm xl:text-base hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${pathname === item.href
+                    className={`relative flex items-center gap-0.5 rounded-md px-0.5 py-1.5 text-xs font-medium tracking-tight whitespace-nowrap transition-all duration-200 md:px-1 md:text-sm hover:bg-[#2C2416]/5 dark:hover:bg-[#F5F3F0]/10 ${pathname === item.href
                         ? 'text-[#2C2416] dark:text-[#F5F3F0]'
                         : 'text-[#6B5D47] dark:text-[#B8A584] hover:text-[#8B6F47] dark:hover:text-[#D4A574]'
                       }`}
@@ -257,7 +257,7 @@ export default function Navigation() {
                     {pathname === item.href && (
                       <motion.div
                         layoutId="navbar-indicator"
-                        className="absolute bottom-0 left-0.5 right-0.5 h-0.5 rounded-full bg-[#8B6F47] dark:bg-[#D4A574] md:left-1 md:right-1 lg:left-1.5 lg:right-1.5"
+                        className="absolute bottom-0 left-0.5 right-0.5 h-0.5 rounded-full bg-[#8B6F47] dark:bg-[#D4A574] md:left-1 md:right-1"
                         initial={false}
                       />
                     )}
@@ -314,7 +314,7 @@ export default function Navigation() {
           </div>
 
           {/* Right — nudged toward viewport edge */}
-          <div className="hidden shrink-0 items-center justify-end gap-1.5 md:flex md:gap-2 md:pl-2 lg:gap-2.5 lg:pl-3 md:-mr-1 lg:-mr-2">
+          <div className="hidden shrink-0 items-center justify-end gap-1.5 md:flex md:gap-2 md:pl-1 lg:gap-2 lg:pl-2 md:-mr-1 lg:-mr-2">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
