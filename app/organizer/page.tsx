@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -88,7 +87,6 @@ interface Announcement {
 }
 
 export default function OrganizerPage() {
-  const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [userRole, setUserRole] = useState<string | null>(null)
   const [checking, setChecking] = useState(true)
@@ -143,22 +141,25 @@ export default function OrganizerPage() {
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const chatChannelRef = useRef<any>(null)
 
-  // Auth gate
+  // Resolve user for organizer tools (guests can still view the page)
   useEffect(() => {
     const check = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('users').select('role').eq('id', session.user.id).single()
-      if (!profile || (profile.role !== 'organizer' && profile.role !== 'admin')) {
-        router.push('/')
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session?.user) {
+        setUserId(null)
+        setUserRole(null)
+        setChecking(false)
         return
       }
+      const { data: profile } = await supabase.from('users').select('role').eq('id', session.user.id).single()
       setUserId(session.user.id)
-      setUserRole(profile.role)
+      setUserRole(profile?.role ?? null)
       setChecking(false)
     }
     check()
-  }, [router])
+  }, [])
 
   const loadResources = useCallback(async () => {
     if (!userId) return
