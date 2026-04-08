@@ -15,31 +15,49 @@ type Props = {
   website?: string | null
   /** Direct logo URL from DB or seed data (optional) */
   image?: string | null
-  /** Unverified / pending resources use the yellow brand tile */
-  verified?: boolean
   className?: string
   /** Smaller tile for directory list rows */
   variant?: 'hero' | 'compact'
 }
 
-/** Tiny favicons / generic globe icons are usually ≤64px intrinsic; reject so we show yellow + heart instead. */
+/** Tiny favicons / generic globe icons are usually ≤64px intrinsic; reject so we show tan + heart instead. */
 const MAX_INTRINSIC_BAD_LOGO = 64
 
+const yellowHeartBox = (
+  boxClass: string,
+  heartClass: string,
+) => (
+  <div
+    className={`${boxClass} flex items-center justify-center bg-gradient-to-br from-amber-300 to-yellow-500 dark:from-amber-400 dark:to-yellow-600`}
+    aria-hidden
+  >
+    <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+    <Heart className={`${heartClass} text-white drop-shadow-sm`} />
+  </div>
+)
+
+const tanHeartBox = (boxClass: string, heartClass: string) => (
+  <div
+    className={`${boxClass} bg-gradient-to-br from-[#8B6F47] to-[#D4A574] flex items-center justify-center`}
+    aria-hidden
+  >
+    <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+    <Heart className={heartClass} />
+  </div>
+)
+
 /**
- * Shows organization logo from `image`, else Clearbit/Google favicon from `website`, else yellow + white heart.
+ * Shows organization logo from `image`, else Clearbit/Google favicon from `website`, else placeholders.
+ * A fixed list of org names uses the yellow + white heart tile only; others keep real logos / tan heart.
  */
 export default function ResourceHeroLogo({
   name,
   website,
   image,
-  verified,
   className = '',
   variant = 'hero',
 }: Props) {
-  const yellowBrandOnly = useMemo(
-    () => shouldUseYellowBrandResourceLogo(name, { image, verified }),
-    [name, image, verified]
-  )
+  const yellowBrandOnly = useMemo(() => shouldUseYellowBrandResourceLogo(name), [name])
 
   const urls = useMemo(() => {
     if (yellowBrandOnly) return []
@@ -54,14 +72,12 @@ export default function ResourceHeroLogo({
   useEffect(() => {
     setIndex(0)
     setYellowSmileyFallback(false)
-  }, [name, image, website, verified, yellowBrandOnly])
+  }, [name, image, website, yellowBrandOnly])
 
   const src = urls[index]
   const showImage = src != null && index < urls.length
-  /** External absolute URLs: CORS so canvas can read pixels for smiley detection; skip for same-origin paths */
   const imgCrossOrigin = src && /^https?:\/\//i.test(src.trim()) ? ('anonymous' as const) : undefined
 
-  /** Retina-friendly srcSet for providers that serve fixed bitmaps */
   const srcSet = useMemo(() => {
     if (!host || !src) return undefined
     if (src.includes('logo.clearbit.com')) {
@@ -121,16 +137,16 @@ export default function ResourceHeroLogo({
     setYellowSmileyFallback(false)
   }
 
-  if (yellowSmileyFallback || !showImage) {
-    return (
-      <div
-        className={`${boxClass} flex items-center justify-center bg-gradient-to-br from-amber-300 to-yellow-500 dark:from-amber-400 dark:to-yellow-600`}
-        aria-hidden
-      >
-        <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-        <Heart className={`${heartClass} text-white drop-shadow-sm`} />
-      </div>
-    )
+  if (yellowBrandOnly) {
+    return yellowHeartBox(boxClass, heartClass)
+  }
+
+  if (yellowSmileyFallback) {
+    return yellowHeartBox(boxClass, heartClass)
+  }
+
+  if (!showImage) {
+    return tanHeartBox(boxClass, heartClass)
   }
 
   return (

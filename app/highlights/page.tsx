@@ -127,7 +127,6 @@ function FeaturedResourceCard({ resource, index, isFavorite, onToggleFavorite }:
             name={resource.name}
             website={resource.website}
             image={resource.image}
-            verified={resource.verified}
             className="!w-full !h-full !max-w-none !mx-0 rounded-[3rem] !shadow-2xl"
           />
         </motion.div>

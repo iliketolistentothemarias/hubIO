@@ -1,6 +1,6 @@
 /**
- * Yellow gradient + white heart for resources without a custom logo, unverified
- * entries, and specific directory names (always, even if an image URL exists).
+ * Yellow gradient + white heart only for specific directory org names (see list below).
+ * All other resources use normal logo URLs and the default tan placeholder when needed.
  */
 
 function norm(name: string): string {
@@ -11,8 +11,7 @@ function norm(name: string): string {
     .replace(/'/g, "'")
 }
 
-/** Explicit org names that should always use the yellow brand tile */
-const ALWAYS_YELLOW_NAMES = new Set(
+const YELLOW_HEART_RESOURCE_NAMES = new Set(
   [
     'Pittsburgh YMCA',
     'Pittsburgh Legal Aid Society',
@@ -37,14 +36,7 @@ const ALWAYS_YELLOW_NAMES = new Set(
   ].map(norm)
 )
 
-export function shouldUseYellowBrandResourceLogo(
-  name: string,
-  opts?: { image?: string | null; verified?: boolean }
-): boolean {
+export function shouldUseYellowBrandResourceLogo(name: string): boolean {
   const n = norm(name)
-  if (n && ALWAYS_YELLOW_NAMES.has(n)) return true
-  if (opts?.verified === false) return true
-  const img = opts?.image
-  if (img == null || (typeof img === 'string' && !img.trim())) return true
-  return false
+  return Boolean(n && YELLOW_HEART_RESOURCE_NAMES.has(n))
 }
