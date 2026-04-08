@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, CheckCircle, XCircle, Info, MessageSquare, Trash2 } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
@@ -28,6 +28,7 @@ export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isOpen, setIsOpen] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -160,6 +161,24 @@ export default function Notifications() {
       subscription.unsubscribe()
     }
   }, [loadNotifications])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const onPointerDown = (e: PointerEvent) => {
+      const el = containerRef.current
+      if (!el || el.contains(e.target as Node)) return
+      setIsOpen(false)
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsOpen(false)
+    }
+    document.addEventListener('pointerdown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [isOpen])
 
   const markAsRead = async (notificationIds: string[]) => {
     try {
@@ -310,8 +329,9 @@ export default function Notifications() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2.5 rounded-lg bg-white dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584] 
                  hover:bg-[#F5F3F0] dark:hover:bg-[#353330] transition-all duration-200

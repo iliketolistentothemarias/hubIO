@@ -74,9 +74,9 @@ export default function Navigation() {
     }
   }, [isOpen])
 
-  // Close nav dropdown / account menu on click-outside or Escape
+  // Close nav dropdown / account menu on outside pointer down or Escape (pointer works on touch)
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handlePointerOutside = (e: PointerEvent) => {
       const t = e.target as Node
       if (dropdownRef.current && !dropdownRef.current.contains(t)) {
         setOpenDropdown(null)
@@ -91,10 +91,10 @@ export default function Navigation() {
         setUserMenuOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('pointerdown', handlePointerOutside)
     document.addEventListener('keydown', handleEscape)
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('pointerdown', handlePointerOutside)
       document.removeEventListener('keydown', handleEscape)
     }
   }, [])
