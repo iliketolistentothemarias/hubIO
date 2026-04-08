@@ -35,10 +35,10 @@ export default function ReferencesPage() {
                 </motion.div>
 
                 {/* Tabs System */}
-                <Tabs.Root defaultValue="works-cited" className="w-full">
+                <Tabs.Root defaultValue="bibliography" className="w-full">
                     <Tabs.List className="flex flex-wrap justify-center gap-3 p-1.5 bg-[#E8E0D6] dark:bg-white/5 rounded-2xl w-full md:w-fit mx-auto mb-10 shadow-inner">
                         <Tabs.Trigger
-                            value="works-cited"
+                            value="bibliography"
                             className="flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-xl text-sm font-semibold transition-all duration-300
                          data-[state=active]:bg-white dark:data-[state=active]:bg-[#1F1B28]
                          data-[state=active]:text-[#8B6F47] dark:data-[state=active]:text-[#D4A574]
@@ -46,7 +46,7 @@ export default function ReferencesPage() {
                          hover:text-[#8B6F47] dark:hover:text-[#D4A574]"
                         >
                             <BookOpen className="w-4 h-4" />
-                            Works Cited
+                            Bibliography
                         </Tabs.Trigger>
                         <Tabs.Trigger
                             value="worklog"
@@ -72,8 +72,8 @@ export default function ReferencesPage() {
                         </Tabs.Trigger>
                     </Tabs.List>
 
-                    {/* Works Cited Tab */}
-                    <Tabs.Content value="works-cited" className="focus:outline-none">
+                    {/* Bibliography — Communify Works Cited PDF (replaces external MyBib embed) */}
+                    <Tabs.Content value="bibliography" className="focus:outline-none">
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
@@ -82,14 +82,14 @@ export default function ReferencesPage() {
                             <LiquidGlass intensity="medium">
                                 <div className="p-2 h-[500px] md:h-[850px] rounded-[2rem] bg-white/40 dark:bg-black/20 border border-white/20 dark:border-white/5 backdrop-blur-md">
                                     <iframe
-                                        src="/communify-works-cited.pdf"
-                                        className="w-full h-full rounded-2xl bg-white/90 dark:bg-white/10"
-                                        title="Communify Works Cited"
+                                        src="/communify-works-cited.pdf#view=FitH"
+                                        className="w-full h-full rounded-2xl bg-white/90 dark:bg-white/10 border-0"
+                                        title="Bibliography — Communify Works Cited"
                                     />
                                 </div>
                                 <div className="mt-4 flex justify-between items-center px-4">
                                     <p className="text-sm text-[#6B5D47] dark:text-[#B8A584]">
-                                        Communify Works Cited
+                                        Communify Works Cited (bibliography)
                                     </p>
                                     <a
                                         href="/communify-works-cited.pdf"
