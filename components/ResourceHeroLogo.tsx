@@ -6,6 +6,7 @@ import { hostnameFromWebsite, resourceLogoUrlCandidates } from '@/lib/utils/reso
 import {
   bitmapLooksLikePixelSmileyOnWhite,
   shouldSkipDefaultAvatarUrl,
+  urlSuggestsGravatarDefaultRisk,
 } from '@/lib/utils/resource-default-avatar'
 
 type Props = {
@@ -47,6 +48,8 @@ export default function ResourceHeroLogo({
 
   const src = urls[index]
   const showImage = src != null && index < urls.length
+  /** External absolute URLs: CORS so canvas can read pixels for smiley detection; skip for same-origin paths */
+  const imgCrossOrigin = src && /^https?:\/\//i.test(src.trim()) ? ('anonymous' as const) : undefined
 
   /** Retina-friendly srcSet for providers that serve fixed bitmaps */
   const srcSet = useMemo(() => {
@@ -91,6 +94,17 @@ export default function ResourceHeroLogo({
     if (bitmapLooksLikePixelSmileyOnWhite(el)) {
       if (!last) advanceToNextSource()
       else setYellowSmileyFallback(true)
+      return
+    }
+
+    if (
+      last &&
+      src &&
+      urlSuggestsGravatarDefaultRisk(src) &&
+      Math.max(w, h) > 0 &&
+      Math.max(w, h) <= 128
+    ) {
+      setYellowSmileyFallback(true)
       return
     }
 
@@ -141,6 +155,7 @@ export default function ResourceHeroLogo({
         decoding="async"
         fetchPriority={variant === 'hero' ? 'high' : 'low'}
         referrerPolicy="no-referrer"
+        crossOrigin={imgCrossOrigin}
         onLoad={handleImgLoad}
         onError={advanceToNextSource}
       />
