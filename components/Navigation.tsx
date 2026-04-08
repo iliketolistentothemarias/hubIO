@@ -195,8 +195,8 @@ export default function Navigation() {
     >
       <div className="mx-auto w-full max-w-[100rem] px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
         <div className="flex min-h-[3.5rem] md:min-h-[4.25rem] w-full box-border items-center justify-between gap-2 py-0.5 md:py-1 md:grid md:grid-cols-[auto_minmax(0,1fr)_auto] md:items-center md:justify-items-stretch md:gap-x-1 lg:gap-x-2">
-          {/* Logo — nudged toward viewport left */}
-          <div className="flex shrink-0 items-center md:-ml-1 lg:-ml-2">
+          {/* Logo — slight inset from the left edge */}
+          <div className="flex shrink-0 items-center ml-0.5 sm:ml-1 md:ml-1 lg:ml-1.5">
             <Link href="/" className="flex items-center gap-1.5 sm:gap-2 group w-fit py-0.5 pr-0.5 md:pr-1">
               <motion.div
                 whileHover={{ rotate: 360, scale: 1.1 }}
@@ -322,8 +322,8 @@ export default function Navigation() {
             </div>
           </div>
 
-          {/* Right — nudged toward viewport edge */}
-          <div className="hidden shrink-0 items-center justify-end gap-1.5 md:flex md:gap-2 md:pl-1 lg:gap-2 lg:pl-2 md:-mr-1 lg:-mr-2">
+          {/* Right — slight inset from the right edge (favorites, theme, notifications, account) */}
+          <div className="hidden shrink-0 items-center justify-end gap-1.5 md:flex md:gap-2 md:pl-0 lg:gap-2 lg:pl-0 md:mr-2 lg:mr-2.5">
             {/* Favorites Badge */}
             <Link
               href="/directory?favorites=true"
@@ -479,7 +479,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 md:hidden mr-1.5 sm:mr-2">
             <button
               onClick={toggleTheme}
               className="p-2.5 rounded-xl bg-white dark:bg-[#2A2824] text-[#6B5D47] dark:text-[#B8A584] 
