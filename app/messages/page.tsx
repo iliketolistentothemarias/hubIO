@@ -8,6 +8,7 @@ import ChatWindow from '@/components/messaging/ChatWindow'
 import { messagingService, Conversation } from '@/lib/messaging/MessagingService'
 import { supabase } from '@/lib/supabase/client'
 import AuthRequired from '@/components/auth/AuthRequired'
+import { isRemovedAccountProfile } from '@/lib/users/removed-accounts'
 import UserAvatarImage from '@/components/UserAvatarImage'
 
 function MessagesContent() {
@@ -85,7 +86,10 @@ function MessagesContent() {
       const { data, error } = await query.limit(10)
 
       if (error) throw error
-      setUsers(data || [])
+      const rows = (data || []).filter(
+        (u) => !isRemovedAccountProfile({ name: u.name, email: u.email })
+      )
+      setUsers(rows)
     } catch (error) {
       console.error('Error searching users:', error)
     } finally {

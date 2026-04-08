@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireUserFromRequest } from '@/lib/auth/server-request'
+import {
+  isRemovedAccountId,
+  isRemovedAccountProfile,
+  parseRemovedAuthUserIdsFromEnv,
+} from '@/lib/users/removed-accounts'
 
 // GET /api/admin/users — list all registered users (merges auth.users + public.users)
 export async function GET(request: NextRequest) {
@@ -39,14 +44,22 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    const removedIds = parseRemovedAuthUserIdsFromEnv()
+
+    const withoutRemoved = merged.filter(
+      (u) =>
+        !isRemovedAccountProfile({ name: u.name, email: u.email }) &&
+        !isRemovedAccountId(u.id, removedIds)
+    )
+
     // Apply search filter
     const filtered = search
-      ? merged.filter(
+      ? withoutRemoved.filter(
           (u) =>
             u.name.toLowerCase().includes(search.toLowerCase()) ||
             u.email.toLowerCase().includes(search.toLowerCase()),
         )
-      : merged
+      : withoutRemoved
 
     // Sort newest first
     filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())

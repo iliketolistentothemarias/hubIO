@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '@/lib/supabase/client'
+import { isRemovedAccountProfile } from '@/lib/users/removed-accounts'
 import { RealtimeChannel } from '@supabase/supabase-js'
 
 export interface Message {
@@ -157,19 +158,29 @@ class MessagingService {
         }
       }
 
-      // Combine all data
-      return conversations.map(conv => {
-        const convParticipants = participants.filter(p => p.conversation_id === conv.id)
-        const convMetadata = metadata?.find(m => m.conversation_id === conv.id)
-        const lastMsg = lastMessageByConv.get(conv.id)
+      // Combine all data; drop DMs whose other participant is a removed account (stale auth row / deleted profile)
+      return conversations
+        .map((conv) => {
+          const convParticipants = participants.filter((p) => p.conversation_id === conv.id)
+          const convMetadata = metadata?.find((m) => m.conversation_id === conv.id)
+          const lastMsg = lastMessageByConv.get(conv.id)
 
-        return {
-          ...conv,
-          participants: convParticipants,
-          metadata: convMetadata,
-          last_message: lastMsg
-        }
-      })
+          return {
+            ...conv,
+            participants: convParticipants,
+            metadata: convMetadata,
+            last_message: lastMsg,
+          }
+        })
+        .filter((conv) => {
+          const others = conv.participants.filter((p) => p.user_id !== user.id)
+          return !others.some((p) =>
+            isRemovedAccountProfile({
+              name: p.user?.name,
+              email: p.user?.email,
+            })
+          )
+        })
     } catch (error) {
       console.error('Error fetching conversations:', error)
       throw error

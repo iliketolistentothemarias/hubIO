@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireUserFromRequest } from '@/lib/auth/server-request'
+import {
+  isRemovedAccountId,
+  isRemovedAccountProfile,
+  parseRemovedAuthUserIdsFromEnv,
+} from '@/lib/users/removed-accounts'
 
 // PATCH /api/admin/users/[userId] — change a user's role (upserts profile if missing)
 export async function PATCH(
@@ -26,16 +31,24 @@ export async function PATCH(
 
     const admin = createAdminClient()
 
-    // Check if a public.users profile already exists
+    const removedIds = parseRemovedAuthUserIdsFromEnv()
+    if (isRemovedAccountId(params.userId, removedIds)) {
+      return NextResponse.json({ success: false, error: 'User account was removed' }, { status: 404 })
+    }
+
     const { data: existing } = await admin
       .from('users')
-      .select('id')
+      .select('id, name, email')
       .eq('id', params.userId)
       .maybeSingle()
 
+    if (existing && isRemovedAccountProfile({ name: existing.name, email: existing.email })) {
+      return NextResponse.json({ success: false, error: 'User account was removed' }, { status: 404 })
+    }
+
     let data, error
 
-    if (existing) {
+    if (existing?.id) {
       // Profile exists — plain update
       ;({ data, error } = await admin
         .from('users')
@@ -50,6 +63,11 @@ export async function PATCH(
         return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 })
       }
       const au = authUser.user
+      const derivedName =
+        (au.user_metadata?.name as string) || au.email?.split('@')[0] || ''
+      if (isRemovedAccountProfile({ name: derivedName, email: au.email })) {
+        return NextResponse.json({ success: false, error: 'User account was removed' }, { status: 404 })
+      }
       ;({ data, error } = await admin
         .from('users')
         .insert({
