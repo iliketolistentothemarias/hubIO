@@ -190,7 +190,7 @@ export default function Navigation() {
     <nav
       className={`fixed top-0 left-0 right-0 z-[50002] overflow-visible transition-all duration-200 [padding-top:env(safe-area-inset-top,0px)] md:-translate-y-1 ${scrolled
           ? 'bg-white/95 dark:bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-[#e0e0e0] dark:border-[#404040] shadow-sm'
-          : 'bg-transparent'
+          : 'max-md:bg-[#FAF9F6] dark:max-md:bg-[#1C1B18] md:bg-transparent'
         }`}
     >
       <div className="mx-auto w-full max-w-[100rem] px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">

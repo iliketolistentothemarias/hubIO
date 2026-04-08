@@ -37,7 +37,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${poppins.variable} ${merriweather.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${poppins.variable} ${merriweather.variable} bg-[#FAF9F6] dark:bg-[#1C1B18]`}
+      suppressHydrationWarning
+    >
       <head>
         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.json" />
