@@ -112,6 +112,7 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
               name={resource.name}
               website={resource.website}
               image={resource.image}
+              verified={resource.verified}
               variant="compact"
             />
           </div>
@@ -123,6 +124,7 @@ export default function ResourceCard({ resource, index, viewMode = 'grid', onCom
               name={resource.name}
               website={resource.website}
               image={resource.image}
+              verified={resource.verified}
               variant="compact"
               className="!mx-auto"
             />

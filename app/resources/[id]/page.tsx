@@ -378,6 +378,7 @@ export default function ResourceDetailPage() {
                       name={resource.name}
                       website={resource.website}
                       image={logoUrlOverride}
+                      verified={resource.verified}
                     />
                   </div>
 

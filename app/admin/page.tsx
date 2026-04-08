@@ -463,6 +463,11 @@ export default function AdminDashboardPage() {
 
     fetchSubmissions()
     fetchPublishedResources()
+    loadBizSubmissions()
+    loadGrantListings()
+    loadGrantApplications()
+    loadLiveBusinesses()
+    loadLiveGrants()
 
     // Subscribe to realtime changes for submissions and resources
     const submissionsChannel = supabase
@@ -703,14 +708,41 @@ export default function AdminDashboardPage() {
                 <div className={`flex flex-wrap gap-1 p-1 rounded-2xl ${themeMode === 'dark' ? 'bg-white/10' : 'bg-black/5'}`}>
                   {([
                     { id: 'resources' as AdminTab, label: 'Resources' },
-                    { id: 'live-businesses' as AdminTab, label: 'Businesses' },
-                    { id: 'live-grants' as AdminTab, label: 'Grants' },
-                  ]).map(({ id, label }) => (
-                    <button key={id} onClick={() => setActiveTab(id)}
-                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap ${
+                    {
+                      id: 'live-businesses' as AdminTab,
+                      label: 'Businesses',
+                      badge:
+                        mockBusinesses.filter((b) => !removedDefaultBizIds.has(b.id)).length +
+                        liveBusinesses.length,
+                    },
+                    {
+                      id: 'live-grants' as AdminTab,
+                      label: 'Grants',
+                      badge:
+                        mockGrants.filter((g) => !removedDefaultGrantIds.has(g.id)).length + liveGrants.length,
+                    },
+                  ] as const).map(({ id, label, badge }) => (
+                    <button
+                      key={id}
+                      onClick={() => setActiveTab(id)}
+                      className={`px-4 py-2 rounded-xl text-sm font-semibold transition whitespace-nowrap flex items-center gap-1.5 ${
                         activeTab === id ? 'bg-white text-[#2C2416] shadow' : themeMode === 'dark' ? 'text-white/70 hover:text-white' : 'text-[#6B5D47]/70 hover:text-[#2C2416]'
-                      }`}>
+                      }`}
+                    >
                       {label}
+                      {typeof badge === 'number' && (
+                        <span
+                          className={`min-w-[1.25rem] px-1.5 py-0.5 rounded-full text-[10px] font-bold leading-none tabular-nums ${
+                            activeTab === id
+                              ? 'bg-[#8B6F47]/20 text-[#8B6F47]'
+                              : themeMode === 'dark'
+                                ? 'bg-white/20 text-white'
+                                : 'bg-black/10 text-[#2C2416]'
+                          }`}
+                        >
+                          {badge}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
