@@ -49,108 +49,152 @@ export default function Home() {
           style={{ opacity: opacity || 1 }}
           className="container-custom relative z-10 w-full px-4 pb-16 sm:px-6 md:pb-24 lg:px-8"
         >
-          <div className="text-center max-w-4xl mx-auto">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <motion.h1
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6 }}
-                className="text-4xl md:text-7xl font-display font-bold text-[#2C2416] dark:text-[#F5F3F0] mb-4 md:mb-6"
+          <div className="grid lg:grid-cols-2 gap-12 items-center max-w-7xl mx-auto">
+            <div className="text-left">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
               >
-                Communify
-              </motion.h1>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-                className="text-lg md:text-2xl text-[#6B5D47] dark:text-[#B8A584] mb-4 font-light"
+                <motion.h1
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-5xl md:text-7xl lg:text-8xl font-display font-extrabold text-[#2C2416] dark:text-[#F5F3F0] mb-4 md:mb-6 leading-tight tracking-tight"
+                >
+                  Communify
+                </motion.h1>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-xl md:text-3xl text-[#8B6F47] dark:text-[#D4A574] mb-6 font-light italic"
+                >
+                  /kəˈmjuː.nə.faɪ/
+                </motion.p>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="text-lg md:text-2xl text-[#6B5D47] dark:text-[#B8A584] mb-10 leading-relaxed max-w-xl"
+                >
+                  Your premier gateway to community resources across <span className="font-semibold text-[#2C2416] dark:text-[#F5F3F0]">South Fayette & Pittsburgh</span>.
+                  <br className="hidden md:block mt-2" />
+                  <span className="font-medium">Connect. Discover. Thrive Together.</span>
+                </motion.p>
+              </motion.div>
+
+              {/* Advanced Search */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.5 }}
+                className="mb-10 max-w-lg"
               >
-                /kəˈmjuː.nə.faɪ/
-              </motion.p>
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                    className="text-base md:text-xl text-[#6B5D47] dark:text-[#B8A584] mb-8"
-                  >
-                    Your gateway to community resources in <span className="font-semibold text-[#8B6F47] dark:text-[#D4A574]">South Fayette & Pittsburgh</span>.
-                    <br className="hidden md:block" />
-                    <span className="font-medium text-[#8B6F47] dark:text-[#D4A574]">Connect. Discover. Thrive Together.</span>
-                  </motion.p>
-            </motion.div>
+                <AdvancedSearch />
+              </motion.div>
 
-            {/* Advanced Search */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-              className="max-w-2xl mx-auto mb-8"
-            >
-              <AdvancedSearch />
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="flex flex-col sm:flex-row gap-4 items-center"
+              >
+                <Link href="/directory" className="w-full sm:w-auto">
+                  <button className="btn-primary text-lg px-8 py-4 flex items-center gap-2 justify-center w-full sm:w-auto hover:scale-105 transition-transform shadow-lg shadow-[#8B6F47]/20">
+                    Explore Resources
+                    <ArrowRight className="w-5 h-5" />
+                  </button>
+                </Link>
+                <Link href="/highlights" className="w-full sm:w-auto">
+                  <button className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto hover:scale-105 transition-transform bg-white dark:bg-[#2A2824]">
+                    Featured Resources
+                  </button>
+                </Link>
+              </motion.div>
+            </div>
 
+            {/* Right side: Hero Image and Stats */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center items-center"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="relative hidden lg:block"
             >
-              <Link href="/directory">
-                <button className="btn-primary text-lg px-8 py-4 flex items-center gap-2 justify-center w-full sm:w-auto">
-                  Explore Resources
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </Link>
-              <Link href="/highlights">
-                <button className="btn-secondary text-lg px-8 py-4 w-full sm:w-auto">
-                  Featured Resources
-                </button>
-              </Link>
-              <Link href="/signup">
-                <button className="btn-secondary text-lg px-8 py-4 bg-[#8B6F47] dark:bg-[#D4A574] 
-                                 text-white dark:text-[#1C1B18] hover:bg-[#7A5F3A] dark:hover:bg-[#C49564] w-full sm:w-auto">
-                  Get Started
-                </button>
-              </Link>
-            </motion.div>
+              <div className="relative rounded-[2rem] overflow-hidden shadow-2xl border-4 border-white dark:border-[#2A2824] aspect-[4/5] w-full max-w-md mx-auto transform hover:-translate-y-2 transition-transform duration-500 group">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2C2416]/80 via-transparent to-transparent z-10"></div>
+                <img 
+                  src="https://images.unsplash.com/photo-1549888834-3ec93abae044?auto=format&fit=crop&q=80&w=1200" 
+                  alt="Pittsburgh Cityscape" 
+                  className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                />
+                <div className="absolute bottom-8 left-8 right-8 z-20 text-white">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Star className="w-5 h-5 text-yellow-400 fill-current" />
+                    <span className="font-semibold text-sm tracking-wider uppercase">Award Winning Platform</span>
+                  </div>
+                  <p className="text-white/90 text-sm leading-relaxed">Built for the community, empowering residents with real-time access to vital resources.</p>
+                </div>
+              </div>
 
-            {/* Stats with enhanced design */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 max-w-5xl mx-auto px-4"
-            >
-              {stats.map((stat, index) => {
-                const Icon = stat.icon
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.7 + index * 0.1 }}
-                    whileHover={{ scale: 1.05, y: -5 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="text-center p-6 bg-white/80 dark:bg-[#2A2824]/80 backdrop-blur-xl 
-                               rounded-3xl shadow-xl border border-[#E8E0D6]/50 dark:border-[#4A4844]/50
-                               hover:shadow-2xl transition-all duration-300"
-                    style={{
-                      backdropFilter: 'saturate(180%) blur(20px)',
-                      WebkitBackdropFilter: 'saturate(180%) blur(20px)',
-                    }}
-                  >
-                    <Icon className={`w-8 h-8 text-[#8B6F47] dark:text-[#D4A574] mx-auto mb-2`} />
-                    <div className="text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">{stat.value}</div>
-                    <div className="text-sm text-[#6B5D47] dark:text-[#B8A584]">{stat.label}</div>
-                  </motion.div>
-                )
-              })}
+              {/* Floating Stat Cards */}
+              <motion.div 
+                animate={{ y: [-5, 5, -5] }} 
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -left-12 top-20 bg-white/90 dark:bg-[#2A2824]/90 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/20 z-30"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-[#8B6F47]/10 dark:bg-[#D4A574]/10 rounded-2xl">
+                    <Users className="w-8 h-8 text-[#8B6F47] dark:text-[#D4A574]" />
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">{campaigns.length}+</p>
+                    <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] font-medium">Active Campaigns</p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div 
+                animate={{ y: [5, -5, 5] }} 
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute -right-8 bottom-32 bg-white/90 dark:bg-[#2A2824]/90 backdrop-blur-xl p-6 rounded-3xl shadow-xl border border-white/20 z-30"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-500/10 rounded-2xl">
+                    <Calendar className="w-8 h-8 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">{events.length}+</p>
+                    <p className="text-sm text-[#6B5D47] dark:text-[#B8A584] font-medium">Upcoming Events</p>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
+
+          {/* Stats Section for Mobile/Tablet */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="grid grid-cols-2 gap-4 mt-16 lg:hidden"
+          >
+            {stats.map((stat, index) => {
+              const Icon = stat.icon
+              return (
+                <motion.div
+                  key={index}
+                  whileHover={{ scale: 1.05 }}
+                  className="text-center p-6 bg-white/80 dark:bg-[#2A2824]/80 backdrop-blur-xl 
+                             rounded-3xl shadow-lg border border-[#E8E0D6]/50 dark:border-[#4A4844]/50"
+                >
+                  <Icon className={`w-8 h-8 text-[#8B6F47] dark:text-[#D4A574] mx-auto mb-2`} />
+                  <div className="text-3xl font-bold text-[#2C2416] dark:text-[#F5F3F0]">{stat.value}</div>
+                  <div className="text-sm text-[#6B5D47] dark:text-[#B8A584]">{stat.label}</div>
+                </motion.div>
+              )
+            })}
+          </motion.div>
         </motion.div>
 
         {/* Scroll indicator with animation */}
@@ -320,17 +364,23 @@ export default function Home() {
               <motion.div
                 whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-gray-200 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full"
               >
-                <Search className="w-12 h-12 text-primary-600 dark:text-primary-400 mb-4 group-hover:scale-110 transition-transform" />
-                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Resource Directory</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Browse our comprehensive directory of community resources, services, and organizations.
-                </p>
-                <span className="text-primary-600 dark:text-primary-400 font-medium flex items-center gap-2 group-hover:gap-4 transition-all">
-                  Explore Directory
-                  <ArrowRight className="w-4 h-4" />
-                </span>
+                <div className="h-48 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-300 z-10"></div>
+                  <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=800" alt="Directory" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+                </div>
+                <div className="p-6 flex flex-col flex-grow">
+                  <Search className="w-10 h-10 text-primary-600 dark:text-primary-400 mb-4 group-hover:scale-110 transition-transform" />
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Resource Directory</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                    Browse our comprehensive directory of community resources, services, and organizations.
+                  </p>
+                  <span className="text-primary-600 dark:text-primary-400 font-medium flex items-center gap-2 group-hover:gap-4 transition-all">
+                    Explore Directory
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </div>
               </motion.div>
             </Link>
 
@@ -338,17 +388,23 @@ export default function Home() {
               <motion.div
                 whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-gray-200 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full"
               >
-                <Sparkles className="w-12 h-12 text-secondary-600 dark:text-secondary-400 mb-4 group-hover:scale-110 transition-transform" />
-                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Featured Resources</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Learn about standout organizations making a difference in our community.
-                </p>
-                <span className="text-secondary-600 dark:text-secondary-400 font-medium flex items-center gap-2 group-hover:gap-4 transition-all">
-                  View Highlights
-                  <ArrowRight className="w-4 h-4" />
-                </span>
+                <div className="h-48 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-300 z-10"></div>
+                  <img src="https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&q=80&w=800" alt="Highlights" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+                </div>
+                <div className="p-6 flex flex-col flex-grow">
+                  <Sparkles className="w-10 h-10 text-secondary-600 dark:text-secondary-400 mb-4 group-hover:scale-110 transition-transform" />
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Featured Resources</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                    Learn about standout organizations making a difference in our community.
+                  </p>
+                  <span className="text-secondary-600 dark:text-secondary-400 font-medium flex items-center gap-2 group-hover:gap-4 transition-all">
+                    View Highlights
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </div>
               </motion.div>
             </Link>
 
@@ -356,17 +412,23 @@ export default function Home() {
               <motion.div
                 whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-gray-200 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer group border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full"
               >
-                <Heart className="w-12 h-12 text-primary-600 dark:text-primary-400 mb-4 group-hover:scale-110 transition-transform" />
-                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Submit Resource</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Help us grow! Submit a new resource or organization to add to our community hub.
-                </p>
-                <span className="text-primary-600 dark:text-primary-400 font-medium flex items-center gap-2 group-hover:gap-4 transition-all">
-                  Submit Now
-                  <ArrowRight className="w-4 h-4" />
-                </span>
+                <div className="h-48 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors duration-300 z-10"></div>
+                  <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=800" alt="Submit" className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+                </div>
+                <div className="p-6 flex flex-col flex-grow">
+                  <Heart className="w-10 h-10 text-primary-600 dark:text-primary-400 mb-4 group-hover:scale-110 transition-transform" />
+                  <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">Submit Resource</h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4 flex-grow">
+                    Help us grow! Submit a new resource or organization to add to our community hub.
+                  </p>
+                  <span className="text-primary-600 dark:text-primary-400 font-medium flex items-center gap-2 group-hover:gap-4 transition-all">
+                    Submit Now
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </div>
               </motion.div>
             </Link>
           </div>

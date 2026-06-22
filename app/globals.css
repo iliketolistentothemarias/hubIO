@@ -17,13 +17,16 @@ nav[class*="fixed"][class*="z-"] {
     hyphens: none;
     -webkit-hyphens: none;
     word-break: normal;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
   }
   .no-hyphens, [class*="rounded-full"], code, pre {
     hyphens: none;
     -webkit-hyphens: none;
     word-break: normal;
   }
+}
+h1, h2, h3, h4, h5, h6 {
+  text-wrap: balance;
 }
 
 /* Accessibility - Screen Reader Only */

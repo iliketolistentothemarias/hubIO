@@ -112,26 +112,51 @@ function LoginContent() {
             <div className="mb-8 p-4 rounded-2xl bg-[#F5F3F0]/50 dark:bg-white/5 border border-[#E8E0D6] dark:border-white/10">
               <div className="flex items-center gap-2 mb-3 text-[#8B6F47] dark:text-[#D4A574]">
                 <Info className="w-4 h-4" />
-                <h3 className="text-sm font-semibold uppercase tracking-wider">Test Environment Access</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider">TSA Judges Demo Start Here</h3>
               </div>
 
               <div className="space-y-4 text-sm text-[#6B5D47] dark:text-[#B8A584]">
                 <div>
-                  <p className="font-medium mb-2">Available Test Accounts:</p>
+                  <p className="font-medium mb-2 text-xs opacity-80">Click any account below to auto-fill credentials:</p>
                   <div className="space-y-2">
-                    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-2 gap-y-0.5">
-                      <span className="text-xs opacity-60 uppercase font-bold tracking-wide">Volunteer</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('testuser1@gmail.com')
+                        setPassword('testuser1')
+                      }}
+                      className="w-full text-left grid grid-cols-[100px_1fr_auto] items-center gap-2 p-2 rounded-xl border border-transparent hover:border-[#8B6F47]/20 hover:bg-[#8B6F47]/5 dark:hover:bg-[#D4A574]/5 transition-all text-[#6B5D47] dark:text-[#B8A584]"
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full text-center truncate">Volunteer</span>
                       <span className="text-[#2C2416] dark:text-[#F5F3F0] text-xs truncate">testuser1@gmail.com</span>
                       <span className="opacity-60 text-xs font-mono">testuser1</span>
+                    </button>
 
-                      <span className="text-xs opacity-60 uppercase font-bold tracking-wide whitespace-nowrap">Organizer</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('testuser2@gmail.com')
+                        setPassword('testuser2')
+                      }}
+                      className="w-full text-left grid grid-cols-[100px_1fr_auto] items-center gap-2 p-2 rounded-xl border border-transparent hover:border-[#8B6F47]/20 hover:bg-[#8B6F47]/5 dark:hover:bg-[#D4A574]/5 transition-all text-[#6B5D47] dark:text-[#B8A584]"
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full text-center truncate">Organizer</span>
                       <span className="text-[#2C2416] dark:text-[#F5F3F0] text-xs truncate">testuser2@gmail.com</span>
                       <span className="opacity-60 text-xs font-mono">testuser2</span>
+                    </button>
 
-                      <span className="text-xs opacity-60 uppercase font-bold tracking-wide font-semibold">Admin</span>
-                      <span className="text-[#2C2416] dark:text-[#F5F3F0] text-xs truncate font-semibold">testuser3@gmail.com</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail('testuser3@gmail.com')
+                        setPassword('testuser3')
+                      }}
+                      className="w-full text-left grid grid-cols-[100px_1fr_auto] items-center gap-2 p-2 rounded-xl border border-transparent hover:border-[#8B6F47]/20 hover:bg-[#8B6F47]/5 dark:hover:bg-[#D4A574]/5 transition-all font-semibold text-[#6B5D47] dark:text-[#B8A584]"
+                    >
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full text-center truncate">Admin</span>
+                      <span className="text-[#2C2416] dark:text-[#F5F3F0] text-xs truncate">testuser3@gmail.com</span>
                       <span className="opacity-60 text-xs font-mono font-semibold">testuser3</span>
-                    </div>
+                    </button>
                   </div>
                 </div>
 
@@ -142,11 +167,11 @@ function LoginContent() {
                 <div className="pt-3 border-t border-[#E8E0D6] dark:border-white/10 grid grid-cols-2 gap-2">
                   <div>
                     <p className="text-[10px] uppercase font-bold opacity-50">Team ID</p>
-                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0]">2043-901</p>
+                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0]">1825</p>
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-bold opacity-50">Individual IDs</p>
-                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0] text-[10px]">2043-062, 2043-083</p>
+                    <p className="font-mono text-[#2C2416] dark:text-[#F5F3F0] text-[10px]">1122394, 960942</p>
                   </div>
                 </div>
               </div>
