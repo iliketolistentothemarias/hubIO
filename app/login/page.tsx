@@ -112,10 +112,24 @@ function LoginContent() {
             <div className="mb-8 p-4 rounded-2xl bg-[#F5F3F0]/50 dark:bg-white/5 border border-[#E8E0D6] dark:border-white/10">
               <div className="flex items-center gap-2 mb-3 text-[#8B6F47] dark:text-[#D4A574]">
                 <Info className="w-4 h-4" />
-                <h3 className="text-xs font-bold uppercase tracking-wider">TSA Judges Demo Start Here</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider font-display">TSA Judges Demo Start Here</h3>
               </div>
 
               <div className="space-y-4 text-sm text-[#6B5D47] dark:text-[#B8A584]">
+                <div className="text-xs space-y-2 border-b border-[#E8E0D6] dark:border-white/10 pb-3 mb-2 leading-relaxed text-[#6B5D47] dark:text-[#B8A584]">
+                  <p>
+                    <strong>Communify</strong> is a platform built to empower local communities. It bridges resource gaps by connecting residents with food banks, housing programs, legal aid, and more.
+                  </p>
+                  <p>
+                    Choose a role below to explore the application:
+                  </p>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li><strong>Volunteer (Regular)</strong>: Browse the resource map/directory, message organizers, and join local programs.</li>
+                    <li><strong>Organizer</strong>: Create and manage resource listings, manage volunteer applications, and post announcements.</li>
+                    <li><strong>Admin</strong>: Access the admin panel dashboard, view system-wide analytics, and audit new resource submissions.</li>
+                  </ul>
+                </div>
+
                 <div>
                   <p className="font-medium mb-2 text-xs opacity-80">Click any account below to auto-fill credentials:</p>
                   <div className="space-y-2">
